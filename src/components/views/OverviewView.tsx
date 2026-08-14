@@ -1,0 +1,421 @@
+import React, { useState } from 'react';
+import { 
+  TrendingUp, 
+  ArrowUpRight, 
+  ArrowDownLeft, 
+  Coins, 
+  ShieldAlert, 
+  PiggyBank, 
+  Wallet, 
+  Sparkles, 
+  ChevronRight, 
+  Layers, 
+  Plus, 
+  Calendar,
+  Filter,
+  Trash2,
+  PieChart as PieIcon,
+  ShieldCheck,
+  Zap,
+  ArrowRight
+} from 'lucide-react';
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell
+} from 'recharts';
+import { useFinance } from '../../context/FinanceContext';
+
+export const OverviewView: React.FC = () => {
+  const { 
+    netWorth, 
+    totalAssets, 
+    totalLiabilities, 
+    monthlyIncome, 
+    monthlyExpenses, 
+    netSavings, 
+    savingsRate, 
+    formatMoney, 
+    assetAllocationBreakdown,
+    transactions,
+    deleteTransaction,
+    openQuickAdd,
+    setActiveTab,
+    setWealthSubTab,
+    setAccountSubTab,
+    netWorthHistory,
+    liquidRunwayMonths,
+    healthScore,
+    isPrivateMode
+  } = useFinance();
+
+  const [txFilter, setTxFilter] = useState<'all' | 'income' | 'expense'>('all');
+
+  const filteredTransactions = transactions
+    .filter(t => txFilter === 'all' || t.type === txFilter)
+    .slice(0, 6);
+
+  // Sparkline data from history
+  const chartData = netWorthHistory.map(item => ({
+    date: item.date.replace('2025-', 'Sep ').replace('2026-', 'Jan '),
+    rawDate: item.date,
+    netWorth: item.netWorth,
+    assets: item.totalAssets,
+    liabilities: item.totalLiabilities,
+  }));
+
+  return (
+    <div className="space-y-6 pb-24 lg:pb-12 animate-in fade-in duration-200">
+      {/* 1. Net Worth Hero Card */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 border border-slate-800/80 p-5 sm:p-7 shadow-2xl">
+        {/* Glow accent */}
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-72 h-72 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Total Net Worth
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                <TrendingUp className="w-3 h-3" /> +3.4% (30d)
+              </span>
+            </div>
+            
+            <button
+              onClick={() => {
+                setActiveTab('wealth');
+                setWealthSubTab('networth');
+              }}
+              className="text-xs text-slate-400 hover:text-blue-400 flex items-center gap-1 font-medium transition-colors"
+            >
+              <span>Detailed Growth</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 mb-4">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white font-mono">
+              {formatMoney(netWorth)}
+            </h1>
+            <div className="text-xs text-slate-400 font-mono">
+              Assets: <span className="text-slate-200">{formatMoney(totalAssets)}</span> &nbsp;|&nbsp; 
+              Liabilities: <span className="text-rose-400">{formatMoney(totalLiabilities)}</span>
+            </div>
+          </div>
+
+          {/* Interactive Net Worth Mini Chart */}
+          <div className="h-32 sm:h-40 w-full mt-3">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="nwGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#64748b" 
+                  fontSize={10} 
+                  tickLine={false} 
+                  axisLine={false} 
+                />
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-slate-900 border border-slate-800 p-2.5 rounded-2xl shadow-2xl text-xs font-mono">
+                          <p className="text-slate-400 mb-1">{data.rawDate}</p>
+                          <p className="text-blue-400 font-bold">
+                            Net Worth: {isPrivateMode ? '••••••' : `$${data.netWorth.toLocaleString()}`}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="netWorth" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2.5} 
+                  fillOpacity={1} 
+                  fill="url(#nwGrad)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Cash Flow & Monthly Velocity Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Income */}
+        <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/80 border border-slate-800/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-slate-400 font-medium">Monthly Inflow</span>
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <ArrowDownLeft className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold font-mono text-emerald-400">
+              {formatMoney(monthlyIncome)}
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">Earned & Passive Cash Flow</p>
+          </div>
+        </div>
+
+        {/* Expenses */}
+        <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/80 border border-slate-800/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-slate-400 font-medium">Monthly Outflow</span>
+            <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+              <ArrowUpRight className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold font-mono text-rose-400">
+              {formatMoney(monthlyExpenses)}
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">Living & Discretionary Burn</p>
+          </div>
+        </div>
+
+        {/* Net Savings & Rate */}
+        <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/80 border border-slate-800/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-slate-400 font-medium">Net Savings Rate</span>
+            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <PiggyBank className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold font-mono text-slate-100">
+                {formatMoney(netSavings)}
+              </span>
+              <span className="text-xs font-semibold text-blue-400 font-mono">
+                {savingsRate}% saved
+              </span>
+            </div>
+            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-blue-600 to-sky-400 h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, Math.max(0, savingsRate))}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Investments & Asset Classes Breakdown */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/80 border border-slate-800/80 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-blue-400" />
+            <h2 className="text-sm font-bold text-slate-100">Asset Classes & Capital Allocation</h2>
+          </div>
+          <button
+            onClick={() => {
+              setActiveTab('wealth');
+              setWealthSubTab('allocation');
+            }}
+            className="text-xs text-slate-400 hover:text-blue-400 flex items-center gap-1 font-medium transition-colors"
+          >
+            <span>Target Allocation</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Stacked Percentage Bar */}
+        <div className="w-full h-3 rounded-full overflow-hidden flex bg-slate-800 gap-0.5">
+          {assetAllocationBreakdown.map((item, idx) => (
+            <div
+              key={idx}
+              className="h-full transition-all hover:opacity-80"
+              style={{
+                width: `${item.percentage}%`,
+                backgroundColor: item.color,
+              }}
+              title={`${item.category}: ${item.percentage}%`}
+            />
+          ))}
+        </div>
+
+        {/* Asset Classes Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 pt-1">
+          {assetAllocationBreakdown.map((item, idx) => (
+            <div 
+              key={idx}
+              onClick={() => {
+                setActiveTab('wealth');
+                setWealthSubTab('assets');
+              }}
+              className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 hover:border-blue-500/40 cursor-pointer transition-all"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-[11px] font-medium text-slate-300 truncate max-w-[100px]">
+                    {item.category}
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400 font-semibold">
+                  {item.percentage}%
+                </span>
+              </div>
+              <div className="text-xs font-mono font-bold text-slate-100">
+                {formatMoney(item.value)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 4. Recent Transactions & Activity Stream */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/80 border border-slate-800/80 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold text-slate-100">Recent Financial Ledger</h2>
+            <span className="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-0.5 rounded-full font-mono">
+              {transactions.length} records
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-xs">
+            <button
+              onClick={() => setTxFilter('all')}
+              className={`px-3 py-1 rounded-xl transition-all ${
+                txFilter === 'all' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setTxFilter('income')}
+              className={`px-3 py-1 rounded-xl transition-all ${
+                txFilter === 'income' ? 'bg-emerald-500/20 text-emerald-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Inflow
+            </button>
+            <button
+              onClick={() => setTxFilter('expense')}
+              className={`px-3 py-1 rounded-xl transition-all ${
+                txFilter === 'expense' ? 'bg-rose-500/20 text-rose-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Outflow
+            </button>
+          </div>
+        </div>
+
+        {/* Transactions List */}
+        <div className="divide-y divide-slate-800/80">
+          {filteredTransactions.length === 0 ? (
+            <div className="py-8 text-center text-xs text-slate-400">
+              No transactions recorded in this category.
+            </div>
+          ) : (
+            filteredTransactions.map(tx => (
+              <div key={tx.id} className="py-3 flex items-center justify-between gap-3 group">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`p-2 rounded-2xl shrink-0 ${
+                    tx.type === 'income' 
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                  }`}>
+                    {tx.type === 'income' ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-200 truncate">
+                      {tx.description}
+                    </p>
+                    <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                      <span>{tx.category}</span>
+                      <span>•</span>
+                      <span>{tx.accountName}</span>
+                      <span>•</span>
+                      <span>{tx.date}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className={`font-mono text-xs font-bold ${
+                    tx.type === 'income' ? 'text-emerald-400' : 'text-slate-100'
+                  }`}>
+                    {tx.type === 'income' ? '+' : '-'}{formatMoney(tx.amount)}
+                  </span>
+                  <button
+                    onClick={() => deleteTransaction(tx.id)}
+                    title="Delete record"
+                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-rose-400 transition-opacity"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer Quick Action */}
+        <div className="pt-2 flex items-center justify-between border-t border-slate-800/80 text-xs">
+          <button
+            onClick={() => openQuickAdd('expense')}
+            className="text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Transaction
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('account');
+              setAccountSubTab('money');
+            }}
+            className="text-slate-400 hover:text-slate-200"
+          >
+            View Cash Flow Activity →
+          </button>
+        </div>
+      </div>
+
+      {/* 5. Health & Solvency Scorecard */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/80 border border-slate-800/80 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-blue-400" />
+            <h2 className="text-sm font-bold text-slate-100">Financial Vital Signs</h2>
+          </div>
+          <span className="text-xs font-mono font-bold text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
+            Score: {healthScore.score}/100 ({healthScore.grade})
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+          {healthScore.metrics.map((m, idx) => (
+            <div key={idx} className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold text-slate-300">{m.label}</span>
+                <span className={`w-2 h-2 rounded-full ${
+                  m.status === 'good' ? 'bg-emerald-400' : m.status === 'warning' ? 'bg-amber-400' : 'bg-rose-400'
+                }`} />
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1 font-mono">{m.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
