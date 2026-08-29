@@ -16,9 +16,10 @@ import { useFinance } from '../context/FinanceContext';
 import { MainTab } from '../types';
 
 export const BottomNav: React.FC = () => {
-  const { activeTab, setActiveTab, openQuickAdd, theme } = useFinance();
+  const { activeTab, setActiveTab, openQuickAdd, theme, transactions } = useFinance();
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const isLight = theme === 'light';
+  const hasNoTransactions = transactions.length === 0;
 
   const navItems: { id: MainTab; label: string; icon: any }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -160,17 +161,33 @@ export const BottomNav: React.FC = () => {
 
           {/* Center Plus (+) Button */}
           <div className="relative -top-4">
+            {/* Subtle radar pulse glow when empty */}
+            {hasNoTransactions && !isFabMenuOpen && (
+              <>
+                <span className="absolute -inset-1 rounded-full bg-blue-500/40 blur-sm animate-pulse pointer-events-none" />
+                <span className="absolute inset-0 rounded-full bg-blue-400 opacity-30 animate-ping pointer-events-none duration-1000" />
+              </>
+            )}
+
             <button
               id="mobile-nav-center-plus"
               onClick={() => setIsFabMenuOpen(prev => !prev)}
               aria-label="Add transaction, asset, or liability"
-              className={`w-12 h-12 rounded-full bg-gradient-to-tr from-blue-600 via-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 border-2 ${
+              className={`relative w-12 h-12 rounded-full bg-gradient-to-tr from-blue-600 via-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 border-2 ${
                 isLight ? 'border-white' : 'border-slate-950'
               } transition-transform active:scale-95 hover:scale-105 ${
                 isFabMenuOpen ? 'rotate-45 bg-slate-800 text-white' : ''
-              }`}
+              } ${hasNoTransactions && !isFabMenuOpen ? 'animate-fab-pulse' : ''}`}
             >
               <Plus className="w-6 h-6 stroke-[2.5]" />
+
+              {/* Subtle green indicator beacon when empty */}
+              {hasNoTransactions && !isFabMenuOpen && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border-2 border-slate-950"></span>
+                </span>
+              )}
             </button>
           </div>
 

@@ -7,13 +7,8 @@ import {
   MoreHorizontal, 
   CalendarDays, 
   BarChart3, 
-  Calculator, 
-  Plus, 
   ShieldCheck, 
-  PieChart, 
-  Layers,
-  ArrowUpRight,
-  Sparkles
+  ArrowUpRight
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { MainTab } from '../types';
@@ -22,7 +17,6 @@ export const Sidebar: React.FC = () => {
   const { 
     activeTab, 
     setActiveTab, 
-    openQuickAdd, 
     healthScore, 
     formatMoney, 
     netWorth,
@@ -47,19 +41,7 @@ export const Sidebar: React.FC = () => {
     <aside className={`w-64 shrink-0 hidden lg:flex flex-col justify-between h-[calc(100vh-61px)] border-r ${
       isLight ? 'border-slate-200/90 bg-white/90 text-slate-900 shadow-sm' : 'border-slate-800/60 bg-slate-950/80 text-white'
     } backdrop-blur-md px-3 py-4 sticky top-[61px] select-none transition-colors`}>
-      <div className="space-y-5">
-        {/* Quick Add Action Button */}
-        <div>
-          <button
-            id="btn-sidebar-quick-add"
-            onClick={() => openQuickAdd('income')}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-blue-500/25 border border-blue-400/20 transition-all active:scale-[0.98]"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Record Transaction / Asset</span>
-          </button>
-        </div>
-
+      <div className="space-y-4">
         {/* Primary Navigation Menu */}
         <nav className="space-y-1">
           <div className={`px-3 pb-2 text-[10px] font-bold uppercase tracking-wider ${

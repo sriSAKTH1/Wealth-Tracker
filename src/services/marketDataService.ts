@@ -1,0 +1,905 @@
+export interface MasterAsset {
+  id: string; // Unique Master ID e.g. "NSE_RELIANCE", "MF_118968", "BSE_500325"
+  asset_type: 'stock' | 'mutual_fund' | 'etf' | 'crypto' | 'commodity' | 'manual';
+  name: string;
+  symbol: string; // e.g. "RELIANCE", "118968", "TCS"
+  isin?: string; // e.g. "INE002A01018"
+  exchange: 'NSE' | 'BSE' | 'MF' | 'NASDAQ' | 'NYSE' | 'CRYPTO';
+  data_source: 'NSE_LIVE' | 'BSE_FEED' | 'MFAPI_IN' | 'YAHOO_FINANCE' | 'MOCK_PROVIDER';
+  
+  // Real-time / Daily Pricing
+  latest_price: number; // in its native currency (INR/USD)
+  previous_close?: number;
+  price_change?: number; // Absolute change
+  price_change_percent?: number; // Percentage change
+  currency: 'INR' | 'USD' | 'EUR' | 'GBP';
+  open?: number;
+  high?: number;
+  low?: number;
+  volume?: number;
+  data_status: 'Real-time' | 'Delayed' | 'Daily NAV' | 'Market Closed';
+  last_updated: string; // Formatted timestamp or date string
+
+  // Mutual Fund Specific
+  scheme_name?: string;
+  amc?: string;
+  scheme_code?: string | number;
+  plan?: 'Direct' | 'Regular';
+  option?: 'Growth' | 'IDCW';
+  category?: string;
+  latest_nav?: number;
+  nav_date?: string;
+  nav_change?: number;
+  nav_change_percent?: number;
+  sector?: string;
+}
+
+export interface UserAssetHolding {
+  id: string;
+  user_id: string;
+  asset_id: string; // References MasterAsset.id
+  quantity: number; // units or shares
+  average_price: number; // purchase price
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IMarketDataProvider {
+  searchAssets(query: string, filter?: string): Promise<MasterAsset[]>;
+  getAssetQuote(symbol: string, exchange?: string, type?: string): Promise<MasterAsset | null>;
+  getBatchQuotes(securities: Array<{ symbol: string; exchange?: string; type?: string; scheme_code?: string | number }>): Promise<Record<string, MasterAsset>>;
+}
+
+// -------------------------------------------------------------
+// CURATED MASTER ASSETS CATALOG (INDIAN STOCKS, ETFS, MUTUAL FUNDS)
+// -------------------------------------------------------------
+export const MOCK_MASTER_ASSETS: MasterAsset[] = [
+  // --- Indian Stocks (NSE & BSE) ---
+  {
+    id: 'NSE_RELIANCE',
+    asset_type: 'stock',
+    name: 'Reliance Industries Ltd',
+    symbol: 'RELIANCE',
+    isin: 'INE002A01018',
+    exchange: 'NSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 1283.70,
+    previous_close: 1282.20,
+    price_change: 1.50,
+    price_change_percent: 0.12,
+    currency: 'INR',
+    open: 1284.00,
+    high: 1292.00,
+    low: 1278.00,
+    volume: 8452100,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'Conglomerate & Telecom'
+  },
+  {
+    id: 'BSE_500325',
+    asset_type: 'stock',
+    name: 'Reliance Industries Ltd',
+    symbol: '500325',
+    isin: 'INE002A01018',
+    exchange: 'BSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 1283.10,
+    previous_close: 1281.80,
+    price_change: 1.30,
+    price_change_percent: 0.10,
+    currency: 'INR',
+    open: 1283.50,
+    high: 1291.50,
+    low: 1277.50,
+    volume: 1250400,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'Conglomerate & Telecom'
+  },
+  {
+    id: 'NSE_TCS',
+    asset_type: 'stock',
+    name: 'Tata Consultancy Services Ltd',
+    symbol: 'TCS',
+    isin: 'INE467B01029',
+    exchange: 'NSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 4280.00,
+    previous_close: 4241.80,
+    price_change: 38.20,
+    price_change_percent: 0.90,
+    currency: 'INR',
+    open: 4250.00,
+    high: 4295.00,
+    low: 4235.00,
+    volume: 2415000,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'IT Services'
+  },
+  {
+    id: 'BSE_532540',
+    asset_type: 'stock',
+    name: 'Tata Consultancy Services Ltd',
+    symbol: '532540',
+    isin: 'INE467B01029',
+    exchange: 'BSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 4279.10,
+    previous_close: 4241.00,
+    price_change: 38.10,
+    price_change_percent: 0.90,
+    currency: 'INR',
+    open: 4249.00,
+    high: 4294.00,
+    low: 4234.00,
+    volume: 410000,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'IT Services'
+  },
+  {
+    id: 'NSE_HDFCBANK',
+    asset_type: 'stock',
+    name: 'HDFC Bank Ltd',
+    symbol: 'HDFCBANK',
+    isin: 'INE040A01034',
+    exchange: 'NSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 1655.40,
+    previous_close: 1661.20,
+    price_change: -5.80,
+    price_change_percent: -0.35,
+    currency: 'INR',
+    open: 1660.00,
+    high: 1668.50,
+    low: 1648.00,
+    volume: 14200000,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'Banking'
+  },
+  {
+    id: 'BSE_500180',
+    asset_type: 'stock',
+    name: 'HDFC Bank Ltd',
+    symbol: '500180',
+    isin: 'INE040A01034',
+    exchange: 'BSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 1655.10,
+    previous_close: 1660.90,
+    price_change: -5.80,
+    price_change_percent: -0.35,
+    currency: 'INR',
+    open: 1659.00,
+    high: 1668.00,
+    low: 1647.50,
+    volume: 2100000,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'Banking'
+  },
+  {
+    id: 'NSE_ICICIBANK',
+    asset_type: 'stock',
+    name: 'ICICI Bank Ltd',
+    symbol: 'ICICIBANK',
+    isin: 'INE090A01021',
+    exchange: 'NSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 1220.60,
+    previous_close: 1211.50,
+    price_change: 9.10,
+    price_change_percent: 0.75,
+    currency: 'INR',
+    open: 1215.00,
+    high: 1225.00,
+    low: 1210.00,
+    volume: 9800000,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'Banking'
+  },
+  {
+    id: 'NSE_INFY',
+    asset_type: 'stock',
+    name: 'Infosys Ltd',
+    symbol: 'INFY',
+    isin: 'INE009A01021',
+    exchange: 'NSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 1860.25,
+    previous_close: 1826.45,
+    price_change: 33.80,
+    price_change_percent: 1.85,
+    currency: 'INR',
+    open: 1835.00,
+    high: 1868.00,
+    low: 1830.00,
+    volume: 6700000,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'IT Services'
+  },
+  {
+    id: 'NSE_SBIN',
+    asset_type: 'stock',
+    name: 'State Bank of India',
+    symbol: 'SBIN',
+    isin: 'INE062A01020',
+    exchange: 'NSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 824.50,
+    previous_close: 815.15,
+    price_change: 9.35,
+    price_change_percent: 1.15,
+    currency: 'INR',
+    open: 818.00,
+    high: 828.00,
+    low: 816.00,
+    volume: 18500000,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'PSU Banking'
+  },
+  {
+    id: 'NSE_BHARTIARTL',
+    asset_type: 'stock',
+    name: 'Bharti Airtel Ltd',
+    symbol: 'BHARTIARTL',
+    isin: 'INE397D01024',
+    exchange: 'NSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 1520.00,
+    previous_close: 1501.25,
+    price_change: 18.75,
+    price_change_percent: 1.25,
+    currency: 'INR',
+    open: 1505.00,
+    high: 1525.00,
+    low: 1500.00,
+    volume: 4800000,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'Telecommunications'
+  },
+  {
+    id: 'NSE_ITC',
+    asset_type: 'stock',
+    name: 'ITC Limited',
+    symbol: 'ITC',
+    isin: 'INE154A01025',
+    exchange: 'NSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 498.40,
+    previous_close: 496.42,
+    price_change: 1.98,
+    price_change_percent: 0.40,
+    currency: 'INR',
+    open: 497.00,
+    high: 501.00,
+    low: 495.50,
+    volume: 12000000,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'FMCG'
+  },
+  {
+    id: 'NSE_LT',
+    asset_type: 'stock',
+    name: 'Larsen & Toubro Ltd',
+    symbol: 'LT',
+    isin: 'INE018A01030',
+    exchange: 'NSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 3680.00,
+    previous_close: 3630.90,
+    price_change: 49.10,
+    price_change_percent: 1.35,
+    currency: 'INR',
+    open: 3640.00,
+    high: 3695.00,
+    low: 3635.00,
+    volume: 2100000,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'Infrastructure & Engineering'
+  },
+  {
+    id: 'NSE_TATAMOTORS',
+    asset_type: 'stock',
+    name: 'Tata Motors Ltd',
+    symbol: 'TATAMOTORS',
+    isin: 'INE155A01022',
+    exchange: 'NSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 1085.30,
+    previous_close: 1063.00,
+    price_change: 22.30,
+    price_change_percent: 2.10,
+    currency: 'INR',
+    open: 1070.00,
+    high: 1092.00,
+    low: 1065.00,
+    volume: 9500000,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'Automobile'
+  },
+  {
+    id: 'NSE_NIFTYBEES',
+    asset_type: 'etf',
+    name: 'Nippon India Nifty 50 BeES ETF',
+    symbol: 'NIFTYBEES',
+    isin: 'INF732E01015',
+    exchange: 'NSE',
+    data_source: 'MOCK_PROVIDER',
+    latest_price: 272.50,
+    previous_close: 270.35,
+    price_change: 2.15,
+    price_change_percent: 0.80,
+    currency: 'INR',
+    open: 271.00,
+    high: 273.50,
+    low: 270.80,
+    volume: 15400000,
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'Index ETF'
+  },
+
+  // --- Indian Mutual Funds ---
+  {
+    id: 'MF_118968',
+    asset_type: 'mutual_fund',
+    name: 'HDFC Flexi Cap Fund - Direct Plan - Growth',
+    scheme_name: 'HDFC Flexi Cap Fund',
+    symbol: '118968',
+    scheme_code: '118968',
+    isin: 'INF179K01BE2',
+    exchange: 'MF',
+    data_source: 'MFAPI_IN',
+    amc: 'HDFC Mutual Fund',
+    plan: 'Direct',
+    option: 'Growth',
+    category: 'Flexi Cap Fund',
+    latest_price: 1980.50,
+    latest_nav: 1980.50,
+    previous_close: 1963.80,
+    price_change: 16.70,
+    price_change_percent: 0.85,
+    nav_change: 16.70,
+    nav_change_percent: 0.85,
+    currency: 'INR',
+    nav_date: '28-Aug-2024',
+    data_status: 'Daily NAV',
+    last_updated: '28-Aug-2024',
+    sector: 'Equity - Flexi Cap'
+  },
+  {
+    id: 'MF_101662',
+    asset_type: 'mutual_fund',
+    name: 'HDFC Flexi Cap Fund - Regular Plan - Growth',
+    scheme_name: 'HDFC Flexi Cap Fund',
+    symbol: '101662',
+    scheme_code: '101662',
+    isin: 'INF179K01BB8',
+    exchange: 'MF',
+    data_source: 'MFAPI_IN',
+    amc: 'HDFC Mutual Fund',
+    plan: 'Regular',
+    option: 'Growth',
+    category: 'Flexi Cap Fund',
+    latest_price: 1845.20,
+    latest_nav: 1845.20,
+    previous_close: 1830.40,
+    price_change: 14.80,
+    price_change_percent: 0.81,
+    nav_change: 14.80,
+    nav_change_percent: 0.81,
+    currency: 'INR',
+    nav_date: '28-Aug-2024',
+    data_status: 'Daily NAV',
+    last_updated: '28-Aug-2024',
+    sector: 'Equity - Flexi Cap'
+  },
+  {
+    id: 'MF_122639',
+    asset_type: 'mutual_fund',
+    name: 'Parag Parikh Flexi Cap Fund - Direct Plan - Growth',
+    scheme_name: 'Parag Parikh Flexi Cap Fund',
+    symbol: '122639',
+    scheme_code: '122639',
+    isin: 'INF879O01027',
+    exchange: 'MF',
+    data_source: 'MFAPI_IN',
+    amc: 'PPFAS Mutual Fund',
+    plan: 'Direct',
+    option: 'Growth',
+    category: 'Flexi Cap Fund',
+    latest_price: 82.45,
+    latest_nav: 82.45,
+    previous_close: 81.75,
+    price_change: 0.70,
+    price_change_percent: 0.85,
+    nav_change: 0.70,
+    nav_change_percent: 0.85,
+    currency: 'INR',
+    nav_date: '28-Aug-2024',
+    data_status: 'Daily NAV',
+    last_updated: '28-Aug-2024',
+    sector: 'Equity - Flexi Cap'
+  },
+  {
+    id: 'MF_119598',
+    asset_type: 'mutual_fund',
+    name: 'SBI Bluechip Fund - Direct Plan - Growth',
+    scheme_name: 'SBI Bluechip Fund',
+    symbol: '119598',
+    scheme_code: '119598',
+    isin: 'INF200K01RS4',
+    exchange: 'MF',
+    data_source: 'MFAPI_IN',
+    amc: 'SBI Mutual Fund',
+    plan: 'Direct',
+    option: 'Growth',
+    category: 'Large Cap Fund',
+    latest_price: 98.20,
+    latest_nav: 98.20,
+    previous_close: 97.66,
+    price_change: 0.54,
+    price_change_percent: 0.55,
+    nav_change: 0.54,
+    nav_change_percent: 0.55,
+    currency: 'INR',
+    nav_date: '28-Aug-2024',
+    data_status: 'Daily NAV',
+    last_updated: '28-Aug-2024',
+    sector: 'Equity - Large Cap'
+  },
+  {
+    id: 'MF_120828',
+    asset_type: 'mutual_fund',
+    name: 'Quant Small Cap Fund - Direct Plan - Growth',
+    scheme_name: 'Quant Small Cap Fund',
+    symbol: '120828',
+    scheme_code: '120828',
+    isin: 'INF966L01AA3',
+    exchange: 'MF',
+    data_source: 'MFAPI_IN',
+    amc: 'Quant Mutual Fund',
+    plan: 'Direct',
+    option: 'Growth',
+    category: 'Small Cap Fund',
+    latest_price: 268.10,
+    latest_nav: 268.10,
+    previous_close: 264.25,
+    price_change: 3.85,
+    price_change_percent: 1.45,
+    nav_change: 3.85,
+    nav_change_percent: 1.45,
+    currency: 'INR',
+    nav_date: '28-Aug-2024',
+    data_status: 'Daily NAV',
+    last_updated: '28-Aug-2024',
+    sector: 'Equity - Small Cap'
+  },
+  {
+    id: 'MF_118778',
+    asset_type: 'mutual_fund',
+    name: 'Nippon India Small Cap Fund - Direct Plan - Growth',
+    scheme_name: 'Nippon India Small Cap Fund',
+    symbol: '118778',
+    scheme_code: '118778',
+    isin: 'INF204K01T40',
+    exchange: 'MF',
+    data_source: 'MFAPI_IN',
+    amc: 'Nippon India Mutual Fund',
+    plan: 'Direct',
+    option: 'Growth',
+    category: 'Small Cap Fund',
+    latest_price: 172.90,
+    latest_nav: 172.90,
+    previous_close: 170.85,
+    price_change: 2.05,
+    price_change_percent: 1.20,
+    nav_change: 2.05,
+    nav_change_percent: 1.20,
+    currency: 'INR',
+    nav_date: '28-Aug-2024',
+    data_status: 'Daily NAV',
+    last_updated: '28-Aug-2024',
+    sector: 'Equity - Small Cap'
+  },
+  {
+    id: 'MF_120716',
+    asset_type: 'mutual_fund',
+    name: 'UTI Nifty 50 Index Fund - Direct Plan - Growth',
+    scheme_name: 'UTI Nifty 50 Index Fund',
+    symbol: '120716',
+    scheme_code: '120716',
+    isin: 'INF789F01X41',
+    exchange: 'MF',
+    data_source: 'MFAPI_IN',
+    amc: 'UTI Mutual Fund',
+    plan: 'Direct',
+    option: 'Growth',
+    category: 'Index Fund',
+    latest_price: 184.10,
+    latest_nav: 184.10,
+    previous_close: 182.65,
+    price_change: 1.45,
+    price_change_percent: 0.80,
+    nav_change: 1.45,
+    nav_change_percent: 0.80,
+    currency: 'INR',
+    nav_date: '28-Aug-2024',
+    data_status: 'Daily NAV',
+    last_updated: '28-Aug-2024',
+    sector: 'Equity - Index Fund'
+  }
+];
+
+// -------------------------------------------------------------
+// MOCK MARKET DATA PROVIDER
+// -------------------------------------------------------------
+export class MockMarketDataProvider implements IMarketDataProvider {
+  async searchAssets(query: string, filter?: string): Promise<MasterAsset[]> {
+    const q = query.trim().toUpperCase();
+    let list = MOCK_MASTER_ASSETS;
+
+    if (filter === 'stock') {
+      list = list.filter(a => a.asset_type === 'stock' || a.asset_type === 'etf');
+    } else if (filter === 'mutual_fund') {
+      list = list.filter(a => a.asset_type === 'mutual_fund');
+    }
+
+    if (!q) {
+      return list.slice(0, 15);
+    }
+
+    return list.filter(item => {
+      const matchSymbol = item.symbol.toUpperCase().includes(q);
+      const matchName = item.name.toUpperCase().includes(q);
+      const matchIsin = item.isin ? item.isin.toUpperCase().includes(q) : false;
+      const matchAmc = item.amc ? item.amc.toUpperCase().includes(q) : false;
+      const matchSchemeCode = item.scheme_code ? String(item.scheme_code).includes(q) : false;
+      const matchCategory = item.category ? item.category.toUpperCase().includes(q) : false;
+      return matchSymbol || matchName || matchIsin || matchAmc || matchSchemeCode || matchCategory;
+    });
+  }
+
+  async getAssetQuote(symbol: string, exchange?: string, type?: string): Promise<MasterAsset | null> {
+    const clean = symbol.trim().toUpperCase();
+    const found = MOCK_MASTER_ASSETS.find(
+      a => a.symbol.toUpperCase() === clean || 
+           (a.scheme_code && String(a.scheme_code) === clean) ||
+           (a.isin && a.isin.toUpperCase() === clean)
+    );
+    if (found) return found;
+
+    // Default mock asset
+    return {
+      id: `${exchange || 'NSE'}_${clean}`,
+      asset_type: type === 'mutual_fund' ? 'mutual_fund' : 'stock',
+      name: `${clean} Security`,
+      symbol: clean,
+      exchange: (exchange as any) || 'NSE',
+      data_source: 'MOCK_PROVIDER',
+      latest_price: 100.0,
+      currency: exchange === 'NSE' || exchange === 'BSE' || exchange === 'MF' ? 'INR' : 'USD',
+      data_status: 'Delayed',
+      last_updated: new Date().toLocaleTimeString()
+    };
+  }
+
+  async getBatchQuotes(securities: Array<{ symbol: string; exchange?: string; type?: string; scheme_code?: string | number }>): Promise<Record<string, MasterAsset>> {
+    const map: Record<string, MasterAsset> = {};
+    for (const s of securities) {
+      const q = await this.getAssetQuote(s.symbol || String(s.scheme_code), s.exchange, s.type);
+      if (q) {
+        map[s.symbol.toUpperCase()] = q;
+      }
+    }
+    return map;
+  }
+}
+
+// -------------------------------------------------------------
+// PRODUCTION MARKET DATA PROVIDER (Connects to /api/market & /api/mf)
+// -------------------------------------------------------------
+export class ProductionMarketDataProvider implements IMarketDataProvider {
+  async searchAssets(query: string, filter?: string): Promise<MasterAsset[]> {
+    const q = query.trim();
+    
+    // First, retrieve instant local mock matches for speed
+    const mockProvider = new MockMarketDataProvider();
+    const localMatches = await mockProvider.searchAssets(q, filter);
+
+    if (!q) {
+      return localMatches;
+    }
+
+    try {
+      // 1. Search Mutual Funds via backend /api/mf/search
+      const mfSearchPromise = (filter !== 'stock') 
+        ? fetch(`/api/mf/search?q=${encodeURIComponent(q)}`)
+            .then(r => r.ok ? r.json() : { results: [] })
+            .catch(() => ({ results: [] }))
+        : Promise.resolve({ results: [] });
+
+      // 2. Search Stocks via backend /api/market/search (Yahoo/NSE/BSE)
+      const stockSearchPromise = (filter !== 'mutual_fund')
+        ? fetch(`/api/market/search?q=${encodeURIComponent(q)}`)
+            .then(r => r.ok ? r.json() : { results: [] })
+            .catch(() => ({ results: [] }))
+        : Promise.resolve({ results: [] });
+
+      const [mfData, stockData] = await Promise.allSettled([mfSearchPromise, stockSearchPromise]);
+
+      const liveResults: MasterAsset[] = [];
+
+      // Process Mutual Fund search results
+      if (mfData.status === 'fulfilled' && mfData.value?.results) {
+        mfData.value.results.slice(0, 15).forEach((m: any) => {
+          const isDirect = /direct/i.test(m.schemeName || m.name);
+          const isGrowth = /growth/i.test(m.schemeName || m.name);
+          liveResults.push({
+            id: `MF_${m.schemeCode}`,
+            asset_type: 'mutual_fund',
+            name: m.schemeName || m.name,
+            scheme_name: (m.schemeName || m.name).replace(/\s*-\s*(Direct|Regular).*$/i, '').trim(),
+            symbol: String(m.schemeCode),
+            scheme_code: m.schemeCode,
+            exchange: 'MF',
+            data_source: 'MFAPI_IN',
+            plan: isDirect ? 'Direct' : 'Regular',
+            option: isGrowth ? 'Growth' : 'IDCW',
+            latest_price: 100.0,
+            latest_nav: 100.0,
+            currency: 'INR',
+            data_status: 'Daily NAV',
+            last_updated: 'Latest NAV',
+            category: 'Mutual Fund'
+          });
+        });
+      }
+
+      // Process Stock search results
+      if (stockData.status === 'fulfilled' && stockData.value?.results) {
+        stockData.value.results.slice(0, 15).forEach((s: any) => {
+          const isIndian = s.exchange === 'NSE' || s.exchange === 'BSE' || s.country === 'IN' || s.currency === 'INR';
+          liveResults.push({
+            id: `${s.exchange || 'NSE'}_${s.ticker}`,
+            asset_type: s.type === 'etf' ? 'etf' : 'stock',
+            name: s.name || s.ticker,
+            symbol: s.ticker,
+            exchange: s.exchange || (isIndian ? 'NSE' : 'NASDAQ'),
+            data_source: isIndian ? 'NSE_LIVE' : 'YAHOO_FINANCE',
+            latest_price: s.currency === 'INR' ? 500.0 : 100.0,
+            currency: s.currency || (isIndian ? 'INR' : 'USD'),
+            data_status: 'Real-time',
+            last_updated: 'Market Live'
+          });
+        });
+      }
+
+      // Merge results avoiding duplicate symbols
+      const seen = new Set<string>();
+      const combined: MasterAsset[] = [];
+
+      // Local curated assets take precedence for accurate ISIN and clean meta
+      localMatches.forEach(item => {
+        const key = `${item.exchange}_${item.symbol}`.toUpperCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          combined.push(item);
+        }
+      });
+
+      liveResults.forEach(item => {
+        const key = `${item.exchange}_${item.symbol}`.toUpperCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          combined.push(item);
+        }
+      });
+
+      // Enrich top search results with live real-time quotes if available
+      const topItems = combined.slice(0, 20);
+      try {
+        const batchQuotes = await this.getBatchQuotes(topItems.map(item => ({
+          symbol: item.symbol,
+          exchange: item.exchange,
+          type: item.asset_type,
+          scheme_code: item.scheme_code
+        })));
+
+        return topItems.map(item => {
+          const live = batchQuotes[item.symbol.toUpperCase()] || (item.scheme_code ? batchQuotes[String(item.scheme_code).toUpperCase()] : null);
+          if (live && live.latest_price > 0) {
+            return {
+              ...item,
+              latest_price: live.latest_price,
+              latest_nav: live.latest_nav || live.latest_price,
+              previous_close: live.previous_close || item.previous_close,
+              price_change: live.price_change !== undefined ? live.price_change : item.price_change,
+              price_change_percent: live.price_change_percent !== undefined ? live.price_change_percent : item.price_change_percent,
+              data_status: live.data_status || item.data_status,
+              last_updated: live.last_updated || item.last_updated,
+              isin: live.isin || item.isin
+            };
+          }
+          return item;
+        });
+      } catch {
+        return topItems;
+      }
+    } catch (e) {
+      return localMatches;
+    }
+  }
+
+  async getAssetQuote(symbol: string, exchange?: string, type?: string): Promise<MasterAsset | null> {
+    const clean = symbol.trim().toUpperCase();
+    try {
+      const res = await fetch(`/api/market/quote?ticker=${encodeURIComponent(clean)}${exchange ? `&exchange=${encodeURIComponent(exchange)}` : ''}${type ? `&type=${encodeURIComponent(type)}` : ''}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.quote) {
+          const q = json.quote;
+          const isMF = q.type === 'mutual_fund' || exchange === 'MF';
+          return {
+            id: `${q.exchange || exchange || 'NSE'}_${clean}`,
+            asset_type: isMF ? 'mutual_fund' : 'stock',
+            name: q.name || clean,
+            symbol: clean,
+            scheme_code: q.schemeCode,
+            isin: q.isin,
+            amc: q.fundHouse,
+            exchange: (q.exchange as any) || (exchange as any) || 'NSE',
+            data_source: isMF ? 'MFAPI_IN' : 'NSE_LIVE',
+            latest_price: q.currentPrice || q.nav || 100,
+            previous_close: q.previousClose,
+            price_change: q.priceChange24hAmount,
+            price_change_percent: q.priceChange24h,
+            latest_nav: q.nav,
+            nav_date: q.navDate,
+            currency: q.currency || 'INR',
+            data_status: isMF ? 'Daily NAV' : 'Real-time',
+            last_updated: q.marketTime ? new Date(q.marketTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today'
+          };
+        }
+      }
+    } catch (err) {
+      // Fallback
+    }
+
+    const mockProvider = new MockMarketDataProvider();
+    return mockProvider.getAssetQuote(clean, exchange, type);
+  }
+
+  async getBatchQuotes(securities: Array<{ symbol: string; exchange?: string; type?: string; scheme_code?: string | number }>): Promise<Record<string, MasterAsset>> {
+    const map: Record<string, MasterAsset> = {};
+    try {
+      const res = await fetch('/api/market/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          securities: securities.map(s => ({
+            ticker: s.symbol,
+            exchange: s.exchange,
+            type: s.type,
+            schemeCode: s.scheme_code
+          }))
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.quotes) {
+          Object.entries(data.quotes).forEach(([key, q]: [string, any]) => {
+            const isMF = q.type === 'mutual_fund' || q.exchange === 'MF';
+            map[key.toUpperCase()] = {
+              id: `${q.exchange || 'NSE'}_${key}`,
+              asset_type: isMF ? 'mutual_fund' : 'stock',
+              name: q.name || key,
+              symbol: key,
+              scheme_code: q.schemeCode,
+              isin: q.isin,
+              amc: q.fundHouse,
+              exchange: (q.exchange as any) || 'NSE',
+              data_source: isMF ? 'MFAPI_IN' : 'NSE_LIVE',
+              latest_price: q.currentPrice || q.nav || 100,
+              previous_close: q.previousClose,
+              price_change: q.priceChange24hAmount,
+              price_change_percent: q.priceChange24h,
+              currency: q.currency || 'INR',
+              data_status: isMF ? 'Daily NAV' : 'Real-time',
+              last_updated: 'Just now'
+            };
+          });
+        }
+      }
+    } catch (e) {
+      // Fallback
+    }
+
+    // Fill missing with mock provider
+    const mock = new MockMarketDataProvider();
+    for (const s of securities) {
+      const key = s.symbol.toUpperCase();
+      if (!map[key]) {
+        const item = await mock.getAssetQuote(s.symbol, s.exchange, s.type);
+        if (item) map[key] = item;
+      }
+    }
+
+    return map;
+  }
+}
+
+// -------------------------------------------------------------
+// UNIFIED MARKET DATA SERVICE
+// -------------------------------------------------------------
+class MarketDataService {
+  private provider: IMarketDataProvider;
+  private isDevelopmentMode: boolean = false;
+
+  constructor() {
+    // Default to ProductionMarketDataProvider which leverages free live endpoints (mfapi.in + live market routes)
+    // and seamlessly uses mock fallback
+    this.provider = new ProductionMarketDataProvider();
+  }
+
+  public setDevelopmentMode(enabled: boolean) {
+    this.isDevelopmentMode = enabled;
+    if (enabled) {
+      this.provider = new MockMarketDataProvider();
+    } else {
+      this.provider = new ProductionMarketDataProvider();
+    }
+  }
+
+  public getIsDevelopmentMode(): boolean {
+    return this.isDevelopmentMode;
+  }
+
+  public async search(query: string, filter?: string): Promise<MasterAsset[]> {
+    return this.provider.searchAssets(query, filter);
+  }
+
+  public async getQuote(symbol: string, exchange?: string, type?: string): Promise<MasterAsset | null> {
+    return this.provider.getAssetQuote(symbol, exchange, type);
+  }
+
+  public async getBatchQuotes(securities: Array<{ symbol: string; exchange?: string; type?: string; scheme_code?: string | number }>): Promise<Record<string, MasterAsset>> {
+    return this.provider.getBatchQuotes(securities);
+  }
+}
+
+export const marketDataService = new MarketDataService();
+
+/**
+ * Generates an external link to view security on Google Finance
+ */
+export function getGoogleFinanceUrl(symbol: string, exchange?: string, name?: string): string {
+  const clean = symbol.trim().toUpperCase();
+  if (exchange === 'MF' || exchange === 'mutual_fund' || /^\d{5,7}$/.test(clean)) {
+    if (name) {
+      return `https://www.google.com/search?q=${encodeURIComponent(name + ' nav google finance')}`;
+    }
+    return `https://www.google.com/search?q=${encodeURIComponent(clean + ' mutual fund nav google finance')}`;
+  }
+  if (exchange === 'BSE' || /^\d{6}$/.test(clean)) {
+    return `https://www.google.com/finance/quote/${clean}:BOM`;
+  }
+  if (exchange === 'NSE' || exchange === 'stock' || !exchange) {
+    return `https://www.google.com/finance/quote/${clean}:NSE`;
+  }
+  if (exchange === 'NASDAQ' || exchange === 'NYSE' || exchange === 'NYSEARCA') {
+    return `https://www.google.com/finance/quote/${clean}:${exchange}`;
+  }
+  return `https://www.google.com/finance/quote/${clean}`;
+}

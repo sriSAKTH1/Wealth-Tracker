@@ -31,6 +31,7 @@ import {
   INITIAL_SCHEDULED_ITEMS,
   INITIAL_NET_WORTH_HISTORY
 } from '../data/initialData';
+import { getMarketQuote, fetchLiveQuotesBatchAsync } from '../data/marketStocks';
 
 export const CURRENCY_CONFIGS: Record<CurrencyCode, CurrencyConfig> = {
   USD: { code: 'USD', symbol: '$', name: 'US Dollar', rateToUSD: 1 },
@@ -79,6 +80,12 @@ interface FinanceContextType {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 
+  // Real-time Market Data & Synchronization
+  isSyncingMarketPrices: boolean;
+  lastMarketSyncTime: string | null;
+  marketSyncStatus: string | null;
+  syncLiveMarketPrices: (force?: boolean) => Promise<{ updatedCount: number; message: string }>;
+
   // Data
   assets: Asset[];
   liabilities: Liability[];
@@ -110,7 +117,10 @@ interface FinanceContextType {
   updateBudget: (id: string, newAllocated: number) => void;
   addBudgetCategory: (category: BudgetEnvelope['category'], amount: number) => void;
 
+  addEssentialGoal: (goal: Omit<EssentialGoal, 'id' | 'lastUpdated'>) => void;
   updateEssentialGoal: (id: string, updates: Partial<EssentialGoal>) => void;
+  deleteEssentialGoal: (id: string) => void;
+  depositToEssentialGoal: (id: string, amount: number) => void;
   addCustomGoal: (goal: Omit<CustomGoal, 'id'>) => void;
   updateCustomGoal: (id: string, updates: Partial<CustomGoal>) => void;
   deleteCustomGoal: (id: string) => void;
@@ -124,6 +134,7 @@ interface FinanceContextType {
   exportDataJSON: () => void;
   exportTransactionsCSV: () => void;
   resetToDefaultData: () => void;
+  resetAllDataToZero: () => void;
 
   // Computed Analytics
   totalAssets: number;
@@ -169,6 +180,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [quickAddType, setQuickAddType] = useState<'income' | 'expense' | 'asset' | 'liability'>('income');
   const [isSearchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Real-time Market Live Price Synchronization
+  const [isSyncingMarketPrices, setIsSyncingMarketPrices] = useState(false);
+  const [lastMarketSyncTime, setLastMarketSyncTime] = useState<string | null>(() => {
+    return localStorage.getItem('aura_last_market_sync') || null;
+  });
+  const [marketSyncStatus, setMarketSyncStatus] = useState<string | null>(null);
 
   // Primary Data State
   const [assets, setAssets] = useState<Asset[]>(() => {
@@ -326,7 +344,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const liquidRunwayMonths = monthlyExpenses > 0 
     ? Number((liquidCash / monthlyExpenses).toFixed(1)) 
-    : 12;
+    : (liquidCash > 0 ? 12 : 0);
 
   const debtToAssetRatio = totalAssets > 0 
     ? Number(((totalLiabilities / totalAssets) * 100).toFixed(1)) 
@@ -336,10 +354,16 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const assetAllocationBreakdown = useMemo(() => {
     const map: Record<string, { value: number; color: string }> = {};
     const defaultColors: Record<AssetCategory, string> = {
+      'Equity': '#3B82F6',
+      'Debt': '#10B981',
+      'Real Estate': '#8B5CF6',
+      'Commodities': '#F59E0B',
+      'Cash & Savings': '#06B6D4',
+      'Crypto': '#F97316',
+      'Alternatives': '#EC4899',
+      'Other': '#64748B',
       'Cash & Bank': '#3b82f6',
       'Stocks & ETFs': '#0ea5e9',
-      'Crypto': '#6366f1',
-      'Real Estate': '#10b981',
       'Retirement (401k/IRA)': '#f59e0b',
       'Vehicles & Valuables': '#f43f5e',
       'Fixed Income & Bonds': '#8b5cf6',
@@ -366,6 +390,40 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Health Score Calculation
   const healthScore = useMemo(() => {
+    // If no assets and no transactions (reset / 0 state), return clean 0
+    if (totalAssets === 0 && totalLiabilities === 0 && monthlyIncome === 0 && monthlyExpenses === 0) {
+      return {
+        score: 0,
+        grade: 'N/A',
+        metrics: [
+          {
+            label: 'Emergency Runway',
+            score: 0,
+            status: 'needs_work' as const,
+            desc: `0 months runway ($0 liquid cash)`,
+          },
+          {
+            label: 'Savings Velocity',
+            score: 0,
+            status: 'needs_work' as const,
+            desc: `0% saved monthly`,
+          },
+          {
+            label: 'Debt Leverage Ratio',
+            score: 0,
+            status: 'good' as const,
+            desc: `0% debt-to-asset load`,
+          },
+          {
+            label: 'Asset Diversification',
+            score: 0,
+            status: 'needs_work' as const,
+            desc: `0 asset classes active`,
+          },
+        ]
+      };
+    }
+
     // 1. Runway Score (0-25): 6 months = 25 pts
     const runwayScore = Math.min(25, Math.round((liquidRunwayMonths / 6) * 25));
     
@@ -420,14 +478,134 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         },
       ]
     };
-  }, [liquidRunwayMonths, liquidCash, savingsRate, debtToAssetRatio, assets]);
+  }, [liquidRunwayMonths, liquidCash, savingsRate, debtToAssetRatio, assets, totalAssets, totalLiabilities, monthlyIncome, monthlyExpenses]);
+
+  // Market Live Price Synchronization Engine
+  const syncLiveMarketPrices = async (force: boolean = false): Promise<{ updatedCount: number; message: string }> => {
+    setIsSyncingMarketPrices(true);
+    try {
+      const trackedList = assets
+        .filter(a => (a.ticker || a.schemeCode) && (a.autoSyncMarketPrice !== false || force))
+        .map(a => ({ 
+          ticker: a.ticker || String(a.schemeCode), 
+          exchange: a.exchange, 
+          type: a.assetType,
+          schemeCode: a.schemeCode 
+        }));
+
+      let liveQuotesMap: Record<string, any> = {};
+      if (trackedList.length > 0) {
+        liveQuotesMap = await fetchLiveQuotesBatchAsync(trackedList);
+      }
+
+      let count = 0;
+      const nowIso = new Date().toISOString();
+      const updatedAssets = assets.map(asset => {
+        const key = (asset.ticker || (asset.schemeCode ? String(asset.schemeCode) : '')).toUpperCase();
+        if (key && (asset.autoSyncMarketPrice !== false || force)) {
+          const quote = liveQuotesMap[key] || getMarketQuote(key, asset.exchange);
+          if (quote) {
+            const shares = asset.shares || (asset.costBasis && asset.buyPrice ? asset.costBasis / asset.buyPrice : 1);
+            const newPrice = quote.currentPrice;
+            const newValue = Math.round(shares * newPrice * 100) / 100;
+            count++;
+            return {
+              ...asset,
+              currentPrice: newPrice,
+              value: newValue,
+              priceChange24h: quote.priceChange24h,
+              priceChange24hAmount: quote.priceChange24hAmount,
+              lastPriceSyncedAt: nowIso,
+              lastUpdated: nowIso.split('T')[0],
+              fundHouse: asset.fundHouse || quote.fundHouse,
+              schemeCode: asset.schemeCode || quote.schemeCode,
+            };
+          }
+        }
+        return asset;
+      });
+
+      if (count > 0) {
+        setAssets(updatedAssets);
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_assets`, JSON.stringify(updatedAssets));
+      }
+
+      const syncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setLastMarketSyncTime(syncTime);
+      localStorage.setItem('aura_last_market_sync', syncTime);
+
+      const msg = count > 0 
+        ? `Successfully fetched real-time live prices for ${count} holdings from exchanges.` 
+        : `All holding market prices are up to date.`;
+      setMarketSyncStatus(msg);
+      setTimeout(() => setMarketSyncStatus(null), 4500);
+
+      return { updatedCount: count, message: msg };
+    } finally {
+      setIsSyncingMarketPrices(false);
+    }
+  };
+
+  // Auto-sync market prices when visiting the app
+  useEffect(() => {
+    const hasTrackedAssets = assets.some(a => a.ticker);
+    if (hasTrackedAssets) {
+      const timer = setTimeout(() => {
+        syncLiveMarketPrices(false);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // Asset CRUD
   const addAsset = (data: Omit<Asset, 'id' | 'lastUpdated'>) => {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Check if user already holds this asset by masterAssetId, ISIN, or (ticker + exchange)
+    const existingIndex = assets.findIndex(a => {
+      if (data.masterAssetId && a.masterAssetId === data.masterAssetId) return true;
+      if (data.isin && a.isin && a.isin.toUpperCase() === data.isin.toUpperCase()) return true;
+      if (data.schemeCode && a.schemeCode && String(a.schemeCode) === String(data.schemeCode)) return true;
+      if (data.ticker && a.ticker && a.ticker.toUpperCase() === data.ticker.toUpperCase() && (!data.exchange || a.exchange === data.exchange)) return true;
+      return false;
+    });
+
+    if (existingIndex !== -1) {
+      // User already holds this security -> Merge holding without creating duplicates
+      setAssets(prev => {
+        const next = [...prev];
+        const existing = next[existingIndex];
+        const existingShares = existing.shares || (existing.costBasis && existing.buyPrice ? existing.costBasis / existing.buyPrice : 1);
+        const addedShares = data.shares || (data.costBasis && data.buyPrice ? data.costBasis / data.buyPrice : 1);
+        const totalShares = existingShares + addedShares;
+
+        const existingCost = existing.costBasis || (existingShares * (existing.buyPrice || existing.value));
+        const addedCost = data.costBasis || (addedShares * (data.buyPrice || data.value));
+        const totalCost = existingCost + addedCost;
+        const weightedBuyPrice = totalShares > 0 ? Math.round((totalCost / totalShares) * 100) / 100 : (data.buyPrice || existing.buyPrice);
+
+        const currentPrice = data.currentPrice || existing.currentPrice || weightedBuyPrice || 100;
+        const totalValue = Math.round(totalShares * currentPrice * 100) / 100;
+
+        next[existingIndex] = {
+          ...existing,
+          ...data,
+          shares: totalShares,
+          costBasis: totalCost,
+          buyPrice: weightedBuyPrice,
+          value: totalValue,
+          currentPrice: currentPrice,
+          lastUpdated: today,
+        };
+        return next;
+      });
+      return;
+    }
+
     const newAsset: Asset = {
       ...data,
       id: `ast-${Date.now()}`,
-      lastUpdated: new Date().toISOString().split('T')[0],
+      lastUpdated: today,
     };
     setAssets(prev => [newAsset, ...prev]);
   };
@@ -525,9 +703,35 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setBudgets(prev => [...prev, newB]);
   };
 
-  // Goals
+  // Essential & Emergency Goals
+  const addEssentialGoal = (data: Omit<EssentialGoal, 'id' | 'lastUpdated'>) => {
+    const newGoal: EssentialGoal = {
+      ...data,
+      id: `ess-${Date.now()}`,
+      lastUpdated: new Date().toISOString().split('T')[0],
+    };
+    setEssentialGoals(prev => [newGoal, ...prev]);
+  };
+
   const updateEssentialGoal = (id: string, updates: Partial<EssentialGoal>) => {
     setEssentialGoals(prev => prev.map(g => g.id === id ? { ...g, ...updates, lastUpdated: new Date().toISOString().split('T')[0] } : g));
+  };
+
+  const deleteEssentialGoal = (id: string) => {
+    setEssentialGoals(prev => prev.filter(g => g.id !== id));
+  };
+
+  const depositToEssentialGoal = (id: string, amount: number) => {
+    setEssentialGoals(prev => prev.map(g => {
+      if (g.id === id) {
+        return {
+          ...g,
+          currentAmount: Math.max(0, g.currentAmount + amount),
+          lastUpdated: new Date().toISOString().split('T')[0],
+        };
+      }
+      return g;
+    }));
   };
 
   const addCustomGoal = (data: Omit<CustomGoal, 'id'>) => {
@@ -650,6 +854,43 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setNetWorthHistory(INITIAL_NET_WORTH_HISTORY);
   };
 
+  const resetAllDataToZero = () => {
+    // Reset all assets & liabilities to empty ($0)
+    setAssets([]);
+    setLiabilities([]);
+    // Reset accounts to $0 balance
+    setAccounts([
+      { id: 'acc-1', name: 'Primary Checking', type: 'checking', institution: 'Main Bank', balance: 0, currency: currency, lastSynced: 'Just now' },
+      { id: 'acc-2', name: 'High-Yield Savings', type: 'savings', institution: 'Main Bank', balance: 0, currency: currency, lastSynced: 'Just now' },
+    ]);
+    // Clear all transactions
+    setTransactions([]);
+    // Reset all budget envelopes to $0 allocated
+    setBudgets([
+      { id: 'b-housing', category: 'Housing', allocatedAmount: 0, period: 'monthly', color: '#3B82F6' },
+      { id: 'b-food', category: 'Food & Dining', allocatedAmount: 0, period: 'monthly', color: '#10B981' },
+      { id: 'b-transport', category: 'Transportation', allocatedAmount: 0, period: 'monthly', color: '#F59E0B' },
+      { id: 'b-util', category: 'Utilities', allocatedAmount: 0, period: 'monthly', color: '#6366F1' },
+      { id: 'b-personal', category: 'Personal & Health', allocatedAmount: 0, period: 'monthly', color: '#EC4899' },
+      { id: 'b-ent', category: 'Entertainment', allocatedAmount: 0, period: 'monthly', color: '#8B5CF6' },
+      { id: 'b-sub', category: 'Subscriptions', allocatedAmount: 0, period: 'monthly', color: '#06B6D4' },
+      { id: 'b-other', category: 'Miscellaneous', allocatedAmount: 0, period: 'monthly', color: '#64748B' },
+    ]);
+    // Reset essential goals to $0
+    setEssentialGoals([
+      { id: 'eg-1', name: 'Emergency Fund', type: 'emergency_fund', targetMonths: 6, targetAmount: 0, currentAmount: 0, lastUpdated: new Date().toISOString().split('T')[0] },
+      { id: 'eg-2', name: 'Debt Snowball / Freedom', type: 'debt_snowball', targetAmount: 0, currentAmount: 0, lastUpdated: new Date().toISOString().split('T')[0] },
+      { id: 'eg-3', name: 'Essential Runway', type: 'essential_runway', targetMonths: 12, targetAmount: 0, currentAmount: 0, lastUpdated: new Date().toISOString().split('T')[0] },
+    ]);
+    // Clear custom goals & scheduled items
+    setCustomGoals([]);
+    setScheduledItems([]);
+    // Net worth history baseline $0
+    setNetWorthHistory([
+      { date: new Date().toISOString().split('T')[0], netWorth: 0, totalAssets: 0, totalLiabilities: 0 }
+    ]);
+  };
+
   return (
     <FinanceContext.Provider
       value={{
@@ -681,6 +922,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setSearchOpen,
         searchQuery,
         setSearchQuery,
+        isSyncingMarketPrices,
+        lastMarketSyncTime,
+        marketSyncStatus,
+        syncLiveMarketPrices,
         assets,
         liabilities,
         accounts,
@@ -704,7 +949,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         deleteAccount,
         updateBudget,
         addBudgetCategory,
+        addEssentialGoal,
         updateEssentialGoal,
+        deleteEssentialGoal,
+        depositToEssentialGoal,
         addCustomGoal,
         updateCustomGoal,
         deleteCustomGoal,
@@ -715,6 +963,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         exportDataJSON,
         exportTransactionsCSV,
         resetToDefaultData,
+        resetAllDataToZero,
         totalAssets,
         totalLiabilities,
         netWorth,

@@ -200,3 +200,19 @@
 .light-theme input[type="range"] {
   background-color: #e2e8f0 !important;
 }
+
+/* --- Floating Action Button Subtle Pulse Animation --- */
+@keyframes subtle-floating-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4), 0 0 0 0 rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 16px 30px -5px rgba(59, 130, 246, 0.6), 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+}
+
+.animate-fab-pulse {
+  animation: subtle-floating-pulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

@@ -71,7 +71,7 @@ export const Navbar: React.FC = () => {
         ? 'border-slate-200/90 bg-white/90 backdrop-blur-md text-slate-900 shadow-sm' 
         : 'border-slate-800/60 bg-slate-950/80 backdrop-blur-md text-white'
     } px-4 sm:px-6 py-3`}>
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+      <div className="w-full flex items-center justify-between gap-3">
         {/* Brand / Logo */}
         <div className="flex items-center gap-3">
           <div 

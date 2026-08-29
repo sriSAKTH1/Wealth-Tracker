@@ -8,21 +8,31 @@ export interface CurrencyConfig {
 }
 
 export type AssetCategory = 
+  | 'Equity'
+  | 'Debt'
+  | 'Real Estate'
+  | 'Commodities'
+  | 'Cash & Savings'
+  | 'Crypto'
+  | 'Alternatives'
+  | 'Other'
   | 'Cash & Bank'
   | 'Stocks & ETFs'
-  | 'Crypto'
-  | 'Real Estate'
   | 'Retirement (401k/IRA)'
   | 'Vehicles & Valuables'
   | 'Fixed Income & Bonds'
   | 'Other Assets';
 
 export type LiabilityCategory = 
-  | 'Mortgage'
-  | 'Credit Card'
-  | 'Student Loan'
-  | 'Auto Loan'
+  | 'Home Loan'
   | 'Personal Loan'
+  | 'Credit Card'
+  | 'Auto Loan'
+  | 'Student Loan'
+  | 'Gold Loan'
+  | 'Mortgage'
+  | 'Loan Against Property'
+  | 'Buy Now Pay Later'
   | 'Other Debt';
 
 export type TransactionType = 'income' | 'expense' | 'transfer';
@@ -55,6 +65,7 @@ export interface Asset {
   id: string;
   name: string;
   category: AssetCategory;
+  subType?: string;
   institution?: string;
   value: number;
   costBasis?: number;
@@ -64,12 +75,40 @@ export interface Asset {
   icon?: string;
   color?: string;
   isLiquid?: boolean;
+
+  // Custom Tagging & Portfolio Purpose Organization
+  tags?: string[];
+  purpose?: string; // e.g. 'Retirement', 'Trading', 'Long-term Savings', 'Emergency Fund'
+
+  // Real Market Stock / Crypto / ETF / Mutual Fund Tracking fields
+  masterAssetId?: string;      // Unique master reference e.g. "NSE_RELIANCE", "MF_118968"
+  isin?: string;               // International Securities Identification Number e.g. "INE002A01018"
+  bseCode?: string;            // BSE Scrip code e.g. "500325"
+  dataStatus?: 'Real-time' | 'Delayed' | 'Daily NAV' | 'Market Closed';
+  dataSource?: string;
+  plan?: 'Direct' | 'Regular';
+  option?: 'Growth' | 'IDCW';
+  navDate?: string;
+  ticker?: string;             // e.g. "AAPL", "NVDA", "RELIANCE", "BTC", "VOO", "122639"
+  exchange?: string;           // e.g. "NASDAQ", "NYSE", "NSE", "CRYPTO", "INDEX", "MF", "BSE"
+  assetType?: 'stock' | 'etf' | 'crypto' | 'mutual_fund' | 'commodity' | 'manual';
+  schemeCode?: number | string;// Scheme code for Indian Mutual Funds (mfapi.in)
+  fundHouse?: string;          // AMC name e.g. "PPFAS Mutual Fund"
+  shares?: number;             // Number of units / quantity
+  buyPrice?: number;           // Purchase price per share on buy date
+  buyDate?: string;            // YYYY-MM-DD when bought
+  currentPrice?: number;       // Latest market price per share
+  priceChange24h?: number;     // 24h percentage change (e.g. 2.45)
+  priceChange24hAmount?: number;// 24h absolute change (e.g. 4.30)
+  lastPriceSyncedAt?: string;  // Timestamp of latest price sync
+  autoSyncMarketPrice?: boolean; // Automatically refresh price on load
 }
 
 export interface Liability {
   id: string;
   name: string;
   category: LiabilityCategory;
+  subType?: string;
   institution?: string;
   balance: number;
   interestRate?: number; // annual %
@@ -116,12 +155,14 @@ export interface BudgetEnvelope {
 export interface EssentialGoal {
   id: string;
   name: string;
-  type: 'emergency_fund' | 'debt_snowball' | 'essential_runway' | 'insurance_buffer';
+  type: 'emergency_fund' | 'debt_snowball' | 'essential_runway' | 'insurance_buffer' | 'medical_shield' | 'custom_vault';
   targetMonths?: number;
   targetAmount: number;
   currentAmount: number;
   notes?: string;
   lastUpdated: string;
+  color?: string;
+  icon?: string;
 }
 
 export interface CustomGoal {
@@ -162,6 +203,25 @@ export type AppTheme = 'coolors' | 'dark' | 'midnight' | 'emerald' | 'slate' | '
 export type MainTab = 'overview' | 'wealth' | 'goals' | 'account' | 'more' | 'calendar' | 'reports';
 
 export type WealthSubTab = 'assets' | 'liabilities' | 'networth' | 'allocation';
-export type GoalsSubTab = 'essential' | 'goals';
+export type GoalsSubTab = 'essential' | 'goals' | 'fire';
 export type AccountSubTab = 'money' | 'budget' | 'accounts' | 'state';
 export type MoreSubTab = 'import' | 'calculate' | 'theme' | 'backup' | 'setting' | 'feedback';
+
+export interface AssetTagMeta {
+  name: string;
+  color: string;
+  badgeClass: string;
+}
+
+export const DEFAULT_ASSET_TAGS: AssetTagMeta[] = [
+  { name: 'Retirement', color: '#6366f1', badgeClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' },
+  { name: 'Trading', color: '#f59e0b', badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
+  { name: 'Long-term Savings', color: '#10b981', badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+  { name: 'Emergency Fund', color: '#14b8a6', badgeClass: 'bg-teal-500/15 text-teal-300 border-teal-500/30' },
+  { name: 'Passive Income / Dividends', color: '#3b82f6', badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30' },
+  { name: 'High Growth', color: '#ec4899', badgeClass: 'bg-pink-500/15 text-pink-300 border-pink-500/30' },
+  { name: 'Speculative', color: '#a855f7', badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30' },
+  { name: 'Tax Saving (80C / ELSS)', color: '#06b6d4', badgeClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' },
+  { name: 'House Downpayment', color: '#f97316', badgeClass: 'bg-orange-500/15 text-orange-300 border-orange-500/30' },
+  { name: 'Children Education', color: '#8b5cf6', badgeClass: 'bg-violet-500/15 text-violet-300 border-violet-500/30' },
+];

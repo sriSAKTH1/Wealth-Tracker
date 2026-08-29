@@ -43,13 +43,15 @@ export const ReportsView: React.FC = () => {
   const [reportTimeframe, setReportTimeframe] = useState<'30D' | '90D' | '1Y'>('30D');
 
   // Multi-month cashflow comparison data
-  const monthlyComparisonData = [
+  const monthlyComparisonData = transactions.length === 0 ? [
+    { month: 'Current', income: monthlyIncome, expense: monthlyExpenses, savings: netSavings }
+  ] : [
     { month: 'Mar', income: 7200, expense: 4100, savings: 3100 },
     { month: 'Apr', income: 7400, expense: 3950, savings: 3450 },
     { month: 'May', income: 7600, expense: 4300, savings: 3300 },
     { month: 'Jun', income: 7900, expense: 4400, savings: 3500 },
     { month: 'Jul', income: 7800, expense: 4250, savings: 3550 },
-    { month: 'Aug', income: monthlyIncome || 7942, expense: monthlyExpenses || 4118, savings: netSavings || 3824 },
+    { month: 'Aug', income: monthlyIncome, expense: monthlyExpenses, savings: netSavings },
   ];
 
   // Expense by category breakdown
