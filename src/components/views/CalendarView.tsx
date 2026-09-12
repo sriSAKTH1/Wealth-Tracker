@@ -17,7 +17,7 @@ import { ScheduledCalendarItem } from '../../types';
 
 export const CalendarView: React.FC = () => {
   const { 
-    scheduledItems, 
+    scheduledItems = [], 
     formatMoney, 
     addScheduledItem, 
     deleteScheduledItem,
@@ -87,7 +87,7 @@ export const CalendarView: React.FC = () => {
     setNewAmount('');
   };
 
-  const selectedDayItems = scheduledItems.filter(i => i.dayOfMonth === selectedDay);
+  const selectedDayItems = (scheduledItems || []).filter(i => i.dayOfMonth === selectedDay);
 
   return (
     <div className="space-y-6 pb-24 lg:pb-12 animate-in fade-in duration-200">

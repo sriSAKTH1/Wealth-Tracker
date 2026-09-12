@@ -135,6 +135,7 @@ export interface Transaction {
   id: string;
   description: string;
   amount: number;
+  currency?: CurrencyCode;
   type: TransactionType;
   category: string;
   accountId: string;
@@ -172,6 +173,8 @@ export interface CustomGoal {
   targetAmount: number;
   currentAmount: number;
   targetDate: string; // YYYY-MM-DD
+  tenureYears?: number;
+  tenureMonths?: number;
   monthlyContribution?: number;
   color?: string;
   icon?: string;
@@ -200,12 +203,143 @@ export interface NetWorthSnapshot {
 
 export type AppTheme = 'coolors' | 'dark' | 'midnight' | 'emerald' | 'slate' | 'light';
 
-export type MainTab = 'overview' | 'wealth' | 'goals' | 'account' | 'more' | 'calendar' | 'reports';
+export type MainTab = 'overview' | 'wealth' | 'goals' | 'account' | 'more' | 'calendar' | 'reports' | 'finscore';
 
 export type WealthSubTab = 'assets' | 'liabilities' | 'networth' | 'allocation';
 export type GoalsSubTab = 'essential' | 'goals' | 'fire';
 export type AccountSubTab = 'money' | 'budget' | 'accounts' | 'state';
 export type MoreSubTab = 'import' | 'calculate' | 'theme' | 'backup' | 'setting' | 'feedback';
+
+// ---------------------------------------------------------------------------
+// FINSCORE™ - Financial Health Score Engine & Profile Types
+// ---------------------------------------------------------------------------
+
+export interface FinScoreProfile {
+  name: string;
+  age: number;
+  monthlyIncome: number;
+  occupation: string;
+  dependents: number;
+  currency: CurrencyCode;
+}
+
+export interface FinScoreExpenseCategory {
+  id: string;
+  category: string;
+  amount: number;
+  isEssential: boolean; // Rent, food, utilities, loan EMIs are essential
+}
+
+export interface FinScoreLoan {
+  id: string;
+  type: string; // 'Home Loan' | 'Personal Loan' | 'Auto Loan' | 'Credit Card' | 'Education' | 'Other'
+  outstandingAmount: number;
+  monthlyEmi: number;
+  interestRate: number; // e.g., 8.5%
+  remainingTenureMonths: number;
+}
+
+export interface FinScoreInsurance {
+  hasLifeInsurance: boolean;
+  lifeCoverage: number;
+  hasTermInsurance: boolean;
+  termCoverage: number;
+  hasHealthInsurance: boolean;
+  healthCoverage: number;
+  isFamilyCovered: boolean;
+  hasEmployerInsurance: boolean;
+  hasPersonalHealthPolicy: boolean;
+}
+
+export interface FinScoreEmergency {
+  targetMonths: number; // default 6, configurable 3-12
+  currentEmergencySavings: number;
+}
+
+export interface FinScoreGoal {
+  id: string;
+  name: string;
+  category: 'Bike' | 'Car' | 'Higher Education' | 'Marriage' | 'House' | 'Retirement' | 'Children Education' | 'Business' | 'Travel' | 'Other';
+  targetAmount: number;
+  currentSavings: number;
+  targetYear: number;
+  tenureYears?: number;
+  expectedReturnRate?: number; // default 8-10%
+}
+
+export interface FinScoreHistoryPoint {
+  month: string; // e.g. "Jan", "Feb", "March", "April", "May"
+  year: number;
+  overallScore: number;
+  savingsScore: number;
+  debtScore: number;
+  emergencyScore: number;
+  insuranceScore: number;
+  goalScore: number;
+}
+
+export interface FinScoreAlert {
+  id: string;
+  type: 'emergency' | 'debt' | 'insurance' | 'savings' | 'goal';
+  severity: 'critical' | 'warning' | 'info' | 'positive';
+  title: string;
+  message: string;
+  actionRecommendation?: string;
+}
+
+export interface FinScoreResult {
+  overallScore: number; // 0-100
+  grade: 'Excellent' | 'Good' | 'Fair' | 'Needs Attention';
+  gradeColor: string; // Tailwind color classes
+  summaryDiagnosis: string;
+  biggestPriority: string;
+  scores: {
+    savings: number; // 0-100
+    expenseManagement: number; // 0-100
+    debt: number; // 0-100
+    emergencyFund: number; // 0-100
+    insurance: number; // 0-100
+    futureGoals: number; // 0-100
+  };
+  metrics: {
+    monthlyIncome: number;
+    totalExpenses: number;
+    essentialExpenses: number;
+    discretionaryExpenses: number;
+    monthlySavings: number;
+    savingsRatio: number; // %
+    totalDebt: number;
+    totalMonthlyEmi: number;
+    emiToIncomeRatio: number; // %
+    requiredEmergencyFund: number;
+    emergencyShortfall: number;
+    emergencyFundRatio: number; // %
+    recommendedLifeCoverage: number;
+    lifeCoverageShortfall: number;
+    totalGoalRequiredMonthlySavings: number;
+  };
+  monthlyActionPlan: {
+    monthNumber: number;
+    monthName: string;
+    focus: string;
+    tasks: string[];
+  }[];
+  alerts: FinScoreAlert[];
+}
+
+export interface FinScoreAdminRuleConfig {
+  weights: {
+    savings: number; // default 15
+    expenseManagement: number; // default 15
+    debt: number; // default 20
+    emergencyFund: number; // default 20
+    insurance: number; // default 15
+    futureGoals: number; // default 15
+  };
+  emergencyTargetMonthsDefault: number; // default 6
+  maxHealthyEmiRatio: number; // default 40%
+  lifeInsuranceAnnualIncomeMultiplier: number; // default 12x
+}
 
 export interface AssetTagMeta {
   name: string;

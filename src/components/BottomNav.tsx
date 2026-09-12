@@ -10,16 +10,17 @@ import {
   ArrowUpRight, 
   Coins, 
   ShieldAlert,
+  ShieldCheck,
   X
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { MainTab } from '../types';
 
 export const BottomNav: React.FC = () => {
-  const { activeTab, setActiveTab, openQuickAdd, theme, transactions } = useFinance();
+  const { activeTab, setActiveTab, openQuickAdd, theme, transactions = [] } = useFinance();
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const isLight = theme === 'light';
-  const hasNoTransactions = transactions.length === 0;
+  const hasNoTransactions = !transactions || transactions.length === 0;
 
   const navItems: { id: MainTab; label: string; icon: any }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -113,6 +114,19 @@ export const BottomNav: React.FC = () => {
               <span className="text-xs font-bold">Liability</span>
             </button>
           </div>
+
+          {/* Direct FinScore Launcher in FAB Menu */}
+          <button
+            id="fab-open-finscore"
+            onClick={() => {
+              setIsFabMenuOpen(false);
+              setActiveTab('finscore');
+            }}
+            className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold transition-all shadow-md active:scale-95 text-xs"
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-300" />
+            <span>Open FinScore™ & AI Advisor</span>
+          </button>
         </div>
       )}
 

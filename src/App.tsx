@@ -15,16 +15,19 @@ import { AccountsView } from './components/views/AccountsView';
 import { MoreView } from './components/views/MoreView';
 import { CalendarView } from './components/views/CalendarView';
 import { ReportsView } from './components/views/ReportsView';
+import { FinScoreView } from './components/views/FinScoreView';
 
 const MainLayout: React.FC = () => {
-  const { activeTab, theme, isMobileFrameSimulated, openQuickAdd, transactions } = useFinance();
-  const hasNoTransactions = transactions.length === 0;
+  const { activeTab, theme, isMobileFrameSimulated, openQuickAdd, transactions = [] } = useFinance();
+  const hasNoTransactions = !transactions || transactions.length === 0;
 
   // Render current active view
   const renderView = () => {
     switch (activeTab) {
       case 'overview':
         return <OverviewView />;
+      case 'finscore':
+        return <FinScoreView />;
       case 'wealth':
         return <WealthView />;
       case 'goals':

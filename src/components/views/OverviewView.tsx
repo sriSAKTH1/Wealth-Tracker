@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { 
   TrendingUp, 
+  TrendingDown,
   ArrowUpRight, 
   ArrowDownLeft, 
   Coins, 
@@ -52,23 +53,36 @@ export const OverviewView: React.FC = () => {
     netWorthHistory,
     liquidRunwayMonths,
     healthScore,
-    isPrivateMode
+    isPrivateMode,
+    currency,
+    convertCurrency
   } = useFinance();
 
   const [txFilter, setTxFilter] = useState<'all' | 'income' | 'expense'>('all');
 
-  const filteredTransactions = transactions
+  const filteredTransactions = (transactions || [])
     .filter(t => txFilter === 'all' || t.type === txFilter)
     .slice(0, 6);
 
   // Sparkline data from history
-  const chartData = netWorthHistory.map(item => ({
+  const chartData = (netWorthHistory || []).map(item => ({
     date: item.date.replace('2025-', 'Sep ').replace('2026-', 'Jan '),
     rawDate: item.date,
     netWorth: item.netWorth,
     assets: item.totalAssets,
     liabilities: item.totalLiabilities,
   }));
+
+  // Dynamic 30-day growth rate calculation (supports positive, negative, and 0)
+  const nw30dChange = React.useMemo(() => {
+    if (netWorth === 0 || !netWorthHistory || !Array.isArray(netWorthHistory) || netWorthHistory.length < 2) return 0;
+    const prev = netWorthHistory[netWorthHistory.length - 2]?.netWorth ?? 0;
+    if (prev === 0) {
+      return netWorth > 0 ? 100 : netWorth < 0 ? -100 : 0;
+    }
+    const change = ((netWorth - prev) / Math.abs(prev)) * 100;
+    return isNaN(change) || !isFinite(change) ? 0 : change;
+  }, [netWorth, netWorthHistory]);
 
   return (
     <div className="space-y-6 pb-24 lg:pb-12 animate-in fade-in duration-200">
@@ -81,10 +95,18 @@ export const OverviewView: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Total Net Worth
+                 Total Net Worth
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-500/15 text-blue-400 border border-blue-500/20">
-                <TrendingUp className="w-3 h-3" /> +3.4% (30d)
+              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
+                nw30dChange === 0
+                  ? 'bg-slate-800/60 text-slate-400 border-slate-700/60'
+                  : nw30dChange > 0
+                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
+                  : 'bg-rose-500/15 text-rose-400 border-rose-500/20'
+              }`}>
+                {nw30dChange > 0 && <TrendingUp className="w-3 h-3 text-emerald-400" />}
+                {nw30dChange < 0 && <TrendingDown className="w-3 h-3 text-rose-400" />}
+                {nw30dChange > 0 ? '+' : ''}{nw30dChange.toFixed(1)}% (30d)
               </span>
             </div>
             
@@ -162,7 +184,12 @@ export const OverviewView: React.FC = () => {
         {/* Income */}
         <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/80 border border-slate-800/80 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-slate-400 font-medium">Monthly Inflow</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-300 font-semibold">Monthly Income</span>
+              <span className="text-[10px] font-mono font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">
+                Inflow
+              </span>
+            </div>
             <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <ArrowDownLeft className="w-4 h-4" />
             </div>
@@ -171,14 +198,19 @@ export const OverviewView: React.FC = () => {
             <div className="text-2xl font-bold font-mono text-emerald-400">
               {formatMoney(monthlyIncome)}
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Earned & Passive Cash Flow</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Total earned & passive incoming cash flow</p>
           </div>
         </div>
 
         {/* Expenses */}
         <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/80 border border-slate-800/80 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-slate-400 font-medium">Monthly Outflow</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-300 font-semibold">Monthly Expenses</span>
+              <span className="text-[10px] font-mono font-medium text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
+                Outflow
+              </span>
+            </div>
             <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
               <ArrowUpRight className="w-4 h-4" />
             </div>
@@ -187,7 +219,7 @@ export const OverviewView: React.FC = () => {
             <div className="text-2xl font-bold font-mono text-rose-400">
               {formatMoney(monthlyExpenses)}
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Living & Discretionary Burn</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Living, discretionary & debt spending</p>
           </div>
         </div>
 
@@ -288,7 +320,7 @@ export const OverviewView: React.FC = () => {
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-bold text-slate-100">Recent Financial Ledger</h2>
             <span className="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-0.5 rounded-full font-mono">
-              {transactions.length} records
+              {(transactions || []).length} records
             </span>
           </div>
 
@@ -355,7 +387,7 @@ export const OverviewView: React.FC = () => {
                   <span className={`font-mono text-xs font-bold ${
                     tx.type === 'income' ? 'text-emerald-400' : 'text-slate-100'
                   }`}>
-                    {tx.type === 'income' ? '+' : '-'}{formatMoney(tx.amount)}
+                    {tx.type === 'income' ? '+' : '-'}{formatMoney(convertCurrency(tx.amount, tx.currency || currency, currency))}
                   </span>
                   <button
                     onClick={() => deleteTransaction(tx.id)}

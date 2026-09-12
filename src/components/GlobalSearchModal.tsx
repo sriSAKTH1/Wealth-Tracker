@@ -24,6 +24,8 @@ export const GlobalSearchModal: React.FC = () => {
     customGoals,
     accounts,
     formatMoney,
+    currency,
+    convertCurrency,
     setActiveTab,
     setWealthSubTab,
     setGoalsSubTab,
@@ -147,7 +149,7 @@ export const GlobalSearchModal: React.FC = () => {
                           </div>
                         </div>
                         <span className={`font-mono font-semibold ${t.type === 'income' ? 'text-emerald-400' : 'text-zinc-200'}`}>
-                          {t.type === 'income' ? '+' : '-'}{formatMoney(t.amount)}
+                          {t.type === 'income' ? '+' : '-'}{formatMoney(convertCurrency(t.amount, t.currency || currency, currency))}
                         </span>
                       </div>
                     ))}

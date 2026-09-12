@@ -27,7 +27,7 @@ import { useFinance } from '../../context/FinanceContext';
 
 export const ReportsView: React.FC = () => {
   const { 
-    transactions, 
+    transactions = [], 
     formatMoney, 
     monthlyIncome, 
     monthlyExpenses, 
@@ -43,7 +43,7 @@ export const ReportsView: React.FC = () => {
   const [reportTimeframe, setReportTimeframe] = useState<'30D' | '90D' | '1Y'>('30D');
 
   // Multi-month cashflow comparison data
-  const monthlyComparisonData = transactions.length === 0 ? [
+  const monthlyComparisonData = (!transactions || transactions.length === 0) ? [
     { month: 'Current', income: monthlyIncome, expense: monthlyExpenses, savings: netSavings }
   ] : [
     { month: 'Mar', income: 7200, expense: 4100, savings: 3100 },
@@ -56,7 +56,7 @@ export const ReportsView: React.FC = () => {
 
   // Expense by category breakdown
   const categoryMap: Record<string, number> = {};
-  transactions.filter(t => t.type === 'expense').forEach(t => {
+  (transactions || []).filter(t => t.type === 'expense').forEach(t => {
     categoryMap[t.category] = (categoryMap[t.category] || 0) + t.amount;
   });
 
@@ -107,7 +107,12 @@ export const ReportsView: React.FC = () => {
       {/* Top 3 Summary KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800">
-          <span className="text-xs text-zinc-400 font-medium">Net Monthly Inflow</span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-zinc-300 font-semibold">Monthly Income</span>
+            <span className="text-[10px] font-mono font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">
+              Inflow
+            </span>
+          </div>
           <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">
             {formatMoney(monthlyIncome)}
           </div>
@@ -115,7 +120,12 @@ export const ReportsView: React.FC = () => {
         </div>
 
         <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800">
-          <span className="text-xs text-zinc-400 font-medium">Net Monthly Outflow</span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-zinc-300 font-semibold">Monthly Expenses</span>
+            <span className="text-[10px] font-mono font-medium text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
+              Outflow
+            </span>
+          </div>
           <div className="text-2xl font-bold font-mono text-rose-400 mt-1">
             {formatMoney(monthlyExpenses)}
           </div>

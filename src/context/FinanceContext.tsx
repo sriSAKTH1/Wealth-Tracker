@@ -18,8 +18,16 @@ import {
   AccountSubTab,
   MoreSubTab,
   AssetCategory,
-  TransactionType
+  LiabilityCategory,
+  TransactionType,
+  FinScoreProfile,
+  FinScoreLoan,
+  FinScoreGoal,
+  FinScoreEmergency,
+  FinScoreInsurance,
+  FinScoreExpenseCategory
 } from '../types';
+import { calculateRequiredMonthlySaving } from '../services/finScoreEngine';
 import {
   INITIAL_ASSETS,
   INITIAL_LIABILITIES,
@@ -45,6 +53,25 @@ export const CURRENCY_CONFIGS: Record<CurrencyCode, CurrencyConfig> = {
   CHF: { code: 'CHF', symbol: 'CHF ', name: 'Swiss Franc', rateToUSD: 1.13 },
 };
 
+export const convertCurrency = (
+  amount: number,
+  fromCurrency: CurrencyCode = 'USD',
+  toCurrency: CurrencyCode = 'USD'
+): number => {
+  if (!amount || isNaN(amount)) return 0;
+  if (fromCurrency === toCurrency) return Number(amount);
+
+  const fromConfig = CURRENCY_CONFIGS[fromCurrency] || CURRENCY_CONFIGS.USD;
+  const toConfig = CURRENCY_CONFIGS[toCurrency] || CURRENCY_CONFIGS.USD;
+
+  // Convert source currency to USD, then USD to target currency
+  const amountInUSD = Number(amount) * (fromConfig.rateToUSD || 1);
+  const targetRate = toConfig.rateToUSD || 1;
+  const amountInTarget = targetRate > 0 ? amountInUSD / targetRate : amountInUSD;
+
+  return Math.round(amountInTarget * 100) / 100;
+};
+
 interface FinanceContextType {
   // Navigation
   activeTab: MainTab;
@@ -65,6 +92,7 @@ interface FinanceContextType {
   setCurrency: (c: CurrencyCode) => void;
   currencyConfig: CurrencyConfig;
   formatMoney: (amount: number, options?: { hideSign?: boolean; showCents?: boolean }) => string;
+  convertCurrency: (amount: number, fromCurrency?: CurrencyCode, toCurrency?: CurrencyCode) => number;
   theme: AppTheme;
   setTheme: (theme: AppTheme) => void;
   isMobileFrameSimulated: boolean;
@@ -94,6 +122,7 @@ interface FinanceContextType {
   budgets: BudgetEnvelope[];
   essentialGoals: EssentialGoal[];
   customGoals: CustomGoal[];
+  goals: CustomGoal[];
   scheduledItems: ScheduledCalendarItem[];
   netWorthHistory: NetWorthSnapshot[];
 
@@ -115,6 +144,8 @@ interface FinanceContextType {
   deleteAccount: (id: string) => void;
 
   updateBudget: (id: string, newAllocated: number) => void;
+  addBudget: (envelope: Omit<BudgetEnvelope, 'id'>) => void;
+  deleteBudget: (id: string) => void;
   addBudgetCategory: (category: BudgetEnvelope['category'], amount: number) => void;
 
   addEssentialGoal: (goal: Omit<EssentialGoal, 'id' | 'lastUpdated'>) => void;
@@ -135,6 +166,20 @@ interface FinanceContextType {
   exportTransactionsCSV: () => void;
   resetToDefaultData: () => void;
   resetAllDataToZero: () => void;
+
+  // FinScore Direct Sync to Account UI
+  syncFinScoreToAccount: (data: {
+    profile?: FinScoreProfile;
+    loans?: FinScoreLoan[];
+    goals?: FinScoreGoal[];
+    emergency?: FinScoreEmergency;
+    insurance?: FinScoreInsurance;
+    expenses?: FinScoreExpenseCategory[];
+  }) => {
+    addedLiabilities: number;
+    addedGoals: number;
+    addedEssential: number;
+  };
 
   // Computed Analytics
   totalAssets: number;
@@ -188,51 +233,54 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   });
   const [marketSyncStatus, setMarketSyncStatus] = useState<string | null>(null);
 
+  // Safe localStorage array loader
+  const loadStoredArray = <T,>(key: string, fallback: T[]): T[] => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (!saved) return fallback;
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
   // Primary Data State
-  const [assets, setAssets] = useState<Asset[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_assets`);
-    return saved ? JSON.parse(saved) : INITIAL_ASSETS;
-  });
+  const [assets, setAssets] = useState<Asset[]>(() => 
+    loadStoredArray(`${LOCAL_STORAGE_KEY}_assets`, INITIAL_ASSETS)
+  );
 
-  const [liabilities, setLiabilities] = useState<Liability[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_liabilities`);
-    return saved ? JSON.parse(saved) : INITIAL_LIABILITIES;
-  });
+  const [liabilities, setLiabilities] = useState<Liability[]>(() => 
+    loadStoredArray(`${LOCAL_STORAGE_KEY}_liabilities`, INITIAL_LIABILITIES)
+  );
 
-  const [accounts, setAccounts] = useState<AccountItem[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_accounts`);
-    return saved ? JSON.parse(saved) : INITIAL_ACCOUNTS;
-  });
+  const [accounts, setAccounts] = useState<AccountItem[]>(() => 
+    loadStoredArray(`${LOCAL_STORAGE_KEY}_accounts`, INITIAL_ACCOUNTS)
+  );
 
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_transactions`);
-    return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
-  });
+  const [transactions, setTransactions] = useState<Transaction[]>(() => 
+    loadStoredArray(`${LOCAL_STORAGE_KEY}_transactions`, INITIAL_TRANSACTIONS)
+  );
 
-  const [budgets, setBudgets] = useState<BudgetEnvelope[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_budgets`);
-    return saved ? JSON.parse(saved) : INITIAL_BUDGETS;
-  });
+  const [budgets, setBudgets] = useState<BudgetEnvelope[]>(() => 
+    loadStoredArray(`${LOCAL_STORAGE_KEY}_budgets`, INITIAL_BUDGETS)
+  );
 
-  const [essentialGoals, setEssentialGoals] = useState<EssentialGoal[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_essential_goals`);
-    return saved ? JSON.parse(saved) : INITIAL_ESSENTIAL_GOALS;
-  });
+  const [essentialGoals, setEssentialGoals] = useState<EssentialGoal[]>(() => 
+    loadStoredArray(`${LOCAL_STORAGE_KEY}_essential_goals`, INITIAL_ESSENTIAL_GOALS)
+  );
 
-  const [customGoals, setCustomGoals] = useState<CustomGoal[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_custom_goals`);
-    return saved ? JSON.parse(saved) : INITIAL_CUSTOM_GOALS;
-  });
+  const [customGoals, setCustomGoals] = useState<CustomGoal[]>(() => 
+    loadStoredArray(`${LOCAL_STORAGE_KEY}_custom_goals`, INITIAL_CUSTOM_GOALS)
+  );
 
-  const [scheduledItems, setScheduledItems] = useState<ScheduledCalendarItem[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_scheduled`);
-    return saved ? JSON.parse(saved) : INITIAL_SCHEDULED_ITEMS;
-  });
+  const [scheduledItems, setScheduledItems] = useState<ScheduledCalendarItem[]>(() => 
+    loadStoredArray(`${LOCAL_STORAGE_KEY}_scheduled`, INITIAL_SCHEDULED_ITEMS)
+  );
 
-  const [netWorthHistory, setNetWorthHistory] = useState<NetWorthSnapshot[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_history`);
-    return saved ? JSON.parse(saved) : INITIAL_NET_WORTH_HISTORY;
-  });
+  const [netWorthHistory, setNetWorthHistory] = useState<NetWorthSnapshot[]>(() => 
+    loadStoredArray(`${LOCAL_STORAGE_KEY}_history`, INITIAL_NET_WORTH_HISTORY)
+  );
 
   // Sync to local storage
   useEffect(() => {
@@ -312,41 +360,58 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Computations
   const totalAssets = useMemo(() => {
-    return assets.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
-  }, [assets]);
+    return assets.reduce((sum, item) => {
+      const valInActive = convertCurrency(Number(item.value) || 0, item.currency || 'USD', currency);
+      return sum + valInActive;
+    }, 0);
+  }, [assets, currency]);
 
   const totalLiabilities = useMemo(() => {
-    return liabilities.reduce((sum, item) => sum + (Number(item.balance) || 0), 0);
-  }, [liabilities]);
+    return liabilities.reduce((sum, item) => {
+      const valInActive = convertCurrency(Number(item.balance) || 0, item.currency || 'USD', currency);
+      return sum + valInActive;
+    }, 0);
+  }, [liabilities, currency]);
 
   const netWorth = totalAssets - totalLiabilities;
 
   const monthlyIncome = useMemo(() => {
     return transactions
       .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-  }, [transactions]);
+      .reduce((sum, t) => {
+        const txCurrency = t.currency || currency;
+        const valInActive = txCurrency === currency ? (Number(t.amount) || 0) : convertCurrency(Number(t.amount) || 0, txCurrency, currency);
+        return sum + valInActive;
+      }, 0);
+  }, [transactions, currency]);
 
   const monthlyExpenses = useMemo(() => {
     return transactions
       .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-  }, [transactions]);
+      .reduce((sum, t) => {
+        const txCurrency = t.currency || currency;
+        const valInActive = txCurrency === currency ? (Number(t.amount) || 0) : convertCurrency(Number(t.amount) || 0, txCurrency, currency);
+        return sum + valInActive;
+      }, 0);
+  }, [transactions, currency]);
 
   const netSavings = monthlyIncome - monthlyExpenses;
-  const savingsRate = monthlyIncome > 0 ? Math.max(0, Math.round((netSavings / monthlyIncome) * 100)) : 0;
+  const savingsRate = (monthlyIncome > 0 && netSavings > 0) ? Math.max(0, Math.round((netSavings / monthlyIncome) * 100)) : 0;
 
   const liquidCash = useMemo(() => {
     return assets
       .filter(a => a.isLiquid || a.category === 'Cash & Bank')
-      .reduce((sum, a) => sum + (Number(a.value) || 0), 0);
-  }, [assets]);
+      .reduce((sum, a) => {
+        const valInActive = convertCurrency(Number(a.value) || 0, a.currency || 'USD', currency);
+        return sum + valInActive;
+      }, 0);
+  }, [assets, currency]);
 
-  const liquidRunwayMonths = monthlyExpenses > 0 
+  const liquidRunwayMonths = (monthlyExpenses > 0 && liquidCash > 0)
     ? Number((liquidCash / monthlyExpenses).toFixed(1)) 
-    : (liquidCash > 0 ? 12 : 0);
+    : 0;
 
-  const debtToAssetRatio = totalAssets > 0 
+  const debtToAssetRatio = (totalAssets > 0 && totalLiabilities > 0)
     ? Number(((totalLiabilities / totalAssets) * 100).toFixed(1)) 
     : 0;
 
@@ -377,16 +442,17 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           color: a.color || defaultColors[a.category] || '#3b82f6',
         };
       }
-      map[a.category].value += a.value;
+      const valInActive = convertCurrency(Number(a.value) || 0, a.currency || 'USD', currency);
+      map[a.category].value += valInActive;
     });
 
     return Object.entries(map).map(([category, data]) => ({
       category: category as AssetCategory,
       value: data.value,
-      percentage: totalAssets > 0 ? Number(((data.value / totalAssets) * 100).toFixed(1)) : 0,
+      percentage: (totalAssets > 0 && data.value > 0) ? Number(((data.value / totalAssets) * 100).toFixed(1)) : 0,
       color: data.color,
     })).sort((a, b) => b.value - a.value);
-  }, [assets, totalAssets]);
+  }, [assets, totalAssets, currency]);
 
   // Health Score Calculation
   const healthScore = useMemo(() => {
@@ -604,6 +670,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const newAsset: Asset = {
       ...data,
+      currency: data.currency || currency,
       id: `ast-${Date.now()}`,
       lastUpdated: today,
     };
@@ -622,6 +689,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addLiability = (data: Omit<Liability, 'id' | 'lastUpdated'>) => {
     const newLiab: Liability = {
       ...data,
+      currency: data.currency || currency,
       id: `liab-${Date.now()}`,
       lastUpdated: new Date().toISOString().split('T')[0],
     };
@@ -640,6 +708,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addTransaction = (data: Omit<Transaction, 'id'>) => {
     const newTx: Transaction = {
       ...data,
+      currency: data.currency || currency,
       id: `tx-${Date.now()}`,
     };
     setTransactions(prev => [newTx, ...prev]);
@@ -668,6 +737,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addAccount = (data: Omit<AccountItem, 'id' | 'lastSynced'>) => {
     const newAcc: AccountItem = {
       ...data,
+      currency: data.currency || currency,
       id: `acc-${Date.now()}`,
       lastSynced: 'Just now',
     };
@@ -685,6 +755,18 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Budget
   const updateBudget = (id: string, newAllocated: number) => {
     setBudgets(prev => prev.map(b => b.id === id ? { ...b, allocatedAmount: newAllocated } : b));
+  };
+
+  const addBudget = (envelope: Omit<BudgetEnvelope, 'id'>) => {
+    const newB: BudgetEnvelope = {
+      ...envelope,
+      id: `b-${Date.now()}`,
+    };
+    setBudgets(prev => [...prev, newB]);
+  };
+
+  const deleteBudget = (id: string) => {
+    setBudgets(prev => prev.filter(b => b.id !== id));
   };
 
   const addBudgetCategory = (category: BudgetEnvelope['category'], amount: number) => {
@@ -910,6 +992,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setCurrency,
         currencyConfig,
         formatMoney,
+        convertCurrency,
         theme,
         setTheme,
         isMobileFrameSimulated,
@@ -933,6 +1016,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         budgets,
         essentialGoals,
         customGoals,
+        goals: customGoals,
         scheduledItems,
         netWorthHistory,
         addAsset,
@@ -948,6 +1032,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateAccount,
         deleteAccount,
         updateBudget,
+        addBudget,
+        deleteBudget,
         addBudgetCategory,
         addEssentialGoal,
         updateEssentialGoal,

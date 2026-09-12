@@ -44,12 +44,69 @@ import { useFinance } from '../../context/FinanceContext';
 import { GoalsSubTab, CustomGoal, EssentialGoal } from '../../types';
 import { EmergencyGoalModal } from '../EmergencyGoalModal';
 
+// Helper to calculate tenure in months and formatted label
+export const calculateTenureMonthsFromDate = (dateStr: string): number => {
+  if (!dateStr) return 12;
+  const target = new Date(dateStr);
+  const now = new Date();
+  let months = (target.getFullYear() - now.getFullYear()) * 12 + (target.getMonth() - now.getMonth());
+  return Math.max(1, months);
+};
+
+export const calculateDateFromTenureMonths = (months: number): string => {
+  const d = new Date();
+  d.setMonth(d.getMonth() + Math.max(1, months));
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(Math.min(d.getDate(), 28)).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const formatTenureLabel = (months: number): string => {
+  if (months < 1) return '1 mo';
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  if (y > 0 && m > 0) {
+    return `${y} yr${y > 1 ? 's' : ''} ${m} mo${m > 1 ? 's' : ''}`;
+  }
+  if (y > 0) {
+    return `${y} yr${y > 1 ? 's' : ''}`;
+  }
+  return `${m} mo${m > 1 ? 's' : ''}`;
+};
+
+export const getRemainingTimeLabel = (targetDateStr: string): string => {
+  if (!targetDateStr) return 'Active';
+  const target = new Date(targetDateStr);
+  const now = new Date();
+  const diffTime = target.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  if (diffDays <= 0) return 'Due / Completed';
+  const months = Math.ceil(diffDays / 30);
+  if (months <= 1) return `${diffDays} days left`;
+  if (months < 12) return `${months} mos left`;
+  const yrs = (months / 12).toFixed(1);
+  return `${yrs} yrs left`;
+};
+
+export const formatDateFriendly = (targetDateStr: string): string => {
+  if (!targetDateStr) return '';
+  const parts = targetDateStr.split('-');
+  if (parts.length === 3) {
+    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+  }
+  return targetDateStr;
+};
+
 export const GoalsView: React.FC = () => {
   const { 
     goalsSubTab, 
     setGoalsSubTab, 
-    essentialGoals, 
-    customGoals, 
+    essentialGoals = [], 
+    customGoals = [], 
     formatMoney, 
     monthlyExpenses, 
     monthlyIncome,
@@ -85,8 +142,35 @@ export const GoalsView: React.FC = () => {
   const [newGoalCategory, setNewGoalCategory] = useState('Savings & Investment');
   const [newGoalTarget, setNewGoalTarget] = useState('');
   const [newGoalInitial, setNewGoalInitial] = useState('');
-  const [newGoalDate, setNewGoalDate] = useState('2027-01-01');
+  const [newGoalTenureMonths, setNewGoalTenureMonths] = useState(24); // 2 years default
+  const [newGoalDate, setNewGoalDate] = useState(() => calculateDateFromTenureMonths(24));
   const [newGoalMonthly, setNewGoalMonthly] = useState('');
+
+  // Edit goal modal state
+  const [goalToEdit, setGoalToEdit] = useState<CustomGoal | null>(null);
+  const [editGoalName, setEditGoalName] = useState('');
+  const [editGoalCategory, setEditGoalCategory] = useState('Savings & Investment');
+  const [editGoalTarget, setEditGoalTarget] = useState('');
+  const [editGoalCurrent, setEditGoalCurrent] = useState('');
+  const [editGoalTenureMonths, setEditGoalTenureMonths] = useState(24);
+  const [editGoalDate, setEditGoalDate] = useState('');
+  const [editGoalMonthly, setEditGoalMonthly] = useState('');
+  const [editGoalNotes, setEditGoalNotes] = useState('');
+
+  // Goals Portfolio & Tenure Summary
+  const goalsSummary = useMemo(() => {
+    const totalTarget = customGoals.reduce((sum, g) => sum + (g.targetAmount || 0), 0);
+    const totalSaved = customGoals.reduce((sum, g) => sum + (g.currentAmount || 0), 0);
+    const totalMonthlyRequired = customGoals.reduce((sum, g) => {
+      const remaining = Math.max(0, g.targetAmount - g.currentAmount);
+      const tenureM = g.tenureMonths || calculateTenureMonthsFromDate(g.targetDate);
+      return sum + (tenureM > 0 ? Math.ceil(remaining / tenureM) : 0);
+    }, 0);
+    const allTenures = customGoals.map(g => g.tenureMonths || calculateTenureMonthsFromDate(g.targetDate));
+    const minTenure = allTenures.length > 0 ? Math.min(...allTenures) : 0;
+    const maxTenure = allTenures.length > 0 ? Math.max(...allTenures) : 0;
+    return { totalTarget, totalSaved, totalMonthlyRequired, minTenure, maxTenure };
+  }, [customGoals]);
 
   // Emergency target months slider state
   const [emergencyTargetMonths, setEmergencyTargetMonths] = useState(6);
@@ -282,13 +366,18 @@ export const GoalsView: React.FC = () => {
     const initial = parseFloat(newGoalInitial) || 0;
     if (isNaN(target) || target <= 0 || !newGoalName.trim()) return;
 
+    const tenureMonths = newGoalTenureMonths > 0 ? newGoalTenureMonths : calculateTenureMonthsFromDate(newGoalDate);
+    const tenureYears = parseFloat((tenureMonths / 12).toFixed(1));
+
     addCustomGoal({
       name: newGoalName.trim(),
       category: newGoalCategory,
       targetAmount: target,
       currentAmount: initial,
       targetDate: newGoalDate,
-      monthlyContribution: parseFloat(newGoalMonthly) || Math.round((target - initial) / 12),
+      tenureMonths,
+      tenureYears,
+      monthlyContribution: parseFloat(newGoalMonthly) || Math.max(1, Math.round((target - initial) / tenureMonths)),
       color: '#10b981',
       icon: 'Target',
     });
@@ -297,6 +386,47 @@ export const GoalsView: React.FC = () => {
     setNewGoalName('');
     setNewGoalTarget('');
     setNewGoalInitial('');
+    setNewGoalTenureMonths(24);
+    setNewGoalDate(calculateDateFromTenureMonths(24));
+    setNewGoalMonthly('');
+  };
+
+  const handleOpenEditGoal = (goal: CustomGoal) => {
+    setGoalToEdit(goal);
+    setEditGoalName(goal.name);
+    setEditGoalCategory(goal.category);
+    setEditGoalTarget(goal.targetAmount.toString());
+    setEditGoalCurrent(goal.currentAmount.toString());
+    setEditGoalDate(goal.targetDate || calculateDateFromTenureMonths(24));
+    const m = goal.tenureMonths || calculateTenureMonthsFromDate(goal.targetDate || '');
+    setEditGoalTenureMonths(m);
+    setEditGoalMonthly(goal.monthlyContribution ? goal.monthlyContribution.toString() : '');
+    setEditGoalNotes(goal.notes || '');
+  };
+
+  const handleUpdateGoal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!goalToEdit) return;
+    const target = parseFloat(editGoalTarget);
+    const current = parseFloat(editGoalCurrent) || 0;
+    if (isNaN(target) || target <= 0 || !editGoalName.trim()) return;
+
+    const tenureMonths = editGoalTenureMonths > 0 ? editGoalTenureMonths : calculateTenureMonthsFromDate(editGoalDate);
+    const tenureYears = parseFloat((tenureMonths / 12).toFixed(1));
+
+    updateCustomGoal(goalToEdit.id, {
+      name: editGoalName.trim(),
+      category: editGoalCategory,
+      targetAmount: target,
+      currentAmount: current,
+      targetDate: editGoalDate,
+      tenureMonths,
+      tenureYears,
+      monthlyContribution: parseFloat(editGoalMonthly) || Math.max(1, Math.round((target - current) / tenureMonths)),
+      notes: editGoalNotes.trim() || undefined,
+    });
+
+    setGoalToEdit(null);
   };
 
   // 1-Click Save FIRE Goal to Custom Milestones
@@ -728,20 +858,56 @@ export const GoalsView: React.FC = () => {
           </div>
 
           {/* Header & Add Goal Trigger */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-bold text-zinc-100">Active Financial Milestones</h2>
-              <p className="text-[11px] text-zinc-400">Track savings targets, life plans & milestone progress</p>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-zinc-100">Goals & Milestones Planner</h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                  {customGoals.length} Active Goals
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400">Plan milestone tenures, target dates, and required monthly savings</p>
             </div>
 
             <button
               id="btn-add-custom-goal"
-              onClick={() => setIsAddGoalModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-zinc-950 font-semibold text-xs shadow-md transition-all active:scale-95"
+              onClick={() => {
+                setNewGoalTenureMonths(24);
+                setNewGoalDate(calculateDateFromTenureMonths(24));
+                setIsAddGoalModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-zinc-950 font-semibold text-xs shadow-md transition-all active:scale-95 cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>Create New Goal</span>
             </button>
+          </div>
+
+          {/* Goals Portfolio Metrics Strip with Tenure Insights */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
+            <div className="space-y-0.5">
+              <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold block">Total Milestones Target</span>
+              <span className="text-sm font-bold font-mono text-zinc-100">{formatMoney(goalsSummary.totalTarget)}</span>
+            </div>
+            <div className="space-y-0.5">
+              <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold block">Total Saved So Far</span>
+              <span className="text-sm font-bold font-mono text-emerald-400">{formatMoney(goalsSummary.totalSaved)}</span>
+            </div>
+            <div className="space-y-0.5">
+              <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold block">Required Monthly Pace</span>
+              <span className="text-sm font-bold font-mono text-teal-400">{formatMoney(goalsSummary.totalMonthlyRequired)}/mo</span>
+            </div>
+            <div className="space-y-0.5">
+              <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold flex items-center gap-1">
+                <Clock className="w-3 h-3 text-cyan-400" />
+                <span>Tenure Range</span>
+              </span>
+              <span className="text-xs font-bold text-cyan-300">
+                {goalsSummary.minTenure > 0 
+                  ? `${formatTenureLabel(goalsSummary.minTenure)} – ${formatTenureLabel(goalsSummary.maxTenure)}`
+                  : 'No active goals'}
+              </span>
+            </div>
           </div>
 
           {/* Goals Grid */}
@@ -751,6 +917,10 @@ export const GoalsView: React.FC = () => {
                 ? Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100)) 
                 : (goal.currentAmount > 0 ? 100 : 0);
               const remaining = Math.max(0, goal.targetAmount - goal.currentAmount);
+              const tenureMonths = goal.tenureMonths || calculateTenureMonthsFromDate(goal.targetDate);
+              const tenureLabel = formatTenureLabel(tenureMonths);
+              const remainingTime = getRemainingTimeLabel(goal.targetDate);
+              const recommendedMonthly = tenureMonths > 0 ? Math.max(1, Math.round(remaining / tenureMonths)) : 0;
 
               return (
                 <div 
@@ -777,13 +947,22 @@ export const GoalsView: React.FC = () => {
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => deleteCustomGoal(goal.id)}
-                        className="p-1 text-zinc-500 hover:text-rose-400 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Delete goal"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleOpenEditGoal(goal)}
+                          className="p-1.5 text-zinc-400 hover:text-cyan-400 hover:bg-zinc-800 rounded-lg transition-colors"
+                          title="Edit goal and tenure"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => deleteCustomGoal(goal.id)}
+                          className="p-1.5 text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 rounded-lg transition-colors"
+                          title="Delete goal"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     {goal.notes && (
@@ -793,8 +972,45 @@ export const GoalsView: React.FC = () => {
                     )}
                   </div>
 
+                  {/* Tenure & Target Date Block */}
+                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-zinc-950/70 border border-zinc-800/80 text-[11px]">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0">
+                        <Clock className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-zinc-500 block leading-tight">Tenure</span>
+                        <span className="font-semibold text-zinc-200">{tenureLabel}</span>
+                        <span className="text-[10px] text-zinc-500 font-mono"> ({tenureMonths}m)</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditGoal(goal)}
+                      className="flex items-center gap-2 text-left hover:bg-zinc-850 p-1 rounded-lg transition-colors cursor-pointer group/date"
+                      title="Click to view or edit target date and tenure"
+                    >
+                      <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 shrink-0 group-hover/date:border-cyan-400">
+                        <Calendar className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="overflow-hidden">
+                        <span className="text-[10px] text-zinc-500 block leading-tight flex items-center gap-1">
+                          <span>Target Date</span>
+                          <span className="text-[9px] text-cyan-400 underline font-normal">select/view</span>
+                        </span>
+                        <span className="font-semibold text-cyan-300 truncate block">
+                          {formatDateFriendly(goal.targetDate)}
+                        </span>
+                        <span className="text-[10px] text-zinc-500 block leading-tight font-mono">
+                          {remainingTime}
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+
                   {/* Progress Stats & Bar */}
-                  <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+                  <div className="space-y-2 pt-1 border-t border-zinc-800/80">
                     <div className="flex items-baseline justify-between">
                       <span className="text-xs font-mono font-bold text-emerald-400">
                         {formatMoney(goal.currentAmount)}
@@ -812,9 +1028,9 @@ export const GoalsView: React.FC = () => {
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-1">
-                      <span>Target Date: {goal.targetDate}</span>
+                      <span className="text-zinc-400">Target: <span className="font-mono text-zinc-300">{goal.targetDate}</span></span>
                       <span className="font-mono text-zinc-300">
-                        {remaining === 0 ? '🎉 Milestone Met!' : `Remaining: ${formatMoney(remaining)}`}
+                        {remaining === 0 ? '🎉 Milestone Met!' : `Pace: ${formatMoney(recommendedMonthly)}/mo`}
                       </span>
                     </div>
                   </div>
@@ -1506,25 +1722,58 @@ export const GoalsView: React.FC = () => {
 
       {/* Create New Goal Modal */}
       {isAddGoalModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-100">
-            <h3 className="text-sm font-bold text-zinc-100">Define New Financial Milestone</h3>
-            <form onSubmit={handleCreateGoal} className="space-y-3 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-100 my-8">
+            <div className="flex items-center justify-between pb-1 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
+                  <Target className="w-4 h-4" />
+                </div>
+                <h3 className="text-sm font-bold text-zinc-100">Define New Financial Milestone</h3>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setIsAddGoalModalOpen(false)}
+                className="p-1 text-zinc-400 hover:text-zinc-200 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateGoal} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-zinc-400 mb-1">Goal Name</label>
+                <label className="block text-zinc-400 mb-1 font-medium">Goal Name</label>
                 <input
                   type="text"
                   required
                   value={newGoalName}
                   onChange={e => setNewGoalName(e.target.value)}
-                  placeholder="e.g. Wedding, Tokyo Trip, FIRE Portfolio"
+                  placeholder="e.g. Wedding, Tokyo Trip, FIRE Portfolio, New Car"
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 focus:border-emerald-500"
                 />
               </div>
 
+              <div>
+                <label className="block text-zinc-400 mb-1 font-medium">Category</label>
+                <select
+                  value={newGoalCategory}
+                  onChange={e => setNewGoalCategory(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-200 focus:border-emerald-500"
+                >
+                  <option value="Savings & Investment">Savings & Investment</option>
+                  <option value="Vehicle">Vehicle / Transport</option>
+                  <option value="Housing">Real Estate / Housing</option>
+                  <option value="Travel">Travel & Vacation</option>
+                  <option value="Education">Higher Education</option>
+                  <option value="Family & Life">Family & Life Events</option>
+                  <option value="Financial Independence">Financial Independence (FIRE)</option>
+                  <option value="Business">Business Venture</option>
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-zinc-400 mb-1">Target Amount</label>
+                  <label className="block text-zinc-400 mb-1 font-medium">Target Amount</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1536,7 +1785,7 @@ export const GoalsView: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-zinc-400 mb-1">Initial Saved</label>
+                  <label className="block text-zinc-400 mb-1 font-medium">Initial Saved</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1548,43 +1797,415 @@ export const GoalsView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-400 mb-1">Target Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={newGoalDate}
-                    onChange={e => setNewGoalDate(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-200 focus:border-emerald-500"
-                  />
+              {/* Integrated Goal Tenure & Select/View Date Controls */}
+              <div className="p-3.5 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3">
+                <div className="flex items-center justify-between pb-1 border-b border-zinc-800/80">
+                  <span className="text-xs font-semibold text-zinc-200 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Milestone Tenure & Timeline</span>
+                  </span>
+                  <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    {formatTenureLabel(newGoalTenureMonths)} ({newGoalTenureMonths} Mos)
+                  </span>
                 </div>
-                <div>
-                  <label className="block text-zinc-400 mb-1">Planned Monthly Save</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newGoalMonthly}
-                    onChange={e => setNewGoalMonthly(e.target.value)}
-                    placeholder="Optional"
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 font-mono text-zinc-100 focus:border-emerald-500"
-                  />
+
+                {/* Quick Tenure Presets */}
+                <div className="space-y-1">
+                  <span className="text-[10px] text-zinc-500 font-medium">Quick Presets:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: '3M', months: 3 },
+                      { label: '6M', months: 6 },
+                      { label: '1Y', months: 12 },
+                      { label: '2Y', months: 24 },
+                      { label: '3Y', months: 36 },
+                      { label: '5Y', months: 60 },
+                      { label: '7Y', months: 84 },
+                      { label: '10Y', months: 120 },
+                    ].map(preset => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => {
+                          setNewGoalTenureMonths(preset.months);
+                          setNewGoalDate(calculateDateFromTenureMonths(preset.months));
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                          newGoalTenureMonths === preset.months
+                            ? 'bg-emerald-500 text-zinc-950 font-bold shadow-sm'
+                            : 'bg-zinc-850 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Select & View Target Date Panel */}
+                <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-semibold text-zinc-300 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Select / View Target Date</span>
+                    </label>
+                    <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
+                      {getRemainingTimeLabel(newGoalDate)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center">
+                    <div>
+                      <input
+                        type="date"
+                        required
+                        value={newGoalDate}
+                        onChange={e => {
+                          setNewGoalDate(e.target.value);
+                          const m = calculateTenureMonthsFromDate(e.target.value);
+                          setNewGoalTenureMonths(m);
+                        }}
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-100 font-mono focus:border-cyan-500"
+                      />
+                    </div>
+                    <div className="text-left px-1">
+                      <span className="text-[10px] text-zinc-500 block">Target Completion:</span>
+                      <span className="text-xs font-bold text-cyan-300 font-mono block">
+                        {formatDateFriendly(newGoalDate)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dual Tenure Fine-Tuning */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-[10px] text-zinc-500 block mb-1">Tenure in Years</span>
+                    <input
+                      type="number"
+                      min="0.1"
+                      max="30"
+                      step="0.5"
+                      value={(newGoalTenureMonths / 12).toFixed(1).replace(/\.0$/, '')}
+                      onChange={e => {
+                        const yrs = parseFloat(e.target.value) || 0;
+                        const m = Math.max(1, Math.round(yrs * 12));
+                        setNewGoalTenureMonths(m);
+                        setNewGoalDate(calculateDateFromTenureMonths(m));
+                      }}
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-zinc-100 focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-zinc-500 block mb-1">Tenure in Months</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="360"
+                      value={newGoalTenureMonths}
+                      onChange={e => {
+                        const m = Math.max(1, parseInt(e.target.value) || 1);
+                        setNewGoalTenureMonths(m);
+                        setNewGoalDate(calculateDateFromTenureMonths(m));
+                      }}
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-zinc-100 focus:border-emerald-500"
+                    />
+                  </div>
                 </div>
               </div>
+
+              {/* Planned Monthly Save */}
+              <div>
+                <label className="block text-zinc-400 mb-1 font-medium">Planned Monthly Save</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={newGoalMonthly}
+                  onChange={e => setNewGoalMonthly(e.target.value)}
+                  placeholder={
+                    newGoalTarget 
+                      ? `${Math.max(1, Math.round(((parseFloat(newGoalTarget) || 0) - (parseFloat(newGoalInitial) || 0)) / (newGoalTenureMonths || 1)))}/mo`
+                      : 'Optional'
+                  }
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 font-mono text-zinc-100 focus:border-emerald-500"
+                />
+              </div>
+
+              {/* Real-time tenure contribution helper */}
+              {newGoalTarget && (
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs flex items-center justify-between text-emerald-300">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Pace for {formatTenureLabel(newGoalTenureMonths)} ({formatDateFriendly(newGoalDate)}):</span>
+                  </span>
+                  <span className="font-mono font-bold">
+                    {formatMoney(
+                      Math.max(1, Math.round(((parseFloat(newGoalTarget) || 0) - (parseFloat(newGoalInitial) || 0)) / (newGoalTenureMonths || 1)))
+                    )}/mo
+                  </span>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setIsAddGoalModalOpen(false)}
-                  className="px-3 py-2 rounded-xl bg-zinc-800 text-zinc-300"
+                  className="px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-500 text-zinc-950 font-semibold"
+                  className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold shadow-md transition-colors"
                 >
                   Create Goal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Goal & Tenure Modal */}
+      {goalToEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-100 my-8">
+            <div className="flex items-center justify-between pb-1 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
+                  <Edit2 className="w-4 h-4" />
+                </div>
+                <h3 className="text-sm font-bold text-zinc-100">Edit Goal & Tenure Settings</h3>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setGoalToEdit(null)}
+                className="p-1 text-zinc-400 hover:text-zinc-200 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateGoal} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block text-zinc-400 mb-1 font-medium">Goal Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editGoalName}
+                  onChange={e => setEditGoalName(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-400 mb-1 font-medium">Category</label>
+                <select
+                  value={editGoalCategory}
+                  onChange={e => setEditGoalCategory(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-200 focus:border-cyan-500"
+                >
+                  <option value="Savings & Investment">Savings & Investment</option>
+                  <option value="Vehicle">Vehicle / Transport</option>
+                  <option value="Housing">Real Estate / Housing</option>
+                  <option value="Travel">Travel & Vacation</option>
+                  <option value="Education">Higher Education</option>
+                  <option value="Family & Life">Family & Life Events</option>
+                  <option value="Financial Independence">Financial Independence (FIRE)</option>
+                  <option value="Business">Business Venture</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-400 mb-1 font-medium">Target Amount</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={editGoalTarget}
+                    onChange={e => setEditGoalTarget(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 font-mono text-zinc-100 focus:border-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 mb-1 font-medium">Current Saved</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editGoalCurrent}
+                    onChange={e => setEditGoalCurrent(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 font-mono text-zinc-100 focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+
+              {/* Integrated Goal Tenure & Select/View Date Controls */}
+              <div className="p-3.5 rounded-xl bg-zinc-950/90 border border-zinc-800 space-y-3">
+                <div className="flex items-center justify-between pb-1 border-b border-zinc-800/80">
+                  <span className="text-xs font-semibold text-zinc-200 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Milestone Tenure & Timeline</span>
+                  </span>
+                  <span className="text-xs font-mono font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                    {formatTenureLabel(editGoalTenureMonths)} ({editGoalTenureMonths} Mos)
+                  </span>
+                </div>
+
+                {/* Quick Tenure Presets */}
+                <div className="space-y-1">
+                  <span className="text-[10px] text-zinc-500 font-medium">Quick Presets:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: '3M', months: 3 },
+                      { label: '6M', months: 6 },
+                      { label: '1Y', months: 12 },
+                      { label: '2Y', months: 24 },
+                      { label: '3Y', months: 36 },
+                      { label: '5Y', months: 60 },
+                      { label: '7Y', months: 84 },
+                      { label: '10Y', months: 120 },
+                    ].map(preset => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => {
+                          setEditGoalTenureMonths(preset.months);
+                          setEditGoalDate(calculateDateFromTenureMonths(preset.months));
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                          editGoalTenureMonths === preset.months
+                            ? 'bg-cyan-500 text-zinc-950 font-bold shadow-sm'
+                            : 'bg-zinc-850 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Select & View Target Date Panel */}
+                <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-semibold text-zinc-300 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Select / View Target Date</span>
+                    </label>
+                    <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
+                      {getRemainingTimeLabel(editGoalDate)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center">
+                    <div>
+                      <input
+                        type="date"
+                        required
+                        value={editGoalDate}
+                        onChange={e => {
+                          setEditGoalDate(e.target.value);
+                          const m = calculateTenureMonthsFromDate(e.target.value);
+                          setEditGoalTenureMonths(m);
+                        }}
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-100 font-mono focus:border-cyan-500"
+                      />
+                    </div>
+                    <div className="text-left px-1">
+                      <span className="text-[10px] text-zinc-500 block">Target Completion:</span>
+                      <span className="text-xs font-bold text-cyan-300 font-mono block">
+                        {formatDateFriendly(editGoalDate)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dual Tenure Fine-Tuning */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-[10px] text-zinc-500 block mb-1">Tenure in Years</span>
+                    <input
+                      type="number"
+                      min="0.1"
+                      max="30"
+                      step="0.5"
+                      value={(editGoalTenureMonths / 12).toFixed(1).replace(/\.0$/, '')}
+                      onChange={e => {
+                        const yrs = parseFloat(e.target.value) || 0;
+                        const m = Math.max(1, Math.round(yrs * 12));
+                        setEditGoalTenureMonths(m);
+                        setEditGoalDate(calculateDateFromTenureMonths(m));
+                      }}
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-zinc-100 focus:border-cyan-500"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-zinc-500 block mb-1">Tenure in Months</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="360"
+                      value={editGoalTenureMonths}
+                      onChange={e => {
+                        const m = Math.max(1, parseInt(e.target.value) || 1);
+                        setEditGoalTenureMonths(m);
+                        setEditGoalDate(calculateDateFromTenureMonths(m));
+                      }}
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-zinc-100 focus:border-cyan-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Planned Monthly Save */}
+              <div>
+                <label className="block text-zinc-400 mb-1 font-medium">Planned Monthly Save</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editGoalMonthly}
+                  onChange={e => setNewGoalMonthly ? setEditGoalMonthly(e.target.value) : undefined}
+                  placeholder="Optional"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 font-mono text-zinc-100 focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-400 mb-1 font-medium">Notes / Strategy</label>
+                <input
+                  type="text"
+                  value={editGoalNotes}
+                  onChange={e => setEditGoalNotes(e.target.value)}
+                  placeholder="e.g. SIP in Index Funds, aggressive saving plan"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 focus:border-cyan-500"
+                />
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs flex items-center justify-between text-cyan-300">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Required Pace for {formatTenureLabel(editGoalTenureMonths)} ({formatDateFriendly(editGoalDate)}):</span>
+                </span>
+                <span className="font-mono font-bold">
+                  {formatMoney(
+                    Math.max(1, Math.round(((parseFloat(editGoalTarget) || 0) - (parseFloat(editGoalCurrent) || 0)) / (editGoalTenureMonths || 1)))
+                  )}/mo
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setGoalToEdit(null)}
+                  className="px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-semibold shadow-md transition-colors"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>
@@ -1600,7 +2221,12 @@ export const GoalsView: React.FC = () => {
             setIsAddEssentialModalOpen(false);
             setEssentialGoalToEdit(null);
           }}
+          onSave={addEssentialGoal}
+          onUpdate={updateEssentialGoal}
+          onDelete={deleteEssentialGoal}
           goalToEdit={essentialGoalToEdit}
+          monthlyExpenses={monthlyExpenses}
+          formatMoney={formatMoney}
         />
       )}
 

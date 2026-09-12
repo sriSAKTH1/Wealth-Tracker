@@ -26,8 +26,8 @@ interface EmergencyGoalModalProps {
   onUpdate?: (id: string, updates: Partial<EssentialGoal>) => void;
   onDelete?: (id: string) => void;
   goalToEdit?: EssentialGoal | null;
-  monthlyExpenses: number;
-  formatMoney: (amount: number) => string;
+  monthlyExpenses?: number;
+  formatMoney?: (amount: number) => string;
 }
 
 const PRESET_TEMPLATES = [
@@ -104,8 +104,8 @@ export const EmergencyGoalModal: React.FC<EmergencyGoalModalProps> = ({
   onUpdate,
   onDelete,
   goalToEdit,
-  monthlyExpenses,
-  formatMoney,
+  monthlyExpenses = 0,
+  formatMoney = (amt: number) => `$${Math.round(amt).toLocaleString()}`,
 }) => {
   const isEditing = !!goalToEdit;
 

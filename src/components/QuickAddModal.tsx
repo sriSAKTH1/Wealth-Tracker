@@ -334,6 +334,7 @@ export const QuickAddModal: React.FC = () => {
 
     addTransaction({
       amount: amt,
+      currency: currency,
       type: activeTab === 'income' ? 'income' : 'expense',
       category: txCategory as any,
       description: txDescription || `${activeTab === 'income' ? 'Income' : 'Expense'} payment`,
@@ -1390,6 +1391,19 @@ export const QuickAddModal: React.FC = () => {
                  ========================================================================= */}
               {(activeTab === 'income' || activeTab === 'expense') && (
                 <form onSubmit={handleSaveTransaction} className="space-y-4 animate-in fade-in duration-150">
+                  <div className={`p-3 rounded-xl border text-xs flex items-center gap-2.5 ${
+                    activeTab === 'income'
+                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+                      : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
+                  }`}>
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${activeTab === 'income' ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                    <span>
+                      {activeTab === 'income'
+                        ? 'Logging income records incoming cash flow to your Monthly Income (Inflow) and updates your net savings.'
+                        : 'Logging expense records cash outflow to Monthly Expenses and updates your budget tracking.'}
+                    </span>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
                       Amount ({currentSymbol}) *

@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
+import { GoogleGenAI } from '@google/genai';
 
 const app = express();
 const PORT = 3000;
@@ -271,7 +272,105 @@ async function fetchGoogleFinanceQuote(ticker: string, exchange?: string): Promi
 }
 
 /**
- * Maps user ticker and exchange into Yahoo Finance or Binance symbol
+ * Dedicated Crypto live quote engine using Binance and Coinbase public endpoints
+ */
+async function fetchLiveCryptoQuote(symbol: string): Promise<any> {
+  const clean = symbol.replace(/-(USD|USDT)$/i, '').replace(/USDT$/i, '').trim().toUpperCase();
+  const cacheKey = `CRYPTO_${clean}`;
+  const cached = quoteCache.get(cacheKey);
+  const now = Date.now();
+  if (cached && now - cached.timestamp < 15000) { // 15s cache for fast-moving crypto
+    return { ...cached.data, cached: true };
+  }
+
+  // 1. Try Binance 24hr ticker
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${clean}USDT`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      const lastPrice = parseFloat(data.lastPrice);
+      if (!isNaN(lastPrice) && lastPrice > 0) {
+        const changePct = parseFloat(data.priceChangePercent) || 0;
+        const changeAmt = parseFloat(data.priceChange) || 0;
+        const prevClose = parseFloat(data.prevClosePrice) || (lastPrice - changeAmt);
+
+        const cryptoQuote = {
+          symbol: clean,
+          ticker: clean,
+          name: clean === 'BTC' ? 'Bitcoin' : clean === 'ETH' ? 'Ethereum' : clean === 'SOL' ? 'Solana' : `${clean} Crypto`,
+          currentPrice: lastPrice >= 1 ? Math.round(lastPrice * 100) / 100 : lastPrice,
+          previousClose: prevClose >= 1 ? Math.round(prevClose * 100) / 100 : prevClose,
+          priceChange24h: Math.round(changePct * 100) / 100,
+          priceChange24hAmount: Math.round(changeAmt * 100) / 100,
+          currency: 'USD',
+          exchange: 'CRYPTO',
+          type: 'crypto',
+          dayHigh: parseFloat(data.highPrice) || lastPrice,
+          dayLow: parseFloat(data.lowPrice) || lastPrice,
+          volume: parseFloat(data.volume) || 0,
+          marketTime: new Date().toISOString(),
+          isLive: true,
+          source: 'BINANCE_LIVE',
+          googleFinanceUrl: `https://www.google.com/finance/quote/${clean}-USD`
+        };
+
+        quoteCache.set(cacheKey, { data: cryptoQuote, timestamp: now });
+        return cryptoQuote;
+      }
+    }
+  } catch {
+    // Fall back to Coinbase
+  }
+
+  // 2. Try Coinbase Spot Price
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch(`https://api.coinbase.com/v2/prices/${clean}-USD/spot`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const json = await res.json();
+      const amt = parseFloat(json?.data?.amount);
+      if (!isNaN(amt) && amt > 0) {
+        const cryptoQuote = {
+          symbol: clean,
+          ticker: clean,
+          name: clean === 'BTC' ? 'Bitcoin' : clean === 'ETH' ? 'Ethereum' : clean === 'SOL' ? 'Solana' : `${clean} Crypto`,
+          currentPrice: amt >= 1 ? Math.round(amt * 100) / 100 : amt,
+          previousClose: amt,
+          priceChange24h: 0,
+          priceChange24hAmount: 0,
+          currency: 'USD',
+          exchange: 'CRYPTO',
+          type: 'crypto',
+          marketTime: new Date().toISOString(),
+          isLive: true,
+          source: 'COINBASE_LIVE',
+          googleFinanceUrl: `https://www.google.com/finance/quote/${clean}-USD`
+        };
+
+        quoteCache.set(cacheKey, { data: cryptoQuote, timestamp: now });
+        return cryptoQuote;
+      }
+    }
+  } catch {
+    // Continue
+  }
+
+  return null;
+}
+
+/**
+ * Maps user ticker and exchange into Yahoo Finance symbol
  */
 function resolveMarketSymbol(ticker: string, exchange?: string, type?: string): string {
   const clean = ticker.trim().toUpperCase();
@@ -310,31 +409,33 @@ function isLikelyIndianTicker(ticker: string): boolean {
   return indianTickers.has(ticker.toUpperCase());
 }
 
+const KNOWN_CRYPTO_SYMBOLS = new Set([
+  'BTC', 'ETH', 'SOL', 'BNB', 'DOGE', 'XRP', 'ADA', 'AVAX', 'DOT', 'LINK',
+  'MATIC', 'NEAR', 'SHIB', 'TRX', 'LTC', 'BCH', 'UNI', 'ATOM', 'XLM', 'ALGO'
+]);
+
 /**
- * Fetches real live market quote from Google Finance with Yahoo Finance fallback
+ * Fetches real live market quote with intelligent routing
  */
-async function fetchLiveMarketQuote(symbolOrTicker: string, exchange?: string): Promise<any> {
+async function fetchLiveMarketQuote(symbolOrTicker: string, exchange?: string, type?: string): Promise<any> {
   const cleanTicker = symbolOrTicker.replace(/\.(NS|BO)$/i, '').trim().toUpperCase();
-  const cacheKey = `${exchange || 'NSE'}_${cleanTicker}`;
+  const isCrypto = type === 'crypto' || exchange === 'CRYPTO' || KNOWN_CRYPTO_SYMBOLS.has(cleanTicker) || cleanTicker.endsWith('-USD') || cleanTicker.endsWith('USDT');
+
+  // If Crypto, route directly to high-performance crypto engine
+  if (isCrypto) {
+    const cryptoQuote = await fetchLiveCryptoQuote(cleanTicker);
+    if (cryptoQuote) return cryptoQuote;
+  }
+
+  const cacheKey = `${exchange || 'AUTO'}_${cleanTicker}`;
   const cached = quoteCache.get(cacheKey);
   const now = Date.now();
   if (cached && now - cached.timestamp < CACHE_TTL_MS) {
     return { ...cached.data, cached: true };
   }
 
-  // 1. Try Google Finance first for exact parity with Google Finance
-  try {
-    const gfQuote = await fetchGoogleFinanceQuote(cleanTicker, exchange);
-    if (gfQuote && gfQuote.currentPrice > 0) {
-      quoteCache.set(cacheKey, { data: gfQuote, timestamp: now });
-      return gfQuote;
-    }
-  } catch (e) {
-    // Proceed to Yahoo Finance fallback
-  }
-
-  // 2. Yahoo Finance fallback
-  const yahooSymbol = resolveMarketSymbol(cleanTicker, exchange);
+  // 1. Try Yahoo Finance with formatted symbol (reliable JSON endpoint)
+  const yahooSymbol = resolveMarketSymbol(cleanTicker, exchange, type);
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1d&range=1d`;
   
   try {
@@ -350,46 +451,57 @@ async function fetchLiveMarketQuote(symbolOrTicker: string, exchange?: string): 
     });
     clearTimeout(timeoutId);
 
-    if (!res.ok) {
-      throw new Error(`Market API returned status ${res.status}`);
+    if (res.ok) {
+      const json = await res.json();
+      const meta = json?.chart?.result?.[0]?.meta;
+
+      if (meta && meta.regularMarketPrice !== undefined) {
+        const regularMarketPrice = meta.regularMarketPrice;
+        const previousClose = meta.previousClose || meta.chartPreviousClose || regularMarketPrice;
+        const priceChangeAmount = regularMarketPrice - previousClose;
+        const priceChangePercent = previousClose !== 0 ? (priceChangeAmount / previousClose) * 100 : 0;
+
+        const isIndian = yahooSymbol.endsWith('.NS') || yahooSymbol.endsWith('.BO') || meta.currency === 'INR';
+        const determinedExchange = exchange || (yahooSymbol.endsWith('.NS') ? 'NSE' : yahooSymbol.endsWith('.BO') ? 'BSE' : (meta.exchangeName || 'US'));
+
+        const quoteData = {
+          symbol: cleanTicker,
+          ticker: cleanTicker,
+          name: meta.longName || meta.shortName || cleanTicker,
+          currentPrice: Math.round(regularMarketPrice * 100) / 100,
+          previousClose: Math.round(previousClose * 100) / 100,
+          priceChange24h: Math.round(priceChangePercent * 100) / 100,
+          priceChange24hAmount: Math.round(priceChangeAmount * 100) / 100,
+          currency: meta.currency || (isIndian ? 'INR' : 'USD'),
+          dayHigh: meta.regularMarketDayHigh || regularMarketPrice,
+          dayLow: meta.regularMarketDayLow || regularMarketPrice,
+          exchange: determinedExchange,
+          marketTime: meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000).toISOString() : new Date().toISOString(),
+          isLive: true,
+          source: 'LIVE_EXCHANGE',
+          googleFinanceUrl: `https://www.google.com/finance/quote/${cleanTicker}:${determinedExchange === 'BSE' ? 'BOM' : determinedExchange}`
+        };
+
+        quoteCache.set(cacheKey, { data: quoteData, timestamp: now });
+        return quoteData;
+      }
     }
-
-    const json = await res.json();
-    const meta = json?.chart?.result?.[0]?.meta;
-
-    if (!meta || meta.regularMarketPrice === undefined) {
-      throw new Error('Invalid meta payload from market API');
-    }
-
-    const regularMarketPrice = meta.regularMarketPrice;
-    const previousClose = meta.previousClose || meta.chartPreviousClose || regularMarketPrice;
-    const priceChangeAmount = regularMarketPrice - previousClose;
-    const priceChangePercent = previousClose !== 0 ? (priceChangeAmount / previousClose) * 100 : 0;
-
-    const quoteData = {
-      symbol: cleanTicker,
-      ticker: cleanTicker,
-      name: meta.longName || meta.shortName || cleanTicker,
-      currentPrice: Math.round(regularMarketPrice * 100) / 100,
-      previousClose: Math.round(previousClose * 100) / 100,
-      priceChange24h: Math.round(priceChangePercent * 100) / 100,
-      priceChange24hAmount: Math.round(priceChangeAmount * 100) / 100,
-      currency: meta.currency || (yahooSymbol.endsWith('.NS') || yahooSymbol.endsWith('.BO') ? 'INR' : 'USD'),
-      dayHigh: meta.regularMarketDayHigh || regularMarketPrice,
-      dayLow: meta.regularMarketDayLow || regularMarketPrice,
-      exchange: exchange || (yahooSymbol.endsWith('.NS') ? 'NSE' : yahooSymbol.endsWith('.BO') ? 'BSE' : 'US'),
-      marketTime: meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000).toISOString() : new Date().toISOString(),
-      isLive: true,
-      source: 'LIVE_YAHOO_FINANCE',
-      googleFinanceUrl: `https://www.google.com/finance/quote/${cleanTicker}:${exchange === 'BSE' ? 'BOM' : (exchange || 'NSE')}`
-    };
-
-    quoteCache.set(cacheKey, { data: quoteData, timestamp: now });
-    return quoteData;
   } catch (error: any) {
-    console.warn(`[MarketAPI] Fallback for ${cleanTicker}: ${error.message}`);
-    return null;
+    // Fall back to Google Finance
   }
+
+  // 2. Google Finance fallback
+  try {
+    const gfQuote = await fetchGoogleFinanceQuote(cleanTicker, exchange);
+    if (gfQuote && gfQuote.currentPrice > 0) {
+      quoteCache.set(cacheKey, { data: gfQuote, timestamp: now });
+      return gfQuote;
+    }
+  } catch (e) {
+    // Fail gracefully
+  }
+
+  return null;
 }
 
 /**
@@ -551,7 +663,7 @@ app.get('/api/market/quote', async (req, res) => {
       }
     }
 
-    const liveQuote = await fetchLiveMarketQuote(ticker, exchange);
+    const liveQuote = await fetchLiveMarketQuote(ticker, exchange, type);
 
     if (liveQuote) {
       return res.json({ success: true, quote: liveQuote });
@@ -592,7 +704,7 @@ app.post('/api/market/quotes', async (req, res) => {
         }
       }
 
-      const live = await fetchLiveMarketQuote(ticker, sec.exchange);
+      const live = await fetchLiveMarketQuote(ticker, sec.exchange, sec.type);
       if (live) {
         results[ticker.toUpperCase()] = live;
       }
@@ -785,6 +897,120 @@ app.get('/api/market/search', async (req, res) => {
     res.json({ results: formatted });
   } catch (err: any) {
     res.json({ results: [] });
+  }
+});
+
+// -------------------------------------------------------------
+// FINSCORE™ - AI FINANCIAL ASSISTANT ENDPOINT
+// -------------------------------------------------------------
+let geminiClient: GoogleGenAI | null = null;
+
+function getGeminiClient(): GoogleGenAI | null {
+  if (!geminiClient && process.env.GEMINI_API_KEY) {
+    geminiClient = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
+  }
+  return geminiClient;
+}
+
+app.post('/api/finscore/ai-advisor', async (req, res) => {
+  try {
+    const { profile, result, question } = req.body || {};
+
+    const profileName = profile?.name || 'Friend';
+    const income = profile?.monthlyIncome || 50000;
+    const currency = profile?.currency === 'INR' ? '₹' : '$';
+    const overallScore = result?.overallScore ?? 70;
+    const grade = result?.grade || 'Good';
+    const savingsRatio = result?.metrics?.savingsRatio ?? 30;
+    const emiRatio = result?.metrics?.emiToIncomeRatio ?? 16;
+    const emergencyFundRatio = result?.metrics?.emergencyFundRatio ?? 53;
+    const emergencyShortfall = result?.metrics?.emergencyShortfall ?? 70000;
+    const biggestPriority = result?.biggestPriority || 'Build your emergency fund before increasing discretionary spending.';
+
+    const ai = getGeminiClient();
+
+    if (ai) {
+      const prompt = question
+        ? `You are FinScore AI, an empathetic, highly knowledgeable certified financial planner and educator.
+The user's verified financial profile:
+- Name: ${profileName} (Age ${profile?.age || 28})
+- Monthly Income: ${currency}${income.toLocaleString()}
+- FinScore: ${overallScore}/100 (${grade})
+- Savings Ratio: ${savingsRatio}%
+- EMI to Income Burden: ${emiRatio}%
+- Emergency Fund Coverage: ${emergencyFundRatio}% (Shortfall: ${currency}${emergencyShortfall.toLocaleString()})
+- Biggest Priority: ${biggestPriority}
+
+The user asks: "${question}"
+
+Provide a direct, inspiring, educational response (under 250 words) with actionable numbers based directly on their profile. Do not invent unrelated figures. Conclude with a supportive closing.`
+        : `You are FinScore AI, an empathetic personal financial health advisor.
+The user's verified financial profile:
+- Name: ${profileName} (Age ${profile?.age || 28})
+- Monthly Income: ${currency}${income.toLocaleString()}
+- FinScore: ${overallScore}/100 (${grade})
+- Breakdown: Savings ${result?.scores?.savings}/100, Expense ${result?.scores?.expenseManagement}/100, Debt ${result?.scores?.debt}/100, Emergency ${result?.scores?.emergencyFund}/100, Insurance ${result?.scores?.insurance}/100, Goals ${result?.scores?.futureGoals}/100
+- Savings Ratio: ${savingsRatio}%
+- EMI to Income: ${emiRatio}%
+- Emergency Fund Coverage: ${emergencyFundRatio}% (${currency}${result?.metrics?.emergencyShortfall?.toLocaleString()} needed)
+
+Generate:
+1. Executive Diagnosis: 2 sentences explaining why they earned a score of ${overallScore}/100.
+2. Single Biggest Priority.
+3. 3-Month Action Plan (Month 1, Month 2, Month 3 with concrete amounts).
+Keep it conversational, empowering, professional, and educational.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt,
+        config: {
+          systemInstruction:
+            'You are FinScore AI Financial Assistant. Provide objective, clear, actionable personal finance education. Always present estimates as educational advice, not regulated investment solicitations.',
+        },
+      });
+
+      const responseText = response.text || '';
+      return res.json({
+        success: true,
+        source: 'GEMINI_AI',
+        advice: responseText,
+      });
+    }
+
+    // High quality deterministic fallback when no API key configured
+    const fallbackAdvice = question
+      ? `Based on your monthly income of ${currency}${income.toLocaleString()} and FinScore of ${overallScore}/100 (${grade}): 
+${biggestPriority}
+To optimize your question regarding "${question}", prioritize keeping your EMI ratio below 35% while steadily directing at least 20% of your net income toward liquid emergency buffers and recurring goal investments.`
+      : `Based on your financial profile, your overall health score is ${overallScore}/100 (${grade}).
+
+Key Diagnosis: Your savings rate (${savingsRatio}%) demonstrates solid discipline, but your emergency buffer is at ${emergencyFundRatio}% of your target, leaving a shortfall of ${currency}${emergencyShortfall.toLocaleString()}.
+
+🎯 Biggest Priority: ${biggestPriority}
+
+🗓️ Recommended Action Plan:
+• Month 1: Re-allocate non-essential expenses to save at least ${currency}${Math.round(income * 0.15).toLocaleString()} directly into a high-yield liquid emergency fund.
+• Month 2: Audit existing debt commitments (current EMI ratio: ${emiRatio}%) and review personal health/term insurance adequacy.
+• Month 3: Automate systematic investments for your long-term milestones (e.g. Car, Home Downpayment).`;
+
+    res.json({
+      success: true,
+      source: 'FINSCORE_ENGINE',
+      advice: fallbackAdvice,
+    });
+  } catch (err: any) {
+    res.json({
+      success: true,
+      source: 'FINSCORE_FALLBACK',
+      advice: `Your biggest financial priority: Build your emergency fund before increasing discretionary spending. Channel your surplus cash flow into liquid reserves while maintaining your loan EMIs.`,
+    });
   }
 });
 

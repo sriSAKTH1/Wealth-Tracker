@@ -8,11 +8,13 @@ import {
   Monitor, 
   Sparkles,
   TrendingUp,
+  TrendingDown,
   AlertCircle,
   CheckCircle2,
   Calendar,
   Layers,
-  ChevronDown
+  ChevronDown,
+  ShieldCheck
 } from 'lucide-react';
 import { useFinance, CURRENCY_CONFIGS } from '../context/FinanceContext';
 import { CurrencyCode } from '../types';
@@ -26,11 +28,13 @@ export const Navbar: React.FC = () => {
     setCurrency, 
     formatMoney, 
     netWorth,
+    netWorthHistory = [],
     monthlyExpenses,
     liquidRunwayMonths,
-    scheduledItems,
+    scheduledItems = [],
     isMobileFrameSimulated,
     toggleMobileFrame,
+    activeTab,
     setActiveTab,
     theme
   } = useFinance();
@@ -39,6 +43,17 @@ export const Navbar: React.FC = () => {
 
   const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+
+  // Dynamic 30-day net worth growth rate (supports positive, negative, and 0)
+  const nw30dChange = React.useMemo(() => {
+    if (netWorth === 0 || !netWorthHistory || !Array.isArray(netWorthHistory) || netWorthHistory.length < 2) return 0;
+    const prev = netWorthHistory[netWorthHistory.length - 2]?.netWorth ?? 0;
+    if (prev === 0) {
+      return netWorth > 0 ? 100 : netWorth < 0 ? -100 : 0;
+    }
+    const change = ((netWorth - prev) / Math.abs(prev)) * 100;
+    return isNaN(change) || !isFinite(change) ? 0 : change;
+  }, [netWorth, netWorthHistory]);
 
   // Generate real dynamic alerts based on finances
   const alerts = [
@@ -52,7 +67,7 @@ export const Navbar: React.FC = () => {
     {
       id: '2',
       title: 'Upcoming Recurring Bills',
-      message: `${scheduledItems.filter(i => i.type === 'expense').length} scheduled debits configured this month.`,
+      message: `${(scheduledItems || []).filter(i => i.type === 'expense').length} scheduled debits configured this month.`,
       type: 'info',
       icon: Calendar,
     },
@@ -117,8 +132,18 @@ export const Navbar: React.FC = () => {
           <span className={`text-sm font-bold font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>
             {formatMoney(netWorth)}
           </span>
-          <span className="flex items-center text-[11px] font-semibold text-emerald-500 bg-emerald-500/15 px-2 py-0.5 rounded-full border border-emerald-500/20">
-            <TrendingUp className="w-3 h-3 mr-0.5" /> +3.4%
+          <span className={`flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full border transition-colors ${
+            nw30dChange === 0
+              ? isLight 
+                ? 'text-slate-500 bg-slate-200/70 border-slate-300' 
+                : 'text-slate-400 bg-slate-800/60 border-slate-700/60'
+              : nw30dChange > 0
+              ? 'text-emerald-500 bg-emerald-500/15 border-emerald-500/20'
+              : 'text-rose-500 bg-rose-500/15 border-rose-500/20'
+          }`}>
+            {nw30dChange > 0 && <TrendingUp className="w-3 h-3 mr-0.5 text-emerald-500" />}
+            {nw30dChange < 0 && <TrendingDown className="w-3 h-3 mr-0.5 text-rose-500" />}
+            {nw30dChange > 0 ? '+' : ''}{nw30dChange.toFixed(1)}%
           </span>
         </div>
 
@@ -212,30 +237,24 @@ export const Navbar: React.FC = () => {
             )}
           </div>
 
-          {/* Responsive View Switcher */}
+          {/* FinScore Financial Health Launcher */}
           <button
-            id="btn-mobile-sim-toggle"
-            onClick={toggleMobileFrame}
-            title={isMobileFrameSimulated ? 'Switch to Full Screen View' : 'Simulate Mobile Frame Preview'}
-            className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
-              isMobileFrameSimulated
-                ? 'bg-blue-600/20 border-blue-500/40 text-blue-500 font-semibold'
+            id="btn-nav-finscore"
+            onClick={() => setActiveTab('finscore')}
+            title="Open FinScore™ Financial Health Score & Planner"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all shadow-sm ${
+              activeTab === 'finscore'
+                ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/20'
                 : isLight
-                ? 'bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
-                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                ? 'bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100'
+                : 'bg-blue-600/15 border-blue-500/30 text-blue-400 hover:bg-blue-600/25'
             }`}
           >
-            {isMobileFrameSimulated ? (
-              <>
-                <Smartphone className="w-3.5 h-3.5 text-blue-500" />
-                <span>Mobile Frame</span>
-              </>
-            ) : (
-              <>
-                <Monitor className="w-3.5 h-3.5" />
-                <span>System View</span>
-              </>
-            )}
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>FinScore™</span>
+            <span className="font-mono font-bold px-1.5 py-0.5 rounded-full bg-black/20 text-emerald-400 text-[11px]">
+              74/100
+            </span>
           </button>
 
           {/* Notifications / Alerts */}

@@ -7,8 +7,7 @@ import {
   MoreHorizontal, 
   CalendarDays, 
   BarChart3, 
-  ShieldCheck, 
-  ArrowUpRight
+  ShieldCheck 
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { MainTab } from '../types';
@@ -17,7 +16,6 @@ export const Sidebar: React.FC = () => {
   const { 
     activeTab, 
     setActiveTab, 
-    healthScore, 
     formatMoney, 
     netWorth,
     totalAssets,
@@ -29,6 +27,7 @@ export const Sidebar: React.FC = () => {
 
   const navItems: { id: MainTab; label: string; icon: any; badge?: string }[] = [
     { id: 'overview', label: 'Dashboard & Overview', icon: LayoutDashboard },
+    { id: 'finscore', label: 'FinScore™ & Health', icon: ShieldCheck, badge: 'Score' },
     { id: 'wealth', label: 'Wealth & Allocation', icon: TrendingUp },
     { id: 'goals', label: 'Goals & Essentials', icon: Target },
     { id: 'account', label: 'Accounts & Budgets', icon: Wallet },
@@ -115,39 +114,6 @@ export const Sidebar: React.FC = () => {
               <span className={`text-[11px] ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Net Worth</span>
               <span className={`font-mono font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{formatMoney(netWorth)}</span>
             </div>
-          </div>
-        </div>
-
-        {/* Health Score Pill */}
-        <div 
-          onClick={() => {
-            setActiveTab('account');
-          }}
-          className={`p-2.5 rounded-2xl border cursor-pointer transition-all group ${
-            isLight 
-              ? 'bg-slate-50 border-slate-200 hover:border-blue-300 hover:bg-slate-100/80 shadow-sm' 
-              : 'bg-slate-900/60 border-slate-800 hover:border-blue-500/40'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-600 font-bold text-xs">
-                {healthScore.grade}
-              </div>
-              <div>
-                <div className={`text-xs font-bold transition-colors ${
-                  isLight ? 'text-slate-800 group-hover:text-blue-600' : 'text-slate-200 group-hover:text-blue-300'
-                }`}>
-                  Health Score {healthScore.score}/100
-                </div>
-                <div className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Solid Financial State
-                </div>
-              </div>
-            </div>
-            <ArrowUpRight className={`w-4 h-4 transition-colors ${
-              isLight ? 'text-slate-400 group-hover:text-blue-600' : 'text-slate-400 group-hover:text-blue-400'
-            }`} />
           </div>
         </div>
       </div>

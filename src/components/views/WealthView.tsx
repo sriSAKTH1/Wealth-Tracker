@@ -45,7 +45,7 @@ import {
   BarChart,
   Bar
 } from 'recharts';
-import { useFinance } from '../../context/FinanceContext';
+import { useFinance, CURRENCY_CONFIGS } from '../../context/FinanceContext';
 import { WealthSubTab, AssetCategory, LiabilityCategory, Asset, DEFAULT_ASSET_TAGS } from '../../types';
 import { getGoogleFinanceUrl } from '../../services/marketDataService';
 import { AssetEditModal } from '../AssetEditModal';
@@ -85,14 +85,16 @@ export const WealthView: React.FC = () => {
   const { 
     wealthSubTab, 
     setWealthSubTab, 
-    assets, 
-    liabilities, 
+    assets = [], 
+    liabilities = [], 
     totalAssets, 
     totalLiabilities, 
     netWorth, 
+    currency,
+    convertCurrency,
     formatMoney, 
     assetAllocationBreakdown, 
-    netWorthHistory, 
+    netWorthHistory = [], 
     deleteAsset, 
     deleteLiability, 
     openQuickAdd, 
@@ -173,8 +175,9 @@ export const WealthView: React.FC = () => {
 
     assets.forEach(a => {
       const assetTags = a.tags && a.tags.length > 0 ? a.tags : (a.purpose ? [a.purpose] : []);
+      const valInActive = convertCurrency(a.value || 0, a.currency || 'USD', currency);
       if (assetTags.length === 0) {
-        untaggedVal += a.value;
+        untaggedVal += valInActive;
         untaggedCount += 1;
         untaggedItems.push(a);
       } else {
@@ -185,7 +188,7 @@ export const WealthView: React.FC = () => {
             const meta = DEFAULT_ASSET_TAGS.find(dt => dt.name.toLowerCase() === trimmed.toLowerCase());
             map[trimmed] = { totalVal: 0, count: 0, items: [], meta };
           }
-          map[trimmed].totalVal += a.value;
+          map[trimmed].totalVal += valInActive;
           map[trimmed].count += 1;
           if (!map[trimmed].items.some(it => it.id === a.id)) {
             map[trimmed].items.push(a);
@@ -215,7 +218,7 @@ export const WealthView: React.FC = () => {
     }
 
     return list.sort((a, b) => b.totalVal - a.totalVal);
-  }, [assets, totalAssets]);
+  }, [assets, totalAssets, currency, convertCurrency]);
 
   // Keep filter valid if currently selected category was removed
   React.useEffect(() => {
@@ -407,9 +410,10 @@ export const WealthView: React.FC = () => {
 
     filteredAssets.forEach(asset => {
       const assetTags = asset.tags && asset.tags.length > 0 ? asset.tags : (asset.purpose ? [asset.purpose] : []);
+      const valInActive = convertCurrency(asset.value || 0, asset.currency || 'USD', currency);
       if (assetTags.length === 0) {
         untaggedList.push(asset);
-        untaggedVal += asset.value;
+        untaggedVal += valInActive;
       } else {
         // Add to its primary tag group (first tag)
         const primaryTag = assetTags[0].trim();
@@ -417,7 +421,7 @@ export const WealthView: React.FC = () => {
           const meta = DEFAULT_ASSET_TAGS.find(dt => dt.name.toLowerCase() === primaryTag.toLowerCase());
           groupMap[primaryTag] = { meta, totalVal: 0, items: [] };
         }
-        groupMap[primaryTag].totalVal += asset.value;
+        groupMap[primaryTag].totalVal += valInActive;
         groupMap[primaryTag].items.push(asset);
       }
     });
@@ -444,7 +448,7 @@ export const WealthView: React.FC = () => {
     }
 
     return groups;
-  }, [filteredAssets]);
+  }, [filteredAssets, currency, convertCurrency]);
 
   const toggleGroupExpand = (groupName: string) => {
     setExpandedGroups(prev => ({
@@ -505,7 +509,9 @@ export const WealthView: React.FC = () => {
   };
 
   // Liquid vs illiquid
-  const liquidAssets = assets.filter(a => a.isLiquid || a.category === 'Cash & Bank').reduce((s, a) => s + a.value, 0);
+  const liquidAssets = assets
+    .filter(a => a.isLiquid || a.category === 'Cash & Bank')
+    .reduce((s, a) => s + convertCurrency(a.value || 0, a.currency || 'USD', currency), 0);
   const illiquidAssets = totalAssets - liquidAssets;
 
   // Monthly total minimum debt payment
@@ -980,10 +986,16 @@ export const WealthView: React.FC = () => {
                       {!isCollapsed && (
                         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                           {group.items.map(asset => {
-                            const gain = asset.costBasis ? asset.value - asset.costBasis : 0;
-                            const gainPercent = asset.costBasis && asset.costBasis > 0 ? (gain / asset.costBasis) * 100 : 0;
+                            const isZeroVal = !asset.value || asset.value === 0;
+                            const gain = (!isZeroVal && asset.costBasis) ? asset.value - asset.costBasis : 0;
+                            const gainPercent = (isZeroVal || gain === 0 || !asset.costBasis || asset.costBasis <= 0) 
+                              ? 0 
+                              : (gain / asset.costBasis) * 100;
                             const isEditing = editingAssetId === asset.id;
                             const assetTags = asset.tags && asset.tags.length > 0 ? asset.tags : (asset.purpose ? [asset.purpose] : []);
+                            const isDifferentCurrency = Boolean(asset.currency && asset.currency !== currency);
+                            const assetValueInActive = convertCurrency(asset.value || 0, asset.currency || 'USD', currency);
+                            const gainInActive = convertCurrency(gain, asset.currency || 'USD', currency);
 
                             return (
                               <div
@@ -1066,19 +1078,32 @@ export const WealthView: React.FC = () => {
                                     <span className="text-[10px] text-zinc-500 uppercase tracking-wider block font-medium">
                                       Valuation
                                     </span>
-                                    <span className="text-base font-bold font-mono text-zinc-100">
-                                      {formatMoney(asset.value)}
-                                    </span>
+                                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                                      <span className="text-base font-bold font-mono text-zinc-100">
+                                        {formatMoney(assetValueInActive)}
+                                      </span>
+                                      {isDifferentCurrency && (
+                                        <span className="text-[10px] text-zinc-400 font-mono">
+                                          ({CURRENCY_CONFIGS[asset.currency!]?.symbol || asset.currency} {asset.value.toLocaleString('en-US', { maximumFractionDigits: 2 })})
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
 
-                                  {asset.costBasis && (
+                                  {asset.costBasis !== undefined && asset.costBasis !== null && (
                                     <div className="text-right">
                                       <span className="text-[10px] text-zinc-500 block font-medium">P&L</span>
                                       <span className={`text-xs font-mono font-semibold flex items-center justify-end gap-0.5 ${
-                                        gain >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                                        gainPercent === 0 || gain === 0 || isZeroVal 
+                                          ? 'text-zinc-400' 
+                                          : gain > 0 
+                                          ? 'text-emerald-400' 
+                                          : 'text-rose-400'
                                       }`}>
-                                        {gain >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                                        {formatMoney(gain)} ({gainPercent >= 0 ? '+' : ''}{gainPercent.toFixed(1)}%)
+                                        {!(gainPercent === 0 || gain === 0 || isZeroVal) && (
+                                          gain > 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />
+                                        )}
+                                        {formatMoney(gainInActive)} ({gainPercent > 0 ? '+' : ''}{gainPercent.toFixed(1)}%)
                                       </span>
                                     </div>
                                   )}
@@ -1127,11 +1152,17 @@ export const WealthView: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {filteredAssets.map(asset => {
-                    const gain = asset.costBasis ? asset.value - asset.costBasis : 0;
-                    const gainPercent = asset.costBasis && asset.costBasis > 0 ? (gain / asset.costBasis) * 100 : 0;
+                    const isZeroVal = !asset.value || asset.value === 0;
+                    const gain = (!isZeroVal && asset.costBasis) ? asset.value - asset.costBasis : 0;
+                    const gainPercent = (isZeroVal || gain === 0 || !asset.costBasis || asset.costBasis <= 0) 
+                      ? 0 
+                      : (gain / asset.costBasis) * 100;
                     const isEditing = editingAssetId === asset.id;
                     const assetTags = asset.tags && asset.tags.length > 0 ? asset.tags : (asset.purpose ? [asset.purpose] : []);
                     const isQuickTagOpen = quickTagAssetId === asset.id;
+                    const isDifferentCurrency = Boolean(asset.currency && asset.currency !== currency);
+                    const assetValueInActive = convertCurrency(asset.value || 0, asset.currency || 'USD', currency);
+                    const gainInActive = convertCurrency(gain, asset.currency || 'USD', currency);
 
                     return (
                       <div 
@@ -1296,7 +1327,7 @@ export const WealthView: React.FC = () => {
                                       <strong className="text-white font-bold">{asset.shares}</strong> {asset.assetType === 'mutual_fund' || asset.exchange === 'MF' ? 'units' : 'shares'}
                                       {asset.buyPrice ? (
                                         <span className="text-zinc-400">
-                                          {' '}@ {asset.currency === 'INR' || asset.exchange === 'NSE' || asset.exchange === 'BSE' || asset.exchange === 'MF' ? `₹${asset.buyPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : formatMoney(asset.buyPrice)}
+                                          {' '}@ {asset.currency === 'INR' || asset.exchange === 'NSE' || asset.exchange === 'BSE' || asset.exchange === 'MF' ? `₹${asset.buyPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `$${asset.buyPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                                         </span>
                                       ) : ''}
                                     </span>
@@ -1313,7 +1344,7 @@ export const WealthView: React.FC = () => {
                                   <div className="flex items-center gap-1 text-right">
                                     <span className="text-zinc-400">{asset.assetType === 'mutual_fund' || asset.exchange === 'MF' ? 'NAV:' : 'Live:'}</span>
                                     <span className="text-emerald-400 font-bold">
-                                      {asset.currency === 'INR' || asset.exchange === 'NSE' || asset.exchange === 'BSE' || asset.exchange === 'MF' ? `₹${asset.currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : formatMoney(asset.currentPrice)}
+                                      {asset.currency === 'INR' || asset.exchange === 'NSE' || asset.exchange === 'BSE' || asset.exchange === 'MF' ? `₹${asset.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `$${asset.currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                                     </span>
                                     {asset.priceChange24h !== undefined && asset.priceChange24h !== 0 && (
                                       <span className={`text-[10px] font-bold ${asset.priceChange24h >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
@@ -1382,10 +1413,15 @@ export const WealthView: React.FC = () => {
                                 </button>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-baseline gap-1.5 flex-wrap">
                                 <span className="text-lg font-bold font-mono text-zinc-100">
-                                  {formatMoney(asset.value)}
+                                  {formatMoney(assetValueInActive)}
                                 </span>
+                                {isDifferentCurrency && (
+                                  <span className="text-[11px] text-zinc-400 font-mono">
+                                    ({CURRENCY_CONFIGS[asset.currency!]?.symbol || asset.currency} {asset.value.toLocaleString('en-US', { maximumFractionDigits: 2 })})
+                                  </span>
+                                )}
                                 <button
                                   onClick={() => startEditAsset(asset.id, asset.value)}
                                   className="p-1 text-zinc-500 hover:text-zinc-300 transition-colors opacity-0 group-hover:opacity-100"
@@ -1397,14 +1433,20 @@ export const WealthView: React.FC = () => {
                             )}
                           </div>
 
-                          {asset.costBasis && (
+                          {asset.costBasis !== undefined && asset.costBasis !== null && (
                             <div className="text-right">
                               <span className="text-[10px] text-zinc-500 block font-medium">Unrealized P&L</span>
                               <span className={`text-xs font-mono font-semibold flex items-center justify-end gap-0.5 ${
-                                gain >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                                gainPercent === 0 || gain === 0 || isZeroVal 
+                                  ? 'text-zinc-400' 
+                                  : gain > 0 
+                                  ? 'text-emerald-400' 
+                                  : 'text-rose-400'
                               }`}>
-                                {gain >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                                {formatMoney(gain)} ({gainPercent >= 0 ? '+' : ''}{gainPercent.toFixed(1)}%)
+                                {!(gainPercent === 0 || gain === 0 || isZeroVal) && (
+                                  gain > 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />
+                                )}
+                                {formatMoney(gainInActive)} ({gainPercent > 0 ? '+' : ''}{gainPercent.toFixed(1)}%)
                               </span>
                             </div>
                           )}

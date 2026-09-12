@@ -16,18 +16,56 @@ import {
   Layers,
   Edit2,
   Check,
-  ShieldCheck
+  ShieldCheck,
+  X,
+  RotateCcw,
+  Sparkles,
+  Tag,
+  AlertCircle
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
-import { AccountSubTab, ExpenseCategory, AccountItem } from '../../types';
+import { AccountSubTab, ExpenseCategory, AccountItem, BudgetEnvelope } from '../../types';
+import { INITIAL_BUDGETS } from '../../data/initialData';
+
+const EXPENSE_CATEGORIES: ExpenseCategory[] = [
+  'Housing & Rent',
+  'Food & Groceries',
+  'Dining & Drinks',
+  'Transportation',
+  'Utilities & Bills',
+  'Entertainment',
+  'Health & Wellness',
+  'Shopping & Tech',
+  'Travel & Leisure',
+  'Education',
+  'Subscriptions',
+  'Investments',
+  'Other Expense',
+];
+
+const ENVELOPE_COLORS = [
+  '#6366f1', // Indigo
+  '#10b981', // Emerald
+  '#f59e0b', // Amber
+  '#06b6d4', // Cyan
+  '#8b5cf6', // Violet
+  '#ec4899', // Pink
+  '#f43f5e', // Rose
+  '#14b8a6', // Teal
+  '#eab308', // Yellow
+  '#3b82f6', // Blue
+  '#a855f7', // Purple
+  '#f97316', // Orange
+];
 
 export const AccountsView: React.FC = () => {
   const { 
     accountSubTab, 
     setAccountSubTab, 
-    accounts, 
-    budgets, 
-    transactions, 
+    accounts = [], 
+    budgets = [], 
+    transactions = [], 
+    currencyConfig,
     formatMoney, 
     totalAssets, 
     totalLiabilities, 
@@ -39,9 +77,13 @@ export const AccountsView: React.FC = () => {
     healthScore,
     debtToAssetRatio,
     updateBudget,
+    addBudget,
+    deleteBudget,
     addAccount,
     deleteAccount,
-    openQuickAdd
+    openQuickAdd,
+    currency,
+    convertCurrency
   } = useFinance();
 
   // New account modal state
@@ -52,9 +94,19 @@ export const AccountsView: React.FC = () => {
   const [newAccBalance, setNewAccBalance] = useState('');
   const [newAccMasked, setNewAccMasked] = useState('•••• 1234');
 
-  // Budget editing state
+  // Budget editing & management state
   const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
   const [editBudgetAmount, setEditBudgetAmount] = useState<string>('');
+  const [confirmDeleteBudgetEnvelopeId, setConfirmDeleteBudgetEnvelopeId] = useState<string | null>(null);
+
+  // New budget envelope modal state
+  const [isAddEnvelopeOpen, setIsAddEnvelopeOpen] = useState(false);
+  const [newEnvCategory, setNewEnvCategory] = useState<string>('Food & Groceries');
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [customCategoryName, setCustomCategoryName] = useState('');
+  const [newEnvAmount, setNewEnvAmount] = useState('500');
+  const [newEnvPeriod, setNewEnvPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const [newEnvColor, setNewEnvColor] = useState('#10b981');
 
   // Calculate actual category spending from current transactions
   const categorySpendingMap = React.useMemo(() => {
@@ -69,6 +121,44 @@ export const AccountsView: React.FC = () => {
   const totalBudgetSpent: number = (Object.values(categorySpendingMap) as number[]).reduce((s: number, v: number) => s + v, 0);
   const budgetRemaining: number = Math.max(0, totalBudgetAllocated - totalBudgetSpent);
 
+  const handleCreateEnvelope = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = parseFloat(newEnvAmount);
+    const categoryToUse = (isCustomCategory ? customCategoryName.trim() : newEnvCategory.trim()) as ExpenseCategory;
+    if (isNaN(amount) || amount <= 0 || !categoryToUse) return;
+
+    addBudget({
+      category: categoryToUse,
+      allocatedAmount: amount,
+      period: newEnvPeriod,
+      color: newEnvColor,
+    });
+
+    setIsAddEnvelopeOpen(false);
+    setNewEnvAmount('500');
+    setCustomCategoryName('');
+    setIsCustomCategory(false);
+  };
+
+  const handleDeleteEnvelope = (id: string) => {
+    deleteBudget(id);
+    setConfirmDeleteBudgetEnvelopeId(null);
+    if (editingBudgetId === id) {
+      setEditingBudgetId(null);
+    }
+  };
+
+  const handleRestoreDefaultBudgets = () => {
+    INITIAL_BUDGETS.forEach(b => {
+      addBudget({
+        category: b.category,
+        allocatedAmount: b.allocatedAmount,
+        period: b.period,
+        color: b.color || '#3b82f6',
+      });
+    });
+  };
+
   const handleCreateAccount = (e: React.FormEvent) => {
     e.preventDefault();
     const bal = parseFloat(newAccBalance);
@@ -80,7 +170,7 @@ export const AccountsView: React.FC = () => {
       type: newAccType,
       balance: bal,
       accountNumberMasked: newAccMasked.trim(),
-      currency: 'USD',
+      currency: currency,
       color: '#10b981',
     });
 
@@ -205,7 +295,7 @@ export const AccountsView: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <span className={`font-mono font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-zinc-100'}`}>
-                      {tx.type === 'income' ? '+' : '-'}{formatMoney(tx.amount)}
+                      {tx.type === 'income' ? '+' : '-'}{formatMoney(convertCurrency(tx.amount, tx.currency || currency, currency))}
                     </span>
                     <div className="text-[10px] text-zinc-500">{tx.date}</div>
                   </div>
@@ -219,6 +309,47 @@ export const AccountsView: React.FC = () => {
       {/* 2. BUDGET TAB */}
       {accountSubTab === 'budget' && (
         <div className="space-y-5 animate-in fade-in duration-150">
+          {/* Header Action Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-zinc-900/90 border border-zinc-800">
+            <div>
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-cyan-400" />
+                <h3 className="text-sm font-bold text-zinc-100">Monthly Budget Envelopes</h3>
+              </div>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Allocate spending limits across categories to safeguard cash flow and monthly savings.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {budgets.length === 0 && (
+                <button
+                  onClick={handleRestoreDefaultBudgets}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold border border-zinc-700 transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Restore Defaults</span>
+                </button>
+              )}
+              <button
+                id="btn-add-budget-envelope"
+                onClick={() => {
+                  const existing = new Set(budgets.map(b => b.category));
+                  const available = EXPENSE_CATEGORIES.find(c => !existing.has(c));
+                  if (available) {
+                    setNewEnvCategory(available);
+                    setIsCustomCategory(false);
+                  }
+                  setIsAddEnvelopeOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-zinc-950 text-xs font-bold transition-all shadow-sm active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Envelope</span>
+              </button>
+            </div>
+          </div>
+
           {/* Budget Overview Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800">
@@ -248,86 +379,191 @@ export const AccountsView: React.FC = () => {
             </div>
           </div>
 
-          {/* Budget Envelopes Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {budgets.map(envelope => {
-              const spent = categorySpendingMap[envelope.category] || 0;
-              const pct = envelope.allocatedAmount > 0 
-                ? Math.min(150, Math.round((spent / envelope.allocatedAmount) * 100)) 
-                : 0;
-              const isOver = spent > envelope.allocatedAmount;
-              const isEditing = editingBudgetId === envelope.id;
-
-              return (
-                <div 
-                  key={envelope.id}
-                  className="p-4 rounded-2xl bg-zinc-900/70 border border-zinc-800/90 hover:border-zinc-700 transition-all flex flex-col justify-between space-y-3 group"
+          {/* Empty State */}
+          {budgets.length === 0 ? (
+            <div className="p-12 text-center rounded-3xl bg-zinc-900/50 border border-dashed border-zinc-800 flex flex-col items-center justify-center space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                <Layers className="w-7 h-7" />
+              </div>
+              <div className="max-w-md">
+                <h4 className="text-base font-bold text-zinc-200">No Budget Envelopes Configured</h4>
+                <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
+                  Budget envelopes let you cap expenses per category (e.g. Dining, Groceries, Rent) to monitor spending pace in real time.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => setIsAddEnvelopeOpen(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-bold text-xs transition-all active:scale-95"
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-zinc-200">
-                        {envelope.category}
-                      </h4>
-                      <p className="text-[10px] text-zinc-400">Monthly Envelope</p>
-                    </div>
+                  <Plus className="w-4 h-4" />
+                  <span>Create Envelope</span>
+                </button>
+                <button
+                  onClick={handleRestoreDefaultBudgets}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs border border-zinc-700 transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Restore Defaults</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Budget Envelopes Grid */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {budgets.map(envelope => {
+                const spent = categorySpendingMap[envelope.category] || 0;
+                const pct = envelope.allocatedAmount > 0 
+                  ? Math.min(150, Math.round((spent / envelope.allocatedAmount) * 100)) 
+                  : 0;
+                const isOver = spent > envelope.allocatedAmount;
+                const isEditing = editingBudgetId === envelope.id;
+                const isDeleting = confirmDeleteBudgetEnvelopeId === envelope.id;
+                const envelopeColor = envelope.color || '#06b6d4';
 
-                    <button
-                      onClick={() => startEditBudget(envelope.id, envelope.allocatedAmount)}
-                      className="p-1 text-zinc-400 hover:text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Edit envelope allowance"
-                    >
-                      <Edit2 className="w-3 h-3" />
-                    </button>
-                  </div>
+                return (
+                  <div 
+                    key={envelope.id}
+                    className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800/90 hover:border-zinc-700 transition-all flex flex-col justify-between space-y-3 group relative overflow-hidden"
+                  >
+                    {/* Top Accent Color Bar */}
+                    <div 
+                      className="absolute top-0 left-0 right-0 h-1"
+                      style={{ backgroundColor: envelopeColor }}
+                    />
 
-                  {/* Progress bar */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-baseline justify-between text-xs font-mono">
-                      <span className={`font-bold ${isOver ? 'text-rose-400' : 'text-zinc-200'}`}>
-                        {formatMoney(spent)} spent
-                      </span>
-                      <span className="text-zinc-400">
-                        / {formatMoney(envelope.allocatedAmount)}
-                      </span>
-                    </div>
-
-                    {isEditing ? (
-                      <div className="flex items-center gap-1.5 pt-1">
-                        <input
-                          type="number"
-                          value={editBudgetAmount}
-                          onChange={e => setEditBudgetAmount(e.target.value)}
-                          className="w-24 bg-zinc-950 border border-emerald-500 rounded px-2 py-0.5 text-xs font-mono text-white"
+                    {/* Card Header */}
+                    <div className="flex items-start justify-between gap-2 pt-1">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-2.5 h-2.5 rounded-full shrink-0" 
+                          style={{ backgroundColor: envelopeColor }} 
                         />
+                        <div>
+                          <h4 className="text-xs font-bold text-zinc-200">
+                            {envelope.category}
+                          </h4>
+                          <p className="text-[10px] text-zinc-400 capitalize">
+                            {envelope.period || 'monthly'} envelope
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Action buttons: Edit & Delete */}
+                      <div className="flex items-center gap-1">
                         <button
-                          onClick={() => saveEditBudget(envelope.id)}
-                          className="p-1 bg-emerald-500 text-zinc-950 rounded"
+                          onClick={() => {
+                            if (isEditing) {
+                              setEditingBudgetId(null);
+                            } else {
+                              startEditBudget(envelope.id, envelope.allocatedAmount);
+                            }
+                          }}
+                          className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg opacity-80 group-hover:opacity-100 transition-all"
+                          title="Edit envelope allowance"
                         >
-                          <Check className="w-3 h-3" />
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteBudgetEnvelopeId(envelope.id)}
+                          className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg opacity-80 group-hover:opacity-100 transition-all"
+                          title="Delete envelope"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    ) : (
-                      <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full transition-all duration-300 ${
-                            pct > 100 ? 'bg-rose-500' : pct > 80 ? 'bg-amber-400' : 'bg-emerald-400'
-                          }`}
-                          style={{ width: `${Math.min(100, pct)}%` }}
-                        />
+                    </div>
+
+                    {/* Inline Delete Confirmation Overlay */}
+                    {isDeleting && (
+                      <div className="p-2.5 rounded-xl bg-rose-950/40 border border-rose-800/60 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="flex items-center gap-1.5 text-[11px] text-rose-300 font-medium">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+                          <span>Delete envelope for <strong>{envelope.category}</strong>?</span>
+                        </div>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setConfirmDeleteBudgetEnvelopeId(null)}
+                            className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] font-medium"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEnvelope(envelope.id)}
+                            className="px-2.5 py-1 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className={isOver ? 'text-rose-400 font-semibold' : 'text-zinc-400'}>
-                        {isOver ? `Over by ${formatMoney(spent - envelope.allocatedAmount)}` : `${formatMoney(envelope.allocatedAmount - spent)} left`}
-                      </span>
-                      <span className="font-mono text-zinc-400">{pct}%</span>
+                    {/* Progress and numbers */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-baseline justify-between text-xs font-mono">
+                        <span className={`font-bold ${isOver ? 'text-rose-400' : 'text-zinc-200'}`}>
+                          {formatMoney(spent)} spent
+                        </span>
+                        <span className="text-zinc-400 font-medium">
+                          / {formatMoney(envelope.allocatedAmount)}
+                        </span>
+                      </div>
+
+                      {isEditing ? (
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <input
+                            type="number"
+                            min="0"
+                            step="10"
+                            value={editBudgetAmount}
+                            onChange={e => setEditBudgetAmount(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') saveEditBudget(envelope.id);
+                              if (e.key === 'Escape') setEditingBudgetId(null);
+                            }}
+                            className="w-28 bg-zinc-950 border border-cyan-500 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => saveEditBudget(envelope.id)}
+                            className="p-1.5 bg-cyan-500 hover:bg-cyan-400 text-zinc-950 rounded-lg font-bold transition-colors"
+                            title="Save"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setEditingBudgetId(null)}
+                            className="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-lg transition-colors"
+                            title="Cancel"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-full bg-zinc-800/80 h-2 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              pct > 100 ? 'bg-rose-500' : pct > 80 ? 'bg-amber-400' : 'bg-emerald-400'
+                            }`}
+                            style={{ width: `${Math.min(100, pct)}%` }}
+                          />
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className={isOver ? 'text-rose-400 font-semibold' : 'text-zinc-400'}>
+                          {isOver 
+                            ? `Over by ${formatMoney(spent - envelope.allocatedAmount)}` 
+                            : `${formatMoney(envelope.allocatedAmount - spent)} remaining`}
+                        </span>
+                        <span className="font-mono text-zinc-400 font-medium">{pct}%</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -547,6 +783,198 @@ export const AccountsView: React.FC = () => {
                   className="px-5 py-2 rounded-xl bg-emerald-500 text-zinc-950 font-semibold"
                 >
                   Add Account
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Budget Envelope Modal */}
+      {isAddEnvelopeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div 
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-950"
+                  style={{ backgroundColor: newEnvColor }}
+                >
+                  <Layers className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-zinc-100">Create Budget Envelope</h3>
+                  <p className="text-xs text-zinc-400">Set spending limit & category allowance</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAddEnvelopeOpen(false)}
+                className="p-1.5 text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-800 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateEnvelope} className="space-y-4 text-xs">
+              {/* Category Selector */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-zinc-300 font-semibold">Expense Category</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomCategory(!isCustomCategory)}
+                    className="text-[11px] text-cyan-400 hover:text-cyan-300 font-medium"
+                  >
+                    {isCustomCategory ? '← Choose standard category' : '+ Custom category name'}
+                  </button>
+                </div>
+
+                {isCustomCategory ? (
+                  <div>
+                    <input
+                      type="text"
+                      required
+                      value={customCategoryName}
+                      onChange={e => setCustomCategoryName(e.target.value)}
+                      placeholder="e.g. Pet Care & Vet, Gaming & Hardware..."
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-xs"
+                      autoFocus
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-44 overflow-y-auto pr-1 no-scrollbar">
+                    {EXPENSE_CATEGORIES.map(cat => {
+                      const isSelected = newEnvCategory === cat;
+                      const alreadyExists = budgets.some(b => b.category === cat);
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setNewEnvCategory(cat)}
+                          className={`flex items-center justify-between p-2 rounded-xl text-left border transition-all ${
+                            isSelected
+                              ? 'bg-cyan-950/60 border-cyan-500/80 text-cyan-300 font-bold'
+                              : 'bg-zinc-950/60 border-zinc-800/80 text-zinc-300 hover:border-zinc-700'
+                          }`}
+                        >
+                          <span className="truncate text-[11px]">{cat}</span>
+                          {alreadyExists && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 ml-1" title="Already has an active envelope" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {!isCustomCategory && budgets.some(b => b.category === newEnvCategory) && (
+                  <p className="text-[11px] text-amber-400/90 flex items-center gap-1 mt-1">
+                    <AlertTriangle className="w-3 h-3 shrink-0" />
+                    <span>An envelope for &quot;{newEnvCategory}&quot; already exists.</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Allowance Limit */}
+              <div className="space-y-1.5">
+                <label className="text-zinc-300 font-semibold block">Planned Spending Allowance</label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono text-zinc-400 text-sm font-bold">
+                    {currencyConfig.symbol}
+                  </span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="10"
+                    required
+                    value={newEnvAmount}
+                    onChange={e => setNewEnvAmount(e.target.value)}
+                    placeholder="500"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-8 pr-3.5 py-2.5 font-mono text-sm text-zinc-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                  />
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-zinc-500 font-medium">Presets:</span>
+                  {[100, 250, 500, 1000, 2000].map(val => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setNewEnvAmount(val.toString())}
+                      className="px-2 py-0.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-[10px] font-mono transition-colors"
+                    >
+                      {currencyConfig.symbol}{val}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Period & Color Picker Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {/* Period */}
+                <div className="space-y-1.5">
+                  <label className="text-zinc-300 font-semibold block">Budget Cycle</label>
+                  <div className="grid grid-cols-2 gap-1.5 p-1 bg-zinc-950 border border-zinc-800 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setNewEnvPeriod('monthly')}
+                      className={`py-1.5 rounded-lg font-medium text-center transition-all ${
+                        newEnvPeriod === 'monthly'
+                          ? 'bg-zinc-800 text-cyan-400 font-bold shadow-sm'
+                          : 'text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      Monthly
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewEnvPeriod('yearly')}
+                      className={`py-1.5 rounded-lg font-medium text-center transition-all ${
+                        newEnvPeriod === 'yearly'
+                          ? 'bg-zinc-800 text-cyan-400 font-bold shadow-sm'
+                          : 'text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      Yearly
+                    </button>
+                  </div>
+                </div>
+
+                {/* Color Swatches */}
+                <div className="space-y-1.5">
+                  <label className="text-zinc-300 font-semibold block">Accent Color</label>
+                  <div className="flex items-center gap-1.5 flex-wrap p-1.5 bg-zinc-950 border border-zinc-800 rounded-xl">
+                    {ENVELOPE_COLORS.map(color => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setNewEnvColor(color)}
+                        className="w-5 h-5 rounded-full flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
+                        style={{ backgroundColor: color }}
+                      >
+                        {newEnvColor === color && <Check className="w-3 h-3 text-zinc-950 stroke-[3]" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800/80">
+                <button
+                  type="button"
+                  onClick={() => setIsAddEnvelopeOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-bold transition-all shadow-sm active:scale-95 flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create Envelope</span>
                 </button>
               </div>
             </form>
