@@ -46,9 +46,10 @@ import {
   Bar
 } from 'recharts';
 import { useFinance, CURRENCY_CONFIGS } from '../../context/FinanceContext';
-import { WealthSubTab, AssetCategory, LiabilityCategory, Asset, DEFAULT_ASSET_TAGS } from '../../types';
+import { WealthSubTab, AssetCategory, LiabilityCategory, Asset, Liability, DEFAULT_ASSET_TAGS } from '../../types';
 import { getGoogleFinanceUrl } from '../../services/marketDataService';
 import { AssetEditModal } from '../AssetEditModal';
+import { ConfirmationModal } from '../ConfirmationModal';
 
 const DEFAULT_TARGET_ALLOCATIONS: Record<string, number> = {
   'Stocks & ETFs': 45,
@@ -112,6 +113,8 @@ export const WealthView: React.FC = () => {
   const [assetSearchQuery, setAssetSearchQuery] = useState<string>('');
   const [viewLayoutMode, setViewLayoutMode] = useState<'grid' | 'grouped' | 'purpose_breakdown'>('grid');
   const [assetToEdit, setAssetToEdit] = useState<Asset | null>(null);
+  const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
+  const [liabilityToDelete, setLiabilityToDelete] = useState<Liability | null>(null);
   const [quickTagAssetId, setQuickTagAssetId] = useState<string | null>(null);
   const [quickCustomTag, setQuickCustomTag] = useState<string>('');
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -1037,7 +1040,8 @@ export const WealthView: React.FC = () => {
                                         <Edit2 className="w-3.5 h-3.5" />
                                       </button>
                                       <button
-                                        onClick={() => deleteAsset(asset.id)}
+                                        id={`btn-delete-asset-${asset.id}`}
+                                        onClick={() => setAssetToDelete(asset)}
                                         className="p-1.5 text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
                                         title="Delete asset"
                                       >
@@ -1215,7 +1219,8 @@ export const WealthView: React.FC = () => {
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={() => deleteAsset(asset.id)}
+                                id={`btn-delete-asset-grouped-${asset.id}`}
+                                onClick={() => setAssetToDelete(asset)}
                                 className="p-1.5 text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
                                 title="Delete asset"
                               >
@@ -1524,7 +1529,8 @@ export const WealthView: React.FC = () => {
                   </div>
 
                   <button
-                    onClick={() => deleteLiability(liab.id)}
+                    id={`btn-delete-liability-${liab.id}`}
+                    onClick={() => setLiabilityToDelete(liab)}
                     className="p-1 text-zinc-500 hover:text-rose-400 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Delete liability"
                   >
@@ -2033,6 +2039,52 @@ export const WealthView: React.FC = () => {
           }}
         />
       )}
+
+      {/* Confirmation Modal for Deleting Asset */}
+      <ConfirmationModal
+        isOpen={!!assetToDelete}
+        onClose={() => setAssetToDelete(null)}
+        onConfirm={() => {
+          if (assetToDelete) {
+            deleteAsset(assetToDelete.id);
+            setAssetToDelete(null);
+          }
+        }}
+        title="Delete Asset"
+        description="Are you sure you want to delete this asset from your portfolio? This will remove its valuation from your net worth calculations and asset allocation."
+        itemType="asset"
+        itemName={assetToDelete?.name}
+        details={assetToDelete ? [
+          { label: 'Category', value: assetToDelete.category },
+          { label: 'Valuation', value: formatMoney(assetToDelete.value) },
+          { label: 'Asset Class', value: assetToDelete.assetClass.toUpperCase() },
+          ...(assetToDelete.institution ? [{ label: 'Holding Institution', value: assetToDelete.institution }] : [])
+        ] : []}
+        confirmButtonText="Delete Asset"
+      />
+
+      {/* Confirmation Modal for Deleting Liability */}
+      <ConfirmationModal
+        isOpen={!!liabilityToDelete}
+        onClose={() => setLiabilityToDelete(null)}
+        onConfirm={() => {
+          if (liabilityToDelete) {
+            deleteLiability(liabilityToDelete.id);
+            setLiabilityToDelete(null);
+          }
+        }}
+        title="Delete Debt / Liability"
+        description="Are you sure you want to remove this debt from your liabilities? This will update your total liabilities and debt-to-asset ratio."
+        itemType="liability"
+        itemName={liabilityToDelete?.name}
+        details={liabilityToDelete ? [
+          { label: 'Category', value: liabilityToDelete.category },
+          { label: 'Principal Balance', value: formatMoney(liabilityToDelete.balance) },
+          { label: 'Interest Rate', value: `${liabilityToDelete.interestRate}% APR` },
+          { label: 'Institution', value: liabilityToDelete.institution }
+        ] : []}
+        confirmButtonText="Delete Liability"
+      />
     </div>
   );
 };

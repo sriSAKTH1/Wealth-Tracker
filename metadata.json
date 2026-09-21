@@ -1,5 +1,5 @@
 {
-  "name": "Aura Wealth Tracker",
+  "name": "FIX Wealth Tracker",
   "description": "Comprehensive personal finance, wealth, net worth, and cash flow tracker with dual mobile and desktop responsive views.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

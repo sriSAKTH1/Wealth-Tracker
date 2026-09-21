@@ -43,6 +43,8 @@ import confetti from 'canvas-confetti';
 import { useFinance } from '../../context/FinanceContext';
 import { GoalsSubTab, CustomGoal, EssentialGoal } from '../../types';
 import { EmergencyGoalModal } from '../EmergencyGoalModal';
+import { FireFreedomCalculator } from '../FireFreedomCalculator';
+import { ConfirmationModal } from '../ConfirmationModal';
 
 // Helper to calculate tenure in months and formatted label
 export const calculateTenureMonthsFromDate = (dateStr: string): number => {
@@ -129,6 +131,7 @@ export const GoalsView: React.FC = () => {
   const [isAddEssentialModalOpen, setIsAddEssentialModalOpen] = useState(false);
   const [essentialGoalToEdit, setEssentialGoalToEdit] = useState<EssentialGoal | null>(null);
   const [essentialGoalToDelete, setEssentialGoalToDelete] = useState<EssentialGoal | null>(null);
+  const [customGoalToDelete, setCustomGoalToDelete] = useState<CustomGoal | null>(null);
   const [depositEssentialId, setDepositEssentialId] = useState<string | null>(null);
   const [depositEssentialAmount, setDepositEssentialAmount] = useState<string>('');
 
@@ -510,13 +513,13 @@ export const GoalsView: React.FC = () => {
           onClick={() => setGoalsSubTab('fire')}
           className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold transition-all shrink-0 justify-center ${
             goalsSubTab === 'fire'
-              ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/40 shadow-sm'
-              : 'text-zinc-400 hover:text-amber-300'
+              ? 'bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm'
+              : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
           <Flame className="w-4 h-4 text-amber-400" />
-          <span>FIRE Number & Freedom</span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-amber-500/20 text-amber-300 font-mono font-bold">
+          <span>FIRE & Freedom</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-zinc-700/60 text-zinc-300 font-mono font-semibold">
             {fireCalculations.progressPct}%
           </span>
         </button>
@@ -956,7 +959,8 @@ export const GoalsView: React.FC = () => {
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => deleteCustomGoal(goal.id)}
+                          id={`btn-delete-goal-${goal.id}`}
+                          onClick={() => setCustomGoalToDelete(goal)}
                           className="p-1.5 text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 rounded-lg transition-colors"
                           title="Delete goal"
                         >
@@ -1053,632 +1057,10 @@ export const GoalsView: React.FC = () => {
         </div>
       )}
 
-      {/* 3. 🔥 FIRE NUMBER & FREEDOM HUB */}
+      {/* 3. 🔥 FIRE NUMBER & FREEDOM CALCULATOR */}
       {goalsSubTab === 'fire' && (
-        <div className="space-y-6 animate-in fade-in duration-150">
-          {/* Master FIRE Hero Card */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-950/40 via-zinc-900 to-zinc-950 border border-amber-500/30 p-6 sm:p-8 shadow-2xl space-y-6">
-            {/* Background ambient glow */}
-            <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
-
-            <div className="relative z-10 space-y-6">
-              {/* Header Title & Actions */}
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                      <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      Financial Independence & Early Retirement (FIRE)
-                    </span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 font-mono">
-                      {fireCalculations.ruleMultiplier}x Annual Expenses Rule
-                    </span>
-                  </div>
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                    Your FIRE Number Target
-                  </h1>
-                  <p className="text-xs sm:text-sm text-zinc-400 mt-1 max-w-xl">
-                    The exact portfolio amount required to sustainably fund your lifestyle forever without ever needing to earn active income.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleSaveFireAsGoal}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-zinc-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all active:scale-95"
-                  >
-                    <Check className="w-4 h-4 stroke-[3]" />
-                    <span>Set as Active Milestone Goal</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Toast Feedback message */}
-              {fireSyncSuccessMsg && (
-                <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>{fireSyncSuccessMsg}</span>
-                </div>
-              )}
-
-              {/* Big Metrics Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                {/* 1. Target FIRE Number */}
-                <div className="p-4.5 rounded-2xl bg-zinc-950/80 border border-amber-500/30 space-y-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
-                    Calculated FIRE Number
-                  </span>
-                  <div className="text-2xl sm:text-3xl font-mono font-extrabold text-white tracking-tight">
-                    {formatMoney(fireCalculations.fireNumber)}
-                  </div>
-                  <span className="text-[11px] text-zinc-400 block">
-                    @ {fireSafeRate}% SWR ({formatMoney(effectiveAnnualExpense)}/yr burn)
-                  </span>
-                </div>
-
-                {/* 2. Current Progress */}
-                <div className="p-4.5 rounded-2xl bg-zinc-950/80 border border-zinc-800 space-y-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                    Invested Wealth / Progress
-                  </span>
-                  <div className="text-2xl sm:text-3xl font-mono font-extrabold text-emerald-400 tracking-tight">
-                    {fireCalculations.progressPct}%
-                  </div>
-                  <span className="text-[11px] text-zinc-400 block font-mono">
-                    {formatMoney(activeCurrentWealth)} of {formatMoney(fireCalculations.fireNumber)}
-                  </span>
-                </div>
-
-                {/* 3. Projected Horizon / Timeline */}
-                <div className="p-4.5 rounded-2xl bg-zinc-950/80 border border-zinc-800 space-y-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                    Est. Time to Freedom
-                  </span>
-                  <div className="text-2xl sm:text-3xl font-mono font-extrabold text-cyan-400 tracking-tight">
-                    {fireCalculations.deficit === 0 ? 'Achieved!' : `${fireCalculations.yearsToFire} yrs`}
-                  </div>
-                  <span className="text-[11px] text-zinc-400 block">
-                    {fireCalculations.deficit === 0 ? '🎉 Ready to retire' : `Target: ${fireCalculations.projectedTargetDateStr}`}
-                  </span>
-                </div>
-
-                {/* 4. Safe Passive Cashflow */}
-                <div className="p-4.5 rounded-2xl bg-zinc-950/80 border border-zinc-800 space-y-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                    Passive Monthly Yield
-                  </span>
-                  <div className="text-2xl sm:text-3xl font-mono font-extrabold text-purple-400 tracking-tight">
-                    {formatMoney(fireCalculations.monthlyPassiveCashflow)}
-                    <span className="text-xs font-normal text-zinc-400">/mo</span>
-                  </div>
-                  <span className="text-[11px] text-zinc-400 block font-mono">
-                    Currently: {formatMoney(fireCalculations.currentPassiveCashflowToday)}/mo today
-                  </span>
-                </div>
-              </div>
-
-              {/* Progress Bar with Milestone Markers */}
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-zinc-300 font-semibold">
-                    Current Portfolio: {formatMoney(activeCurrentWealth)} ({fireCalculations.progressPct}%)
-                  </span>
-                  <span className="text-amber-400 font-semibold">
-                    Remaining Gap: {formatMoney(fireCalculations.deficit)}
-                  </span>
-                </div>
-
-                <div className="w-full bg-zinc-950 h-3.5 rounded-full overflow-hidden p-0.5 border border-zinc-800">
-                  <div 
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-amber-400 to-orange-500 transition-all duration-700 shadow-lg shadow-amber-500/20"
-                    style={{ width: `${fireCalculations.progressPct}%` }}
-                  />
-                </div>
-
-                {/* Milestone breakdown ticks */}
-                <div className="grid grid-cols-4 gap-1 text-center text-[10px] font-mono text-zinc-400 pt-1">
-                  <div className="border-r border-zinc-800/80 pr-1">
-                    <span className="text-zinc-300 font-semibold block">25% (Basecamp)</span>
-                    <span>{formatMoney(fireCalculations.fireNumber * 0.25)}</span>
-                  </div>
-                  <div className="border-r border-zinc-800/80 px-1">
-                    <span className="text-zinc-300 font-semibold block">50% (Halftime)</span>
-                    <span>{formatMoney(fireCalculations.fireNumber * 0.5)}</span>
-                  </div>
-                  <div className="border-r border-zinc-800/80 px-1">
-                    <span className="text-zinc-300 font-semibold block">75% (Final Lap)</span>
-                    <span>{formatMoney(fireCalculations.fireNumber * 0.75)}</span>
-                  </div>
-                  <div className="pl-1">
-                    <span className="text-amber-400 font-bold block">100% (Freedom)</span>
-                    <span>{formatMoney(fireCalculations.fireNumber)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FIRE Archetypes & Variations */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-bold text-zinc-100">FIRE Archetypes & Styles</h2>
-                <p className="text-[11px] text-zinc-400">Choose the lifestyle independence target that fits your vision</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              {/* 1. Regular FIRE */}
-              <button
-                type="button"
-                onClick={() => setFireType('regular')}
-                className={`p-4 rounded-2xl text-left transition-all border flex flex-col justify-between space-y-3 ${
-                  fireType === 'regular'
-                    ? 'bg-amber-500/10 border-amber-500/50 shadow-md ring-1 ring-amber-500/30'
-                    : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
-                      <Flame className="w-4 h-4" />
-                    </span>
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
-                      100% Exp
-                    </span>
-                  </div>
-                  <h3 className="text-xs font-bold text-zinc-100">Regular FIRE</h3>
-                  <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                    Maintain 100% of your current standard of living without working.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-zinc-800 font-mono text-xs font-bold text-amber-400">
-                  {formatMoney(Math.round(baselineAnnualExpense / (fireSafeRate / 100)))}
-                </div>
-              </button>
-
-              {/* 2. Lean FIRE */}
-              <button
-                type="button"
-                onClick={() => setFireType('lean')}
-                className={`p-4 rounded-2xl text-left transition-all border flex flex-col justify-between space-y-3 ${
-                  fireType === 'lean'
-                    ? 'bg-emerald-500/10 border-emerald-500/50 shadow-md ring-1 ring-emerald-500/30'
-                    : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
-                      <Feather className="w-4 h-4" />
-                    </span>
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
-                      75% Exp
-                    </span>
-                  </div>
-                  <h3 className="text-xs font-bold text-zinc-100">Lean FIRE</h3>
-                  <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                    Minimalist, low-cost freedom with optimized essential expenses.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-zinc-800 font-mono text-xs font-bold text-emerald-400">
-                  {formatMoney(Math.round((baselineAnnualExpense * 0.75) / (fireSafeRate / 100)))}
-                </div>
-              </button>
-
-              {/* 3. Fat FIRE */}
-              <button
-                type="button"
-                onClick={() => setFireType('fat')}
-                className={`p-4 rounded-2xl text-left transition-all border flex flex-col justify-between space-y-3 ${
-                  fireType === 'fat'
-                    ? 'bg-purple-500/10 border-purple-500/50 shadow-md ring-1 ring-purple-500/30'
-                    : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="p-2 rounded-xl bg-purple-500/20 text-purple-400">
-                      <Crown className="w-4 h-4" />
-                    </span>
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
-                      140% Exp
-                    </span>
-                  </div>
-                  <h3 className="text-xs font-bold text-zinc-100">Fat FIRE</h3>
-                  <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                    Abundant lifestyle with travel, luxury hobbies, and padding.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-zinc-800 font-mono text-xs font-bold text-purple-400">
-                  {formatMoney(Math.round((baselineAnnualExpense * 1.40) / (fireSafeRate / 100)))}
-                </div>
-              </button>
-
-              {/* 4. Coast FIRE */}
-              <button
-                type="button"
-                onClick={() => setFireType('coast')}
-                className={`p-4 rounded-2xl text-left transition-all border flex flex-col justify-between space-y-3 ${
-                  fireType === 'coast'
-                    ? 'bg-cyan-500/10 border-cyan-500/50 shadow-md ring-1 ring-cyan-500/30'
-                    : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400">
-                      <Compass className="w-4 h-4" />
-                    </span>
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
-                      Age {targetRetirementAge}
-                    </span>
-                  </div>
-                  <h3 className="text-xs font-bold text-zinc-100">Coast FIRE</h3>
-                  <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                    Invest enough early so compounding hits full FIRE without adding more.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-zinc-800 font-mono text-xs font-bold text-cyan-400">
-                  {formatMoney(fireCalculations.coastFireTarget)} (at {currentAge}yo)
-                </div>
-              </button>
-
-              {/* 5. Barista FIRE */}
-              <button
-                type="button"
-                onClick={() => setFireType('barista')}
-                className={`p-4 rounded-2xl text-left transition-all border flex flex-col justify-between space-y-3 ${
-                  fireType === 'barista'
-                    ? 'bg-rose-500/10 border-rose-500/50 shadow-md ring-1 ring-rose-500/30'
-                    : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="p-2 rounded-xl bg-rose-500/20 text-rose-400">
-                      <Coffee className="w-4 h-4" />
-                    </span>
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
-                      50% Passive
-                    </span>
-                  </div>
-                  <h3 className="text-xs font-bold text-zinc-100">Barista FIRE</h3>
-                  <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                    50% passive portfolio income + low-stress flexible freelancing/job.
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-zinc-800 font-mono text-xs font-bold text-rose-400">
-                  {formatMoney(Math.round((baselineAnnualExpense * 0.50) / (fireSafeRate / 100)))}
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Interactive Parameters & Live Simulator */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {/* Left Col (2 cols): Interactive Controls */}
-            <div className="lg:col-span-2 p-5 sm:p-6 rounded-3xl bg-zinc-900/80 border border-zinc-800 space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-amber-400" />
-                  <h3 className="text-sm font-bold text-zinc-100">Interactive FIRE Assumptions</h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsExpenseSynced(true);
-                    setIsSavingsSynced(true);
-                    setIsContributionSynced(true);
-                    setFireSafeRate(4.0);
-                    setAnnualReturnRate(8.0);
-                  }}
-                  className="text-xs text-zinc-400 hover:text-amber-400 flex items-center gap-1 transition-colors"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Reset to Live Portfolio</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* 1. Annual Living Expenses */}
-                <div className="p-3.5 rounded-2xl bg-zinc-950/70 border border-zinc-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-zinc-300">Annual Living Expenses</label>
-                    <button
-                      type="button"
-                      onClick={() => setIsExpenseSynced(!isExpenseSynced)}
-                      className={`text-[10px] px-2 py-0.5 rounded font-mono font-medium ${
-                        isExpenseSynced 
-                          ? 'bg-emerald-500/20 text-emerald-300' 
-                          : 'bg-zinc-800 text-zinc-400'
-                      }`}
-                    >
-                      {isExpenseSynced ? '✓ Auto-synced' : 'Custom'}
-                    </button>
-                  </div>
-                  {isExpenseSynced ? (
-                    <div className="text-lg font-mono font-bold text-white">
-                      {formatMoney(baselineAnnualExpense)}
-                      <span className="text-[11px] text-zinc-400 font-normal ml-2">
-                        ({formatMoney(monthlyExpenses)}/mo)
-                      </span>
-                    </div>
-                  ) : (
-                    <input
-                      type="number"
-                      value={customAnnualExpense}
-                      onChange={e => setCustomAnnualExpense(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-1.5 text-sm font-mono font-semibold text-white focus:border-amber-500"
-                    />
-                  )}
-                  <p className="text-[10px] text-zinc-400">
-                    Adjusted for {fireType.toUpperCase()} mode: {formatMoney(effectiveAnnualExpense)}/yr
-                  </p>
-                </div>
-
-                {/* 2. Safe Withdrawal Rate (SWR) */}
-                <div className="p-3.5 rounded-2xl bg-zinc-950/70 border border-zinc-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-zinc-300">Safe Withdrawal Rate (SWR)</label>
-                    <span className="text-xs font-mono font-bold text-amber-400">
-                      {fireSafeRate}% ({fireCalculations.ruleMultiplier}x Rule)
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="3.0"
-                    max="5.0"
-                    step="0.25"
-                    value={fireSafeRate}
-                    onChange={e => setFireSafeRate(parseFloat(e.target.value))}
-                    className="w-full accent-amber-500 h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[10px] font-mono text-zinc-500">
-                    <span>3.0% (33.3x)</span>
-                    <span className="text-amber-400 font-bold">4.0% (25x Trinity)</span>
-                    <span>5.0% (20x)</span>
-                  </div>
-                </div>
-
-                {/* 3. Current Invested Base */}
-                <div className="p-3.5 rounded-2xl bg-zinc-950/70 border border-zinc-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-zinc-300">Current Portfolio Base</label>
-                    <button
-                      type="button"
-                      onClick={() => setIsSavingsSynced(!isSavingsSynced)}
-                      className={`text-[10px] px-2 py-0.5 rounded font-mono font-medium ${
-                        isSavingsSynced 
-                          ? 'bg-emerald-500/20 text-emerald-300' 
-                          : 'bg-zinc-800 text-zinc-400'
-                      }`}
-                    >
-                      {isSavingsSynced ? '✓ Live Net Worth' : 'Custom'}
-                    </button>
-                  </div>
-                  {isSavingsSynced ? (
-                    <div className="text-lg font-mono font-bold text-emerald-400">
-                      {formatMoney(activeCurrentWealth)}
-                    </div>
-                  ) : (
-                    <input
-                      type="number"
-                      value={customCurrentPortfolio}
-                      onChange={e => setCustomCurrentPortfolio(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-1.5 text-sm font-mono font-semibold text-white focus:border-amber-500"
-                    />
-                  )}
-                  <p className="text-[10px] text-zinc-400">
-                    Covers {fireCalculations.yearsFundedToday} years of expenses today
-                  </p>
-                </div>
-
-                {/* 4. Monthly Investment / Savings */}
-                <div className="p-3.5 rounded-2xl bg-zinc-950/70 border border-zinc-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-zinc-300">Monthly Contribution</label>
-                    <button
-                      type="button"
-                      onClick={() => setIsContributionSynced(!isContributionSynced)}
-                      className={`text-[10px] px-2 py-0.5 rounded font-mono font-medium ${
-                        isContributionSynced 
-                          ? 'bg-emerald-500/20 text-emerald-300' 
-                          : 'bg-zinc-800 text-zinc-400'
-                      }`}
-                    >
-                      {isContributionSynced ? '✓ Live Savings' : 'Custom'}
-                    </button>
-                  </div>
-                  {isContributionSynced ? (
-                    <div className="text-lg font-mono font-bold text-cyan-400">
-                      {formatMoney(activeMonthlyContribution)}
-                      <span className="text-[11px] text-zinc-400 font-normal ml-2">/month</span>
-                    </div>
-                  ) : (
-                    <input
-                      type="number"
-                      value={customMonthlyInvestment}
-                      onChange={e => setCustomMonthlyInvestment(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-1.5 text-sm font-mono font-semibold text-white focus:border-amber-500"
-                    />
-                  )}
-                  <p className="text-[10px] text-zinc-400">
-                    Annual addition: {formatMoney(activeMonthlyContribution * 12)}/yr
-                  </p>
-                </div>
-
-                {/* 5. Expected Return Rate (CAGR) */}
-                <div className="p-3.5 rounded-2xl bg-zinc-950/70 border border-zinc-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-zinc-300">Expected Annual Return</label>
-                    <span className="text-xs font-mono font-bold text-emerald-400">
-                      {annualReturnRate}% CAGR
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="4.0"
-                    max="14.0"
-                    step="0.5"
-                    value={annualReturnRate}
-                    onChange={e => setAnnualReturnRate(parseFloat(e.target.value))}
-                    className="w-full accent-emerald-500 h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[10px] font-mono text-zinc-500">
-                    <span>4% (Bond/Cons)</span>
-                    <span className="text-emerald-400 font-bold">8% (Balanced Index)</span>
-                    <span>14% (Aggressive)</span>
-                  </div>
-                </div>
-
-                {/* 6. Age & Target Horizon */}
-                <div className="p-3.5 rounded-2xl bg-zinc-950/70 border border-zinc-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-zinc-300">Current & Target Age</label>
-                    <span className="text-xs font-mono font-bold text-purple-400">
-                      Age {currentAge} → {targetRetirementAge} ({fireCalculations.yearsUntilRetirement} yrs)
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="text-[10px] text-zinc-400 block mb-0.5">Current Age</span>
-                      <input
-                        type="number"
-                        min="18"
-                        max="70"
-                        value={currentAge}
-                        onChange={e => setCurrentAge(parseInt(e.target.value) || 30)}
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1 text-xs font-mono text-white"
-                      />
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-zinc-400 block mb-0.5">Target FIRE Age</span>
-                      <input
-                        type="number"
-                        min={currentAge + 1}
-                        max="85"
-                        value={targetRetirementAge}
-                        onChange={e => setTargetRetirementAge(parseInt(e.target.value) || 50)}
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1 text-xs font-mono text-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Col: Coast FIRE & Freedom Ladder */}
-            <div className="p-5 sm:p-6 rounded-3xl bg-zinc-900/80 border border-zinc-800 space-y-4 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-zinc-800">
-                  <Compass className="w-4 h-4 text-cyan-400" />
-                  <h3 className="text-sm font-bold text-zinc-100">Coast FIRE Checkpoint</h3>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-zinc-950/80 border border-cyan-500/20 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-400">Coast Target (at age {currentAge})</span>
-                    <span className="text-sm font-mono font-bold text-cyan-400">
-                      {formatMoney(fireCalculations.coastFireTarget)}
-                    </span>
-                  </div>
-
-                  <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
-                    <div 
-                      className="bg-cyan-400 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${fireCalculations.coastProgressPct}%` }}
-                    />
-                  </div>
-
-                  <p className="text-[11px] text-zinc-300 leading-relaxed">
-                    {fireCalculations.isCoastAchieved ? (
-                      <span className="text-emerald-400 font-semibold">
-                        🎉 Coast FIRE Unlocked! Your current investments will compound to {formatMoney(fireCalculations.fireNumber)} by age {targetRetirementAge} without saving another dollar.
-                      </span>
-                    ) : (
-                      <span>
-                        Save {formatMoney(Math.max(0, fireCalculations.coastFireTarget - activeCurrentWealth))} more to let compound interest carry you completely to retirement.
-                      </span>
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              {/* Freedom Stages Ladder */}
-              <div className="space-y-2 pt-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block">
-                  Freedom Ladder Stages
-                </span>
-                <div className="space-y-1.5 text-xs font-mono">
-                  <div className={`p-2 rounded-xl flex items-center justify-between ${
-                    fireCalculations.progressPct >= 10 ? 'bg-emerald-500/10 text-emerald-300' : 'bg-zinc-950/60 text-zinc-500'
-                  }`}>
-                    <span>1. Debt Freedom & Vault</span>
-                    <span>{fireCalculations.progressPct >= 10 ? '✓ Reached' : 'Pending'}</span>
-                  </div>
-
-                  <div className={`p-2 rounded-xl flex items-center justify-between ${
-                    fireCalculations.progressPct >= 25 ? 'bg-emerald-500/10 text-emerald-300' : 'bg-zinc-950/60 text-zinc-500'
-                  }`}>
-                    <span>2. 5-Yr Runway Buffer (25%)</span>
-                    <span>{fireCalculations.progressPct >= 25 ? '✓ Reached' : 'Pending'}</span>
-                  </div>
-
-                  <div className={`p-2 rounded-xl flex items-center justify-between ${
-                    fireCalculations.isCoastAchieved ? 'bg-cyan-500/10 text-cyan-300' : 'bg-zinc-950/60 text-zinc-500'
-                  }`}>
-                    <span>3. Coast FIRE Secured</span>
-                    <span>{fireCalculations.isCoastAchieved ? '✓ Reached' : 'Pending'}</span>
-                  </div>
-
-                  <div className={`p-2 rounded-xl flex items-center justify-between ${
-                    fireCalculations.progressPct >= 100 ? 'bg-amber-500/20 text-amber-300 font-bold' : 'bg-zinc-950/60 text-zinc-500'
-                  }`}>
-                    <span>4. Full Financial Independence</span>
-                    <span>{fireCalculations.progressPct >= 100 ? '🔥 ACHIEVED!' : `${fireCalculations.yearsToFire} yrs away`}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Trinity 25x / 30x / 33x Comparison Table */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-zinc-900/80 border border-zinc-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-zinc-100">Withdrawal Rate & Multiplier Comparison</h3>
-                <p className="text-[11px] text-zinc-400">Comparing different safety margins for your {formatMoney(effectiveAnnualExpense)} annual burn</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
-              {[
-                { label: 'Aggressive (5.0% SWR)', mult: '20x', amount: Math.round(effectiveAnnualExpense * 20), risk: 'High (suitable for shorter horizons or flex spending)' },
-                { label: 'Standard Trinity (4.0% SWR)', mult: '25x', amount: Math.round(effectiveAnnualExpense * 25), risk: 'Standard (historical 95%+ 30yr survival)' },
-                { label: 'Conservative (3.33% SWR)', mult: '30x', amount: Math.round(effectiveAnnualExpense * 30), risk: 'Very Safe (ideal for early 40+ year retirements)' },
-                { label: 'Ultra Perpetual (3.0% SWR)', mult: '33.3x', amount: Math.round(effectiveAnnualExpense * 33.33), risk: 'Zero Capital Erosion (intergenerational legacy)' },
-              ].map((tier, idx) => (
-                <div 
-                  key={idx}
-                  className={`p-3.5 rounded-2xl border ${
-                    fireCalculations.ruleMultiplier === parseInt(tier.mult)
-                      ? 'bg-amber-500/10 border-amber-500/40 text-white'
-                      : 'bg-zinc-950/60 border-zinc-800/80 text-zinc-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] font-bold">{tier.label}</span>
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">{tier.mult}</span>
-                  </div>
-                  <div className="text-lg font-mono font-bold text-white mt-1">
-                    {formatMoney(tier.amount)}
-                  </div>
-                  <p className="text-[10px] text-zinc-400 mt-1 leading-normal">{tier.risk}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="animate-in fade-in duration-150">
+          <FireFreedomCalculator />
         </div>
       )}
 
@@ -2305,43 +1687,49 @@ export const GoalsView: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Essential Goal Confirmation Modal */}
-      {essentialGoalToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-100">
-            <div className="flex items-center gap-3 text-red-400">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-zinc-100">Delete Defense Vault?</h3>
-                <p className="text-xs text-zinc-400">Are you sure you want to remove &quot;{essentialGoalToDelete.name}&quot;?</p>
-              </div>
-            </div>
+      {/* Confirmation Modal for Deleting Custom Goal */}
+      <ConfirmationModal
+        isOpen={!!customGoalToDelete}
+        onClose={() => setCustomGoalToDelete(null)}
+        onConfirm={() => {
+          if (customGoalToDelete) {
+            deleteCustomGoal(customGoalToDelete.id);
+            setCustomGoalToDelete(null);
+          }
+        }}
+        title="Delete Savings Goal"
+        description="Are you sure you want to delete this savings goal? This will permanently remove the target tracker and timeline projection from your financial plans."
+        itemType="goal"
+        itemName={customGoalToDelete?.name}
+        details={customGoalToDelete ? [
+          { label: 'Category', value: customGoalToDelete.category },
+          { label: 'Target Amount', value: formatMoney(customGoalToDelete.targetAmount) },
+          { label: 'Current Saved', value: formatMoney(customGoalToDelete.currentAmount) },
+          { 
+            label: 'Progress', 
+            value: `${Math.round((customGoalToDelete.currentAmount / Math.max(1, customGoalToDelete.targetAmount)) * 100)}%` 
+          },
+          ...(customGoalToDelete.targetDate ? [{ label: 'Target Date', value: customGoalToDelete.targetDate }] : [])
+        ] : []}
+        confirmButtonText="Delete Goal"
+      />
 
-            <p className="text-xs text-zinc-400 leading-relaxed bg-zinc-950/50 p-3 rounded-xl border border-zinc-800">
-              This vault currently holds <span className="font-mono text-zinc-200 font-bold">{formatMoney(essentialGoalToDelete.currentAmount)}</span>. Removing it will update your emergency statistics.
-            </p>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-800">
-              <button
-                type="button"
-                onClick={() => setEssentialGoalToDelete(null)}
-                className="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 hover:bg-zinc-700 text-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDeleteEssential}
-                className="px-4 py-1.5 rounded-lg bg-red-500 hover:bg-red-400 text-white font-bold text-xs transition-all shadow-md shadow-red-950/40"
-              >
-                Delete Vault
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Confirmation Modal for Deleting Defense Vault */}
+      <ConfirmationModal
+        isOpen={!!essentialGoalToDelete}
+        onClose={() => setEssentialGoalToDelete(null)}
+        onConfirm={handleConfirmDeleteEssential}
+        title="Delete Defense Vault"
+        description="Are you sure you want to remove this emergency defense vault? Removing it will affect your emergency runway coverage and defense health score."
+        itemType="goal"
+        itemName={essentialGoalToDelete?.name}
+        details={essentialGoalToDelete ? [
+          { label: 'Current Balance', value: formatMoney(essentialGoalToDelete.currentAmount) },
+          { label: 'Target Reserve', value: formatMoney(essentialGoalToDelete.targetAmount) },
+          { label: 'Months Covered', value: `${essentialGoalToDelete.coverageMonths} months` }
+        ] : []}
+        confirmButtonText="Delete Vault"
+      />
     </div>
   );
 };

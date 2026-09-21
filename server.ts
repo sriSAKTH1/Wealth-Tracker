@@ -1015,6 +1015,124 @@ Key Diagnosis: Your savings rate (${savingsRatio}%) demonstrates solid disciplin
 });
 
 // -------------------------------------------------------------
+// FIRE & FINANCIAL FREEDOM - AI ADVISER EXPLANATION ENDPOINT
+// -------------------------------------------------------------
+app.post('/api/fire/ai-advisor', async (req, res) => {
+  try {
+    const { calculationResults, userQuestion } = req.body || {};
+    const cr = calculationResults || {};
+
+    const fireNum = cr.fireNumber ? `₹${cr.fireNumber.toLocaleString('en-IN')}` : '₹1,50,00,000';
+    const fireWords = cr.displayPhrases?.fireNumberWords || '₹1.5 Crore';
+    const currInv = cr.currentInvestments ? `₹${cr.currentInvestments.toLocaleString('en-IN')}` : '₹20,00,000';
+    const currInvWords = cr.displayPhrases?.currentInvestmentsWords || '₹20 Lakh';
+    const monthlyExp = cr.monthlyExpenses ? `₹${cr.monthlyExpenses.toLocaleString('en-IN')}` : '₹50,000';
+    const annualExp = cr.annualExpenses ? `₹${cr.annualExpenses.toLocaleString('en-IN')}` : '₹6,00,000';
+    const monthlyInv = cr.monthlyInvestment ? `₹${cr.monthlyInvestment.toLocaleString('en-IN')}` : '₹25,000';
+    const progressPct = cr.fireProgressPercent ?? 13.3;
+    const fireGap = cr.fireGap ? `₹${cr.fireGap.toLocaleString('en-IN')}` : '₹1,30,00,000';
+    const fireGapWords = cr.displayPhrases?.fireGapWords || '₹1.3 Crore';
+    const projPort = cr.projectedPortfolio ? `₹${cr.projectedPortfolio.toLocaleString('en-IN')}` : '₹1,74,00,000';
+    const projPortWords = cr.displayPhrases?.projectedPortfolioWords || '₹1.74 Crore';
+    const retRate = cr.expectedAnnualReturn ?? 12;
+    const wrRate = cr.withdrawalRate ?? 4;
+    const years = cr.years ?? 15;
+    const estYearsToFire = cr.estimatedYearsToFire ?? 14.5;
+
+    const ai = getGeminiClient();
+
+    if (ai) {
+      const prompt = userQuestion
+        ? `You are an AI Personal Finance Adviser for Indian investors.
+Explain the user's FIRE and Financial Freedom calculations in response to their specific question: "${userQuestion}".
+
+STRICT RULES:
+1. Do NOT calculate or alter any figures.
+2. Only reference and explain these exact calculated figures:
+   - Monthly Living Expenses: ${monthlyExp}
+   - Annual Living Expenses: ${annualExp}
+   - Safe Withdrawal Rate: ${wrRate}%
+   - Calculated FIRE / Financial Freedom Number: ${fireWords} (${fireNum})
+   - Current Investments: ${currInvWords} (${currInv})
+   - FIRE Progress: ${progressPct}%
+   - Remaining Freedom Gap: ${fireGapWords} (${fireGap})
+   - Monthly SIP Investment: ${monthlyInv}/month
+   - Expected Annual Return: ${retRate}%
+   - Time Horizon: ${years} Years
+   - Projected Portfolio Value: ${projPortWords} (${projPort})
+   - Estimated Years to achieve FIRE: ~${estYearsToFire} years
+3. Keep the language simple, encouraging, beginner-friendly, and concise (under 250 words).
+4. Use Indian Rupees (₹), Lakhs, and Crores.
+5. Emphasize that these are estimated projections based on assumptions, not guarantees.`
+        : `You are an AI Personal Finance Adviser for Indian investors.
+Provide a clear, encouraging, and beginner-friendly explanation of the user's calculated FIRE (Financial Independence, Retire Early) and Financial Freedom results.
+
+STRICT RULES:
+1. Do NOT calculate, invent, or alter any numbers. All calculations have been completed by the mathematical engine.
+2. Base your explanation strictly on these exact calculated values:
+   - Monthly Expenses: ${monthlyExp}
+   - Annual Expenses: ${annualExp}
+   - Safe Withdrawal Rate: ${wrRate}%
+   - FIRE & Financial Freedom Number: ${fireWords} (${fireNum})
+   - Current Investments: ${currInvWords} (${currInv})
+   - Progress Towards Freedom: ${progressPct}%
+   - Remaining Freedom Gap: ${fireGapWords} (${fireGap})
+   - Monthly Investment / SIP: ${monthlyInv}/month
+   - Compounding Horizon: ${years} years @ ${retRate}% expected annual return
+   - Projected Portfolio Value: ${projPortWords} (${projPort})
+   - Estimated Timeline to Reach FIRE: ~${estYearsToFire} years
+3. Format:
+   - Highlight what their Freedom Target (${fireWords}) means in simple words.
+   - Explain where they stand today (${progressPct}% completed, ${fireGapWords} remaining).
+   - Explain how their ${monthlyInv}/month compounding at ${retRate}% will grow into ${projPortWords}.
+   - Provide 2-3 practical, beginner-friendly tips (e.g., maintaining an emergency fund, staying consistent with SIPs, step-up SIP with salary increases).
+4. Use simple Indian financial terminology (₹, Lakhs, Crores, SIP).
+5. Tone: Warm, empowering, and objective.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt,
+        config: {
+          systemInstruction:
+            'You are an empathetic, objective AI Personal Finance Adviser specializing in Indian personal finance and FIRE planning. Always explain the pre-calculated numbers simply without altering them. Remind users that projections are educational estimates.',
+        },
+      });
+
+      const responseText = response.text || '';
+      return res.json({
+        success: true,
+        source: 'GEMINI_AI',
+        advice: responseText,
+      });
+    }
+
+    // Deterministic fallback response
+    const fallback = userQuestion
+      ? `Based on your calculated target of **${fireWords}** and monthly expenses of **${monthlyExp}**:
+You have saved **${currInvWords}** (${progressPct}% of your target), leaving a gap of **${fireGapWords}**. With your monthly investment of **${monthlyInv}** compounding at **${retRate}%**, your portfolio is projected to grow to **${projPortWords}** over **${years} years**.`
+      : `### Financial Freedom Analysis
+
+• **Your Freedom Target**: With monthly expenses of **${monthlyExp}** (${annualExp}/year), your calculated FIRE Number is **${fireWords}** (${fireNum}) using the standard **${wrRate}%** withdrawal rate.
+• **Current Status**: You currently have **${currInvWords}** invested, covering **${progressPct}%** of your target. Your remaining gap is **${fireGapWords}**.
+• **Growth Projection**: By investing **${monthlyInv}** every month at an expected **${retRate}%** annual return, your portfolio is projected to reach **${projPortWords}** in **${years} years**.
+• **Key Takeaway**: Automating your monthly SIP and increasing it gradually with income raises will significantly accelerate your path to financial freedom.`;
+
+    res.json({
+      success: true,
+      source: 'FIRE_ENGINE',
+      advice: fallback,
+    });
+  } catch (err: any) {
+    res.json({
+      success: true,
+      source: 'FIRE_FALLBACK',
+      advice: `Your calculated FIRE target represents the portfolio value needed to cover your living expenses perpetually through investment income. Staying consistent with disciplined monthly investing and compound interest is the key to bridging your freedom gap.`,
+    });
+  }
+});
+
+
+// -------------------------------------------------------------
 // VITE MIDDLEWARE & STATIC SERVING
 // -------------------------------------------------------------
 

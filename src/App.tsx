@@ -16,6 +16,8 @@ import { MoreView } from './components/views/MoreView';
 import { CalendarView } from './components/views/CalendarView';
 import { ReportsView } from './components/views/ReportsView';
 import { FinScoreView } from './components/views/FinScoreView';
+import { BalanceSheetView } from './components/views/BalanceSheetView';
+import { SettingsView } from './components/views/SettingsView';
 
 const MainLayout: React.FC = () => {
   const { activeTab, theme, isMobileFrameSimulated, openQuickAdd, transactions = [] } = useFinance();
@@ -38,8 +40,12 @@ const MainLayout: React.FC = () => {
         return <MoreView />;
       case 'calendar':
         return <CalendarView />;
+      case 'balancesheet':
+        return <BalanceSheetView />;
       case 'reports':
         return <ReportsView />;
+      case 'settings':
+        return <SettingsView />;
       default:
         return <OverviewView />;
     }

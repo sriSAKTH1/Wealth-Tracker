@@ -101,7 +101,7 @@ export const Navbar: React.FC = () => {
                 <span className={`font-extrabold text-base sm:text-lg tracking-tight group-hover:text-blue-500 transition-colors ${
                   isLight ? 'text-slate-900' : 'text-white'
                 }`}>
-                  AURA
+                  FIX
                 </span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-500 border border-blue-500/30 tracking-wider">
                   WEALTH

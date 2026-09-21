@@ -153,6 +153,7 @@ interface FinanceContextType {
   deleteEssentialGoal: (id: string) => void;
   depositToEssentialGoal: (id: string, amount: number) => void;
   addCustomGoal: (goal: Omit<CustomGoal, 'id'>) => void;
+  addGoal: (goal: Omit<CustomGoal, 'id'>) => void;
   updateCustomGoal: (id: string, updates: Partial<CustomGoal>) => void;
   deleteCustomGoal: (id: string) => void;
   contributeToGoal: (id: string, amount: number) => void;
@@ -897,7 +898,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `aura-wealth-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `fix-wealth-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -1040,6 +1041,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         deleteEssentialGoal,
         depositToEssentialGoal,
         addCustomGoal,
+        addGoal: addCustomGoal,
         updateCustomGoal,
         deleteCustomGoal,
         contributeToGoal,

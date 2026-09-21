@@ -188,9 +188,15 @@ export const MoreView: React.FC = () => {
     { id: 'slate', name: 'Cool Slate', desc: 'Modern blue-tinted cool monochrome workspace', previewBg: 'bg-slate-900', border: 'border-slate-700' },
   ];
 
+  React.useEffect(() => {
+    if ((moreSubTab as string) === 'theme' || (moreSubTab as string) === 'setting') {
+      setMoreSubTab('calculate');
+    }
+  }, [moreSubTab, setMoreSubTab]);
+
   return (
     <div className="space-y-6 pb-24 lg:pb-12 animate-in fade-in duration-200">
-      {/* 6 Sub-Tabs Bar: Import, Calculate, Theme, Backup, Setting, Feedback */}
+      {/* Sub-Tabs Bar: Import, Calculate, Backup, Feedback */}
       <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-900/90 border border-zinc-800 text-xs overflow-x-auto no-scrollbar">
         <button
           id="tab-more-import"
@@ -215,17 +221,6 @@ export const MoreView: React.FC = () => {
         </button>
 
         <button
-          id="tab-more-theme"
-          onClick={() => setMoreSubTab('theme')}
-          className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
-            moreSubTab === 'theme' ? 'bg-zinc-800 text-purple-400 border border-zinc-700 shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          <Palette className="w-4 h-4" />
-          <span>Theme & Style</span>
-        </button>
-
-        <button
           id="tab-more-backup"
           onClick={() => setMoreSubTab('backup')}
           className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
@@ -234,17 +229,6 @@ export const MoreView: React.FC = () => {
         >
           <Download className="w-4 h-4" />
           <span>Backup & Export</span>
-        </button>
-
-        <button
-          id="tab-more-setting"
-          onClick={() => setMoreSubTab('setting')}
-          className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
-            moreSubTab === 'setting' ? 'bg-zinc-800 text-blue-400 border border-zinc-700 shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          <span>Settings</span>
         </button>
 
         <button
@@ -277,7 +261,7 @@ export const MoreView: React.FC = () => {
                 Drag and drop your JSON backup file here
               </p>
               <p className="text-xs text-zinc-500 mt-1 mb-4">
-                Supports all Aura Wealth and FinBoom JSON backup formats
+                Supports all FIX Wealth and FinBoom JSON backup formats
               </p>
 
               <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 cursor-pointer text-xs font-semibold transition-colors">
@@ -801,7 +785,7 @@ export const MoreView: React.FC = () => {
           <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-4">
             <div>
               <h2 className="text-sm font-bold text-zinc-100">Share Feedback & Feature Requests</h2>
-              <p className="text-xs text-zinc-400">Help shape the future of Aura Wealth.</p>
+              <p className="text-xs text-zinc-400">Help shape the future of FIX Wealth.</p>
             </div>
 
             <form onSubmit={handleFeedbackSubmit} className="space-y-3 text-xs">

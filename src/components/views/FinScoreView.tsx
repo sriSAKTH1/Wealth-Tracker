@@ -83,6 +83,8 @@ import {
   formatDateFriendly,
   formatTenureLabel
 } from './GoalsView';
+import { FinScoreAmountInput } from '../finscore/FinScoreAmountInput';
+import { FinScoreHealthPlanModal, FinScoreBenchmarkModal } from '../finscore/FinScoreModals';
 
 type FinScoreTab = 
   | 'dashboard' 
@@ -152,8 +154,10 @@ export const FinScoreView: React.FC = () => {
   const [simEmergencyAdd, setSimEmergencyAdd] = useState(0);
   const [simPrepayDebt, setSimPrepayDebt] = useState(0);
 
-  // Profile Modal & Reset Feedback State
+  // Profile Modal, Plan Modal & Benchmark Modal States
   const [showAddProfileModal, setShowAddProfileModal] = useState(false);
+  const [showHealthPlanModal, setShowHealthPlanModal] = useState(false);
+  const [showBenchmarkModal, setShowBenchmarkModal] = useState(false);
   const [toastNotice, setToastNotice] = useState<string | null>(null);
   const [tempProfile, setTempProfile] = useState<FinScoreProfile>(INITIAL_FINSCORE_PROFILE);
 
@@ -454,6 +458,31 @@ export const FinScoreView: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {/* The Two New User Buttons */}
+            <button
+              id="btn-finscore-quick-plan"
+              onClick={() => setShowHealthPlanModal(true)}
+              title="Open personalized step-by-step 1-Click Financial Health Plan"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-md shadow-blue-500/25 transition-all cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>1-Click Health Plan</span>
+            </button>
+
+            <button
+              id="btn-finscore-peer-benchmark"
+              onClick={() => setShowBenchmarkModal(true)}
+              title="Compare your score and 50/30/20 budget with peer benchmarks"
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm cursor-pointer ${
+                isLight
+                  ? 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200'
+                  : 'bg-purple-950/40 hover:bg-purple-900/60 text-purple-300 border-purple-800/60'
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5 text-purple-400" />
+              <span>Peer Benchmark & Report</span>
+            </button>
+
             {/* 1. Reset / Clear All Button */}
             <button
               id="btn-finscore-reset"
@@ -521,6 +550,110 @@ export const FinScoreView: React.FC = () => {
               <Bot className="w-4 h-4" />
               <span>AI Advisor Plan</span>
             </button>
+          </div>
+        </div>
+
+        {/* FINANCIAL HEALTH SCORE & PLAN AT THE TOP OF THAT PLACE */}
+        <div className={`mt-5 p-4 sm:p-5 rounded-2xl border transition-all ${
+          isLight
+            ? 'bg-gradient-to-r from-slate-50 via-blue-50/50 to-indigo-50/40 border-slate-200/80 shadow-xs'
+            : 'bg-gradient-to-r from-slate-900/90 via-blue-950/20 to-slate-900/90 border-slate-800 shadow-sm'
+        }`}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+            {/* Health Score Glance */}
+            <div className="lg:col-span-5 flex items-center gap-4 border-b lg:border-b-0 lg:border-r border-slate-700/40 pb-4 lg:pb-0 lg:pr-4">
+              <div className="relative shrink-0 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-2xl bg-blue-600/15 border border-blue-500/30 flex flex-col items-center justify-center font-mono text-center">
+                  <span className="text-2xl font-extrabold text-blue-400 leading-tight">
+                    {result.overallScore}
+                  </span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                    /100
+                  </span>
+                </div>
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`px-2 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-wider border ${result.gradeColor}`}>
+                    Grade {result.grade}
+                  </span>
+                  <span className="text-xs font-semibold truncate">
+                    {result.overallScore >= 80
+                      ? 'Optimal Financial Health'
+                      : result.overallScore >= 65
+                      ? 'Good Resilient Foundation'
+                      : result.overallScore >= 50
+                      ? 'Fair • Vulnerable to Shocks'
+                      : 'Critical Action Needed'}
+                  </span>
+                </div>
+
+                {/* 4 Pillars Quick Mini Progress */}
+                <div className="grid grid-cols-4 gap-1.5 mt-2.5 text-[10px] font-mono">
+                  <div title={`Emergency Fund: ${result.scores.emergencyFund}/100`} className="text-center p-1 rounded bg-black/10">
+                    <div className="text-slate-400 text-[9px] truncate">Emergency</div>
+                    <div className="font-bold text-amber-400">{result.scores.emergencyFund}</div>
+                  </div>
+                  <div title={`Insurance: ${result.scores.insurance}/100`} className="text-center p-1 rounded bg-black/10">
+                    <div className="text-slate-400 text-[9px] truncate">Insurance</div>
+                    <div className="font-bold text-blue-400">{result.scores.insurance}</div>
+                  </div>
+                  <div title={`Savings: ${result.scores.savings}/100`} className="text-center p-1 rounded bg-black/10">
+                    <div className="text-slate-400 text-[9px] truncate">Savings</div>
+                    <div className="font-bold text-emerald-400">{result.scores.savings}</div>
+                  </div>
+                  <div title={`Debt: ${result.scores.debt}/100`} className="text-center p-1 rounded bg-black/10">
+                    <div className="text-slate-400 text-[9px] truncate">Debt</div>
+                    <div className="font-bold text-purple-400">{result.scores.debt}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Financial Health Plan Glance */}
+            <div className="lg:col-span-7 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono">
+                    Financial Health Plan
+                  </span>
+                  <span className="text-xs font-bold text-amber-400 truncate">
+                    Top Priority: {result.biggestPriority}
+                  </span>
+                </div>
+                <p className={`text-xs line-clamp-2 ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+                  {result.summaryDiagnosis}
+                </p>
+                <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 pt-0.5">
+                  <span>Monthly Surplus: <strong className="font-mono text-emerald-400">{currSym}{result.metrics.monthlySavings.toLocaleString()}</strong></span>
+                  <span>•</span>
+                  <span>Goal Target SIP: <strong className="font-mono text-blue-400">{currSym}{result.metrics.totalGoalRequiredMonthlySavings.toLocaleString()}/mo</strong></span>
+                </div>
+              </div>
+
+              {/* Quick Action Plan Trigger Buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  id="btn-finscore-plan-preview"
+                  onClick={() => setShowHealthPlanModal(true)}
+                  className="px-3 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>View Plan</span>
+                </button>
+                <button
+                  id="btn-finscore-benchmark-preview"
+                  onClick={() => setShowBenchmarkModal(true)}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer ${
+                    isLight ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                  }`}
+                >
+                  <TrendingUp className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Benchmark</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

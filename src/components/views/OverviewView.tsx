@@ -32,6 +32,8 @@ import {
   Cell
 } from 'recharts';
 import { useFinance } from '../../context/FinanceContext';
+import { Transaction } from '../../types';
+import { ConfirmationModal } from '../ConfirmationModal';
 
 export const OverviewView: React.FC = () => {
   const { 
@@ -59,6 +61,7 @@ export const OverviewView: React.FC = () => {
   } = useFinance();
 
   const [txFilter, setTxFilter] = useState<'all' | 'income' | 'expense'>('all');
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
 
   const filteredTransactions = (transactions || [])
     .filter(t => txFilter === 'all' || t.type === txFilter)
@@ -390,7 +393,8 @@ export const OverviewView: React.FC = () => {
                     {tx.type === 'income' ? '+' : '-'}{formatMoney(convertCurrency(tx.amount, tx.currency || currency, currency))}
                   </span>
                   <button
-                    onClick={() => deleteTransaction(tx.id)}
+                    id={`btn-delete-transaction-${tx.id}`}
+                    onClick={() => setTransactionToDelete(tx)}
                     title="Delete record"
                     className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-rose-400 transition-opacity"
                   >
@@ -448,6 +452,33 @@ export const OverviewView: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Confirmation Modal for Deleting Transaction */}
+      <ConfirmationModal
+        isOpen={!!transactionToDelete}
+        onClose={() => setTransactionToDelete(null)}
+        onConfirm={() => {
+          if (transactionToDelete) {
+            deleteTransaction(transactionToDelete.id);
+            setTransactionToDelete(null);
+          }
+        }}
+        title="Delete Transaction"
+        description="Are you sure you want to delete this transaction record? This action will permanently remove it and recalculate your monthly cashflow and budget analytics."
+        itemType="transaction"
+        itemName={transactionToDelete?.description}
+        details={transactionToDelete ? [
+          { 
+            label: 'Amount', 
+            value: `${transactionToDelete.type === 'income' ? '+' : '-'}${formatMoney(convertCurrency(transactionToDelete.amount, transactionToDelete.currency || currency, currency))}` 
+          },
+          { label: 'Category', value: transactionToDelete.category },
+          { label: 'Account', value: transactionToDelete.accountName },
+          { label: 'Date', value: transactionToDelete.date },
+          { label: 'Type', value: transactionToDelete.type.toUpperCase() }
+        ] : []}
+        confirmButtonText="Delete Transaction"
+      />
     </div>
   );
 };

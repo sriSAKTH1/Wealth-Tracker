@@ -24,8 +24,9 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
-import { AccountSubTab, ExpenseCategory, AccountItem, BudgetEnvelope } from '../../types';
+import { AccountSubTab, ExpenseCategory, AccountItem, BudgetEnvelope, Transaction } from '../../types';
 import { INITIAL_BUDGETS } from '../../data/initialData';
+import { ConfirmationModal } from '../ConfirmationModal';
 
 const EXPENSE_CATEGORIES: ExpenseCategory[] = [
   'Housing & Rent',
@@ -81,10 +82,15 @@ export const AccountsView: React.FC = () => {
     deleteBudget,
     addAccount,
     deleteAccount,
+    deleteTransaction,
     openQuickAdd,
     currency,
     convertCurrency
   } = useFinance();
+
+  // Deletion confirmation states
+  const [accountToDelete, setAccountToDelete] = useState<AccountItem | null>(null);
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
 
   // New account modal state
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
@@ -283,21 +289,31 @@ export const AccountsView: React.FC = () => {
             <h3 className="text-sm font-bold text-zinc-100">Monthly Cash Inflow vs Outflow Ledger</h3>
             <div className="divide-y divide-zinc-800/80 text-xs">
               {transactions.slice(0, 8).map(tx => (
-                <div key={tx.id} className="py-2.5 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className={`p-1.5 rounded-lg ${tx.type === 'income' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                <div key={tx.id} className="py-2.5 flex items-center justify-between group">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`p-1.5 rounded-lg shrink-0 ${tx.type === 'income' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                       {tx.type === 'income' ? <ArrowDownLeft className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
                     </div>
-                    <div>
-                      <div className="font-semibold text-zinc-200">{tx.description}</div>
-                      <div className="text-[10px] text-zinc-400">{tx.category} • {tx.accountName}</div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-zinc-200 truncate">{tx.description}</div>
+                      <div className="text-[10px] text-zinc-400 truncate">{tx.category} • {tx.accountName}</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className={`font-mono font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-zinc-100'}`}>
-                      {tx.type === 'income' ? '+' : '-'}{formatMoney(convertCurrency(tx.amount, tx.currency || currency, currency))}
-                    </span>
-                    <div className="text-[10px] text-zinc-500">{tx.date}</div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <span className={`font-mono font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-zinc-100'}`}>
+                        {tx.type === 'income' ? '+' : '-'}{formatMoney(convertCurrency(tx.amount, tx.currency || currency, currency))}
+                      </span>
+                      <div className="text-[10px] text-zinc-500">{tx.date}</div>
+                    </div>
+                    <button
+                      id={`btn-delete-ledger-tx-${tx.id}`}
+                      onClick={() => setTransactionToDelete(tx)}
+                      className="p-1 text-zinc-500 hover:text-rose-400 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Delete record"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -604,7 +620,8 @@ export const AccountsView: React.FC = () => {
                   </div>
 
                   <button
-                    onClick={() => deleteAccount(acc.id)}
+                    id={`btn-delete-account-${acc.id}`}
+                    onClick={() => setAccountToDelete(acc)}
                     className="p-1 text-zinc-500 hover:text-rose-400 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Remove account"
                   >
@@ -981,6 +998,55 @@ export const AccountsView: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Confirmation Modal for Deleting Account */}
+      <ConfirmationModal
+        isOpen={!!accountToDelete}
+        onClose={() => setAccountToDelete(null)}
+        onConfirm={() => {
+          if (accountToDelete) {
+            deleteAccount(accountToDelete.id);
+            setAccountToDelete(null);
+          }
+        }}
+        title="Delete Account"
+        description="Are you sure you want to remove this financial account? This will unlink the institution and remove its balance from your liquid assets and cash runway calculations."
+        itemType="account"
+        itemName={accountToDelete?.name}
+        details={accountToDelete ? [
+          { label: 'Institution', value: accountToDelete.institution },
+          { label: 'Account Type', value: accountToDelete.type.toUpperCase() },
+          { label: 'Current Balance', value: formatMoney(accountToDelete.balance) },
+          ...(accountToDelete.accountNumberMasked ? [{ label: 'Account Mask', value: accountToDelete.accountNumberMasked }] : []),
+          { label: 'Last Synced', value: accountToDelete.lastSynced }
+        ] : []}
+        confirmButtonText="Delete Account"
+      />
+
+      {/* Confirmation Modal for Deleting Transaction from Ledger */}
+      <ConfirmationModal
+        isOpen={!!transactionToDelete}
+        onClose={() => setTransactionToDelete(null)}
+        onConfirm={() => {
+          if (transactionToDelete) {
+            deleteTransaction(transactionToDelete.id);
+            setTransactionToDelete(null);
+          }
+        }}
+        title="Delete Transaction"
+        description="Are you sure you want to delete this transaction record? This will permanently remove it from your ledger and recalculate category spending."
+        itemType="transaction"
+        itemName={transactionToDelete?.description}
+        details={transactionToDelete ? [
+          { 
+            label: 'Amount', 
+            value: `${transactionToDelete.type === 'income' ? '+' : '-'}${formatMoney(convertCurrency(transactionToDelete.amount, transactionToDelete.currency || currency, currency))}` 
+          },
+          { label: 'Category', value: transactionToDelete.category },
+          { label: 'Account', value: transactionToDelete.accountName },
+          { label: 'Date', value: transactionToDelete.date }
+        ] : []}
+        confirmButtonText="Delete Transaction"
+      />
     </div>
   );
 };
