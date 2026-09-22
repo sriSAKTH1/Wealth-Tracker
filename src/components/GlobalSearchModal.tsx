@@ -67,7 +67,7 @@ export const GlobalSearchModal: React.FC = () => {
   ).slice(0, 4);
 
   const filteredLiabilities = liabilities.filter(l =>
-    !q || l.name.toLowerCase().includes(l) || l.category.toLowerCase().includes(q)
+    !q || l.name.toLowerCase().includes(q) || l.category.toLowerCase().includes(q)
   ).slice(0, 4);
 
   const filteredGoals = customGoals.filter(g =>

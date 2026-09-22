@@ -6,6 +6,8 @@ import { Sidebar } from './components/Sidebar';
 import { BottomNav } from './components/BottomNav';
 import { QuickAddModal } from './components/QuickAddModal';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
+import { GlobalKeyboardShortcuts } from './components/GlobalKeyboardShortcuts';
+import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 
 // Views
 import { OverviewView } from './components/views/OverviewView';
@@ -18,6 +20,7 @@ import { ReportsView } from './components/views/ReportsView';
 import { FinScoreView } from './components/views/FinScoreView';
 import { BalanceSheetView } from './components/views/BalanceSheetView';
 import { SettingsView } from './components/views/SettingsView';
+import { FinancialCalculatorsView } from './components/calculators/FinancialCalculatorsView';
 
 const MainLayout: React.FC = () => {
   const { activeTab, theme, isMobileFrameSimulated, openQuickAdd, transactions = [] } = useFinance();
@@ -46,6 +49,8 @@ const MainLayout: React.FC = () => {
         return <ReportsView />;
       case 'settings':
         return <SettingsView />;
+      case 'calculators':
+        return <FinancialCalculatorsView />;
       default:
         return <OverviewView />;
     }
@@ -149,6 +154,12 @@ const MainLayout: React.FC = () => {
 
       {/* Global ⌘K Search Modal */}
       <GlobalSearchModal />
+
+      {/* Global Keyboard Shortcuts Listener & Floating Feedback */}
+      <GlobalKeyboardShortcuts />
+
+      {/* Keyboard Shortcuts Reference / Cheat Sheet Modal */}
+      <KeyboardShortcutsModal />
     </div>
   );
 };

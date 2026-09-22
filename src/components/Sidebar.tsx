@@ -24,20 +24,20 @@ export const Sidebar: React.FC = () => {
   const isLight = theme === 'light';
 
   // Primary Core Navigation Items (Top)
-  const topNavItems: { id: MainTab; label: string; icon: any; badge?: string }[] = [
-    { id: 'overview', label: 'Dashboard & Overview', icon: LayoutDashboard },
-    { id: 'wealth', label: 'Wealth & Allocation', icon: TrendingUp },
-    { id: 'goals', label: 'Goals & Essentials', icon: Target },
+  const topNavItems: { id: MainTab; label: string; icon: any; badge?: string; shortcut?: string }[] = [
+    { id: 'overview', label: 'Dashboard & Overview', icon: LayoutDashboard, shortcut: 'O' },
+    { id: 'wealth', label: 'Wealth & Allocation', icon: TrendingUp, shortcut: 'A' },
+    { id: 'goals', label: 'Goals & Essentials', icon: Target, shortcut: 'G' },
     { id: 'account', label: 'Accounts & Budgets', icon: Wallet },
   ];
 
   // Bottom Navigation Items (Cash Flow Calendar, Balance Sheet, Reports, Tools, and New Settings)
-  const bottomNavItems: { id: MainTab; label: string; icon: any; badge?: string }[] = [
+  const bottomNavItems: { id: MainTab; label: string; icon: any; badge?: string; shortcut?: string }[] = [
     { id: 'calendar', label: 'Cash Flow Calendar', icon: CalendarDays },
-    { id: 'balancesheet', label: 'Balance Sheet & Audit', icon: Scale, badge: 'Audit' },
-    { id: 'reports', label: 'Reports & Analytics', icon: BarChart3 },
-    { id: 'more', label: 'Tools & Calculators', icon: MoreHorizontal },
-    { id: 'settings', label: 'Settings', icon: Settings, badge: 'New' },
+    { id: 'balancesheet', label: 'Balance Sheet & Audit', icon: Scale, badge: 'Audit', shortcut: 'B' },
+    { id: 'reports', label: 'Reports & Analytics', icon: BarChart3, shortcut: 'R' },
+    { id: 'calculators', label: 'Tools & Calculators', icon: MoreHorizontal, shortcut: 'C' },
+    { id: 'settings', label: 'Settings', icon: Settings, shortcut: 'S' },
   ];
 
   return (
@@ -77,9 +77,11 @@ export const Sidebar: React.FC = () => {
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-500 font-mono font-medium">
-                    {item.badge}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-500 font-mono font-medium">
+                      {item.badge}
+                    </span>
+                  </div>
                 )}
               </button>
             );
@@ -117,13 +119,15 @@ export const Sidebar: React.FC = () => {
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-medium ${
-                    item.badge === 'New' 
-                      ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/20 font-bold' 
-                      : 'bg-blue-500/15 text-blue-500'
-                  }`}>
-                    {item.badge}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-medium ${
+                      item.badge === 'New' 
+                        ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/20 font-bold' 
+                        : 'bg-blue-500/15 text-blue-500'
+                    }`}>
+                      {item.badge}
+                    </span>
+                  </div>
                 )}
               </button>
             );

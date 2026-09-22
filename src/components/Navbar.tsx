@@ -14,7 +14,8 @@ import {
   Calendar,
   Layers,
   ChevronDown,
-  ShieldCheck
+  ShieldCheck,
+  Keyboard
 } from 'lucide-react';
 import { useFinance, CURRENCY_CONFIGS } from '../context/FinanceContext';
 import { CurrencyCode } from '../types';
@@ -36,7 +37,9 @@ export const Navbar: React.FC = () => {
     toggleMobileFrame,
     activeTab,
     setActiveTab,
-    theme
+    theme,
+    keyboardShortcutsEnabled,
+    setIsShortcutsHelpOpen
   } = useFinance();
 
   const isLight = theme === 'light';
@@ -143,7 +146,7 @@ export const Navbar: React.FC = () => {
           }`}>
             {nw30dChange > 0 && <TrendingUp className="w-3 h-3 mr-0.5 text-emerald-500" />}
             {nw30dChange < 0 && <TrendingDown className="w-3 h-3 mr-0.5 text-rose-500" />}
-            {nw30dChange > 0 ? '+' : ''}{nw30dChange.toFixed(1)}%
+            {(nw30dChange ?? 0) > 0 ? '+' : ''}{(nw30dChange ?? 0).toFixed(1)}%
           </span>
         </div>
 
@@ -154,6 +157,7 @@ export const Navbar: React.FC = () => {
             id="btn-global-search"
             onClick={() => setSearchOpen(true)}
             aria-label="Search transactions and assets"
+            title="Search transactions, assets, and tools (/ or ⌘K)"
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-xs font-medium ${
               isLight 
                 ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border-slate-200 hover:border-blue-500/40' 
@@ -162,9 +166,31 @@ export const Navbar: React.FC = () => {
           >
             <Search className="w-4 h-4 text-blue-500" />
             <span className="hidden sm:inline">Search...</span>
-            <kbd className={`hidden lg:inline text-[10px] px-1.5 py-0.5 rounded-full border ${
-              isLight ? 'text-slate-600 bg-white border-slate-200' : 'text-slate-400 bg-slate-950 border-slate-800'
-            }`}>⌘K</kbd>
+            <div className="hidden lg:flex items-center gap-1">
+              <kbd className={`text-[10px] px-1.5 py-0.5 rounded-full border ${
+                isLight ? 'text-slate-600 bg-white border-slate-200' : 'text-slate-400 bg-slate-950 border-slate-800'
+              }`}>/</kbd>
+            </div>
+          </button>
+
+          {/* Keyboard Shortcuts Cheat Sheet Button */}
+          <button
+            id="btn-keyboard-shortcuts"
+            onClick={() => setIsShortcutsHelpOpen(true)}
+            aria-label="Keyboard shortcuts"
+            title={`Keyboard Shortcuts (?)${keyboardShortcutsEnabled ? ' - Enabled' : ' - Disabled in Settings'}`}
+            className={`p-2 rounded-full border transition-all relative ${
+              !keyboardShortcutsEnabled
+                ? 'opacity-60 bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400'
+                : isLight
+                ? 'bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 hover:border-slate-700'
+            }`}
+          >
+            <Keyboard className="w-4 h-4" />
+            {keyboardShortcutsEnabled && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-950" />
+            )}
           </button>
 
           {/* Privacy Mode (Eye Toggle) */}
@@ -252,9 +278,6 @@ export const Navbar: React.FC = () => {
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span>FinScore™</span>
-            <span className="font-mono font-bold px-1.5 py-0.5 rounded-full bg-black/20 text-emerald-400 text-[11px]">
-              74/100
-            </span>
           </button>
 
           {/* Notifications / Alerts */}

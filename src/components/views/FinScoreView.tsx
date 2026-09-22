@@ -32,7 +32,14 @@ import {
   HeartHandshake,
   Settings2,
   HelpCircle,
-  FileText
+  FileText,
+  Copy,
+  MessageSquare,
+  Compass,
+  Shield,
+  ShieldAlert,
+  Zap,
+  BarChart3
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -44,7 +51,15 @@ import {
   BarChart,
   Bar,
   Cell,
-  CartesianGrid
+  CartesianGrid,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Legend,
+  AreaChart,
+  Area
 } from 'recharts';
 import { useFinance } from '../../context/FinanceContext';
 import {
@@ -154,6 +169,41 @@ export const FinScoreView: React.FC = () => {
   const [simEmergencyAdd, setSimEmergencyAdd] = useState(0);
   const [simPrepayDebt, setSimPrepayDebt] = useState(0);
 
+  // Dashboard Unique Chart Mode: 'radar' | 'trajectory' | 'cashflow' | 'stresstest'
+  const [dashboardChartMode, setDashboardChartMode] = useState<'radar' | 'trajectory' | 'cashflow' | 'stresstest'>('radar');
+
+  // SWOT Analysis Quadrant Filter: 'all' | 'strengths' | 'weaknesses' | 'opportunities' | 'threats'
+  const [swotQuadrant, setSwotQuadrant] = useState<'all' | 'strengths' | 'weaknesses' | 'opportunities' | 'threats'>('all');
+  const [copiedSwot, setCopiedSwot] = useState(false);
+
+  // AI Assistant Task Completion Tracker
+  const [completedPlanTasks, setCompletedPlanTasks] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('finscore_completed_plan_tasks');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const togglePlanTask = (taskId: string) => {
+    setCompletedPlanTasks(prev => {
+      const updated = { ...prev, [taskId]: !prev[taskId] };
+      try {
+        localStorage.setItem('finscore_completed_plan_tasks', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
+
+  const handleCopyMessage = (text: string, index: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedMessageIndex(index);
+    setTimeout(() => setCopiedMessageIndex(null), 2000);
+  };
+
   // Profile Modal, Plan Modal & Benchmark Modal States
   const [showAddProfileModal, setShowAddProfileModal] = useState(false);
   const [showHealthPlanModal, setShowHealthPlanModal] = useState(false);
@@ -190,6 +240,436 @@ export const FinScoreView: React.FC = () => {
 
   // Currency symbol helper based on user profile or active currency
   const currSym = profile.currency === 'INR' || currency === 'INR' ? '₹' : '$';
+
+  // NEW UNIQUE CHART 1: Multi-Pillar Radar Symmetry Data (Spider Chart)
+  const radarPillarData = useMemo(() => {
+    return [
+      {
+        pillar: 'Emergency Fund',
+        score: result.scores.emergencyFund,
+        benchmark: 85,
+        fullMark: 100,
+      },
+      {
+        pillar: 'Debt Health',
+        score: result.scores.debt,
+        benchmark: 80,
+        fullMark: 100,
+      },
+      {
+        pillar: 'Savings Rate',
+        score: result.scores.savings,
+        benchmark: 75,
+        fullMark: 100,
+      },
+      {
+        pillar: 'Insurance Shield',
+        score: result.scores.insurance,
+        benchmark: 90,
+        fullMark: 100,
+      },
+      {
+        pillar: 'Future Goals',
+        score: result.scores.futureGoals,
+        benchmark: 80,
+        fullMark: 100,
+      },
+    ];
+  }, [result.scores]);
+
+  // NEW UNIQUE CHART 2: Cash Flow & Capital Allocation Breakdown Data
+  const cashFlowAllocationData = useMemo(() => {
+    const income = Math.max(profile.monthlyIncome, 1);
+    const living = result.metrics.totalExpenses;
+    const emi = result.metrics.totalMonthlyEmi;
+    const ins = Math.round(((insurance.lifePremiumAnnual || 0) + (insurance.healthPremiumAnnual || 0)) / 12);
+    const surplus = Math.max(0, income - (living + emi + ins));
+    return [
+      {
+        name: 'Living Expenses',
+        amount: living,
+        percentage: Math.min(100, Math.round((living / income) * 100)),
+        color: '#3b82f6',
+        category: 'Essential Needs',
+      },
+      {
+        name: 'Debt & EMIs',
+        amount: emi,
+        percentage: Math.min(100, Math.round((emi / income) * 100)),
+        color: '#a855f7',
+        category: 'Obligations',
+      },
+      {
+        name: 'Insurance Premiums',
+        amount: ins,
+        percentage: Math.min(100, Math.round((ins / income) * 100)),
+        color: '#06b6d4',
+        category: 'Risk Shield',
+      },
+      {
+        name: 'Net Monthly Surplus',
+        amount: surplus,
+        percentage: Math.min(100, Math.round((surplus / income) * 100)),
+        color: '#10b981',
+        category: 'Wealth Accumulation',
+      },
+    ];
+  }, [profile.monthlyIncome, result.metrics, insurance]);
+
+  // NEW UNIQUE CHART 3: Financial Stress Test & Shock Resistance Matrix Data
+  const stressTestData = useMemo(() => {
+    const baseScore = result.overallScore;
+    const living = result.metrics.totalExpenses;
+    const emi = result.metrics.totalMonthlyEmi;
+    const monthlyDrain = living + emi;
+    const currentRunwayMonths = monthlyDrain > 0 ? (emergency.currentEmergencySavings / monthlyDrain).toFixed(1) : '12+';
+
+    return [
+      {
+        scenario: 'Current Baseline',
+        score: baseScore,
+        runwayMonths: Number(currentRunwayMonths) || 6,
+        impact: 'Normal operating financial baseline',
+        severity: 'normal',
+        color: '#3b82f6'
+      },
+      {
+        scenario: '3-Mo Income Pause',
+        score: Math.max(25, Math.round(baseScore * (Number(currentRunwayMonths) >= 6 ? 0.88 : 0.65))),
+        runwayMonths: Math.max(0, (Number(currentRunwayMonths) || 6) - 3),
+        impact: Number(currentRunwayMonths) >= 3 ? 'Covered by emergency buffer' : 'Emergency shortfall risk',
+        severity: Number(currentRunwayMonths) >= 3 ? 'moderate' : 'high',
+        color: '#f59e0b'
+      },
+      {
+        scenario: 'Medical Emergency',
+        score: insurance.hasPersonalHealthPolicy ? Math.max(40, Math.round(baseScore * 0.92)) : Math.max(30, Math.round(baseScore * 0.72)),
+        runwayMonths: Number(currentRunwayMonths) || 6,
+        impact: insurance.hasPersonalHealthPolicy ? 'Protected by health policy' : 'Out-of-pocket savings depletion',
+        severity: insurance.hasPersonalHealthPolicy ? 'normal' : 'high',
+        color: '#ec4899'
+      },
+      {
+        scenario: '+2% Loan Rate Spike',
+        score: result.metrics.emiToIncomeRatio <= 30 ? Math.round(baseScore * 0.95) : Math.round(baseScore * 0.82),
+        runwayMonths: Number(currentRunwayMonths) || 6,
+        impact: `Increases monthly EMI load by ~${currSym}${Math.round(result.metrics.totalMonthlyEmi * 0.06).toLocaleString()}`,
+        severity: result.metrics.emiToIncomeRatio <= 30 ? 'normal' : 'moderate',
+        color: '#8b5cf6'
+      }
+    ];
+  }, [result.overallScore, result.metrics, emergency, insurance, currSym]);
+
+  // Dynamic Personal Financial SWOT Strategic Matrix Data
+  const swotData = useMemo(() => {
+    const { metrics } = result;
+    const monthlyDrain = (metrics.totalExpenses || 0) + (metrics.totalMonthlyEmi || 0);
+    const emergencyRunwayMonths = monthlyDrain > 0 
+      ? Number((emergency.currentEmergencySavings / monthlyDrain).toFixed(1)) 
+      : 12;
+    const lifeInsuranceCoverageRatio = metrics.recommendedLifeCoverage > 0
+      ? Math.min(100, Math.round((insurance.lifeCoverage / metrics.recommendedLifeCoverage) * 100))
+      : 100;
+    const totalGoalsCount = goals.length;
+    const fundedGoalsCount = goals.filter(g => (g.currentSavings || 0) >= (g.targetAmount || 1)).length;
+
+    // 1. STRENGTHS (Internal Positives & Advantages)
+    const strengths = [];
+    if (metrics.savingsRatio >= 20) {
+      strengths.push({
+        id: 's-savings',
+        title: 'High Savings Discipline',
+        description: `You save ${metrics.savingsRatio}% of your monthly income, exceeding the standard 20% benchmark and building strong wealth momentum.`,
+        metric: `${metrics.savingsRatio}% Savings Rate`,
+        tag: 'Cash Flow',
+        impact: 'High',
+      });
+    } else if (metrics.monthlySavings > 0) {
+      strengths.push({
+        id: 's-savings-pos',
+        title: 'Positive Net Monthly Cash Flow',
+        description: `Generating ${currSym}${metrics.monthlySavings.toLocaleString()}/month in unallocated surplus to fund future priorities and buffer against surprises.`,
+        metric: `+${currSym}${metrics.monthlySavings.toLocaleString()}/mo`,
+        tag: 'Liquidity',
+        impact: 'Medium',
+      });
+    }
+
+    if (metrics.emiToIncomeRatio <= 30) {
+      strengths.push({
+        id: 's-debt',
+        title: 'Prudent Debt Servicing (Low DTI)',
+        description: `Monthly loan payments consume only ${metrics.emiToIncomeRatio}% of your income, safely below the 35% debt danger limit.`,
+        metric: `${metrics.emiToIncomeRatio}% EMI/Income`,
+        tag: 'Solvency',
+        impact: 'High',
+      });
+    }
+
+    if (emergencyRunwayMonths >= 3) {
+      strengths.push({
+        id: 's-emergency',
+        title: 'Solid Emergency Liquidity Cushion',
+        description: `You have ${emergencyRunwayMonths.toFixed(1)} months of living expenses safely stashed in liquid savings.`,
+        metric: `${emergencyRunwayMonths.toFixed(1)} Mo Runway`,
+        tag: 'Resilience',
+        impact: 'High',
+      });
+    }
+
+    if (insurance.hasPersonalHealthPolicy) {
+      strengths.push({
+        id: 's-health-ins',
+        title: 'Dedicated Personal Health Protection',
+        description: 'Active personal medical insurance shields your portfolio and savings from sudden hospitalization shocks.',
+        metric: 'Shielded',
+        tag: 'Risk Shield',
+        impact: 'High',
+      });
+    }
+
+    if (insurance.lifeCoverage > 0) {
+      strengths.push({
+        id: 's-life-ins',
+        title: 'Active Life Protection',
+        description: `Secured ${currSym}${insurance.lifeCoverage.toLocaleString()} in coverage to protect dependent family members.`,
+        metric: `${currSym}${insurance.lifeCoverage.toLocaleString()}`,
+        tag: 'Family Security',
+        impact: 'Medium',
+      });
+    }
+
+    if (fundedGoalsCount > 0) {
+      strengths.push({
+        id: 's-goals',
+        title: 'Committed Milestone Funding',
+        description: `${fundedGoalsCount} of ${totalGoalsCount} life goals are funded or actively accumulating on schedule.`,
+        metric: `${fundedGoalsCount}/${totalGoalsCount} Goals`,
+        tag: 'Milestones',
+        impact: 'Medium',
+      });
+    }
+
+    if (strengths.length < 2) {
+      strengths.push({
+        id: 's-base',
+        title: 'Steady Recurring Income Foundation',
+        description: `Consistent monthly inflow of ${currSym}${profile.monthlyIncome.toLocaleString()} gives you the structural leverage to optimize allocations.`,
+        metric: `${currSym}${profile.monthlyIncome.toLocaleString()}/mo`,
+        tag: 'Earning Power',
+        impact: 'Medium',
+      });
+    }
+
+    // 2. WEAKNESSES (Internal Vulnerabilities & Deficits)
+    const weaknesses = [];
+    if (emergencyRunwayMonths < 6) {
+      weaknesses.push({
+        id: 'w-emergency',
+        title: 'Emergency Runway Shortfall',
+        description: `Current liquid reserve covers only ${emergencyRunwayMonths.toFixed(1)} months of living expenses vs. recommended 6-month resilience buffer (${currSym}${metrics.requiredEmergencyFund?.toLocaleString() || 'target'}).`,
+        metric: `${emergencyRunwayMonths.toFixed(1)} / 6.0 Mo`,
+        tag: 'Liquidity Gap',
+        impact: 'Critical',
+      });
+    }
+
+    if (metrics.emiToIncomeRatio > 30) {
+      weaknesses.push({
+        id: 'w-debt',
+        title: 'Elevated Monthly Debt Drain',
+        description: `Loan EMIs consume ${metrics.emiToIncomeRatio}% of monthly income, restricting discretionary spending and slowing retirement investments.`,
+        metric: `${metrics.emiToIncomeRatio}% Burden`,
+        tag: 'Cash Drag',
+        impact: 'Critical',
+      });
+    }
+
+    if (!insurance.hasPersonalHealthPolicy) {
+      weaknesses.push({
+        id: 'w-health-ins',
+        title: 'Absence of Standalone Health Cover',
+        description: 'Lacking personal medical insurance leaves savings exposed to high out-of-pocket costs if employer cover lapses.',
+        metric: 'Zero Personal Cover',
+        tag: 'High Risk',
+        impact: 'Critical',
+      });
+    }
+
+    if (lifeInsuranceCoverageRatio < 80) {
+      weaknesses.push({
+        id: 'w-life-ins',
+        title: 'Term Life Underinsurance Gap',
+        description: `Coverage stands at ${Math.round(lifeInsuranceCoverageRatio)}% of ideal income protection standard (${currSym}${metrics.recommendedLifeCoverage.toLocaleString()}) for dependents.`,
+        metric: `${Math.round(lifeInsuranceCoverageRatio)}% Coverage`,
+        tag: 'Protection Gap',
+        impact: 'High',
+      });
+    }
+
+    if (metrics.savingsRatio < 15) {
+      weaknesses.push({
+        id: 'w-savings',
+        title: 'Subdued Savings Rate',
+        description: `Saving only ${metrics.savingsRatio}% of income makes wealth accumulation slow and delays financial independence milestones.`,
+        metric: `${metrics.savingsRatio}% Rate`,
+        tag: 'Wealth Deficit',
+        impact: 'High',
+      });
+    }
+
+    if (totalGoalsCount > fundedGoalsCount) {
+      weaknesses.push({
+        id: 'w-goals',
+        title: 'Unfunded Milestone Commitments',
+        description: `${totalGoalsCount - fundedGoalsCount} goals lack adequate savings accumulation, creating target date slippage risk.`,
+        metric: `${totalGoalsCount - fundedGoalsCount} Unfunded`,
+        tag: 'Planning Lag',
+        impact: 'Medium',
+      });
+    }
+
+    // 3. OPPORTUNITIES (External Upsides & High-ROI Moves)
+    const opportunities = [];
+    if (metrics.totalDebt > 0) {
+      opportunities.push({
+        id: 'o-debt-avalanche',
+        title: 'High-Interest Debt Prepayment',
+        description: `Directing prepayments to top-rate debt can save significant interest charges and instantly boost your FinScore by 8-12 points.`,
+        metric: `Save on ${currSym}${metrics.totalDebt.toLocaleString()}`,
+        tag: 'Cost Reduction',
+        impact: 'High',
+      });
+    }
+
+    opportunities.push({
+      id: 'o-compounding',
+      title: 'Automated Systematic Wealth SIPs',
+      description: `Investing monthly surplus (${currSym}${metrics.monthlySavings.toLocaleString()}/mo) systematically into diversified low-cost index funds unlocks long-term compounding.`,
+      metric: `${currSym}${metrics.monthlySavings.toLocaleString()}/mo Surplus`,
+      tag: 'Wealth Growth',
+      impact: 'High',
+    });
+
+    opportunities.push({
+      id: 'o-super-topup',
+      title: 'Cost-Effective Super Top-Up Health Shield',
+      description: 'Acquiring a super top-up policy with high deductible multiplies medical cover by 3x-5x at a fraction of baseline premium costs.',
+      metric: '3x-5x Cover',
+      tag: 'Risk Arbitrage',
+      impact: 'Medium',
+    });
+
+    opportunities.push({
+      id: 'o-goal-auto',
+      title: 'Automated Milestone Sinking Funds',
+      description: 'Configuring automated recurring transfers specifically tagged for upcoming life goals eliminates impulse diversion.',
+      metric: 'Auto-Pilot Goals',
+      tag: 'Discipline',
+      impact: 'Medium',
+    });
+
+    opportunities.push({
+      id: 'o-finscore-target',
+      title: 'Elevate to Elite FinScore Tier (85+)',
+      description: `Executing the 3-month action plan will elevate your score from ${result.overallScore} to 85+, unlocking best-in-market loan rates and absolute peace of mind.`,
+      metric: `Target: 85+ (now ${result.overallScore})`,
+      tag: 'Score Mastery',
+      impact: 'High',
+    });
+
+    // 4. THREATS (External Macro & Shock Exposures)
+    const threats = [];
+    threats.push({
+      id: 't-medical-inflation',
+      title: 'Hospitalization & Medical Cost Inflation',
+      description: 'Healthcare inflation averages 12-14% annually; a single serious medical event can drain liquid reserves without sufficient protection.',
+      metric: '14% Annual Inflation',
+      tag: 'Inflation Shock',
+      impact: 'Critical',
+    });
+
+    threats.push({
+      id: 't-income-interruption',
+      title: 'Sudden Income or Employment Disruption',
+      description: `If regular income pauses tomorrow, current reserves sustain household living costs for approximately ${emergencyRunwayMonths.toFixed(1)} months before liquidation of assets is required.`,
+      metric: `${emergencyRunwayMonths.toFixed(1)} Mo Runway`,
+      tag: 'Cash Flow Risk',
+      impact: emergencyRunwayMonths < 4 ? 'Critical' : 'High',
+    });
+
+    if (metrics.totalDebt > 0) {
+      threats.push({
+        id: 't-interest-rate',
+        title: 'Benchmark Interest Rate Volatility',
+        description: 'Rising benchmark interest rates increase floating-rate loan tenures and monthly interest outlays.',
+        metric: 'Floating Rate Exposure',
+        tag: 'Macro Headwind',
+        impact: 'Medium',
+      });
+    }
+
+    threats.push({
+      id: 't-inflation-drag',
+      title: 'Inflation Purchasing Power Erosion',
+      description: 'Cash left idle in low-yielding bank accounts loses real purchasing power against persistent 5-7% inflation rates.',
+      metric: '~6% Purchasing Drag',
+      tag: 'Silent Depletion',
+      impact: 'Medium',
+    });
+
+    if (lifeInsuranceCoverageRatio < 100) {
+      threats.push({
+        id: 't-family-security',
+        title: 'Dependent Income Replacement Risk',
+        description: 'Unexpected loss of the breadwinner without comprehensive term insurance leaves dependent family members financially vulnerable.',
+        metric: 'Family Exposure',
+        tag: 'Mortality Risk',
+        impact: 'Critical',
+      });
+    }
+
+    return {
+      strengths,
+      weaknesses,
+      opportunities,
+      threats,
+      totalFactors: strengths.length + weaknesses.length + opportunities.length + threats.length,
+    };
+  }, [result, profile, emergency, loans, insurance, goals, currSym]);
+
+  const handleCopySwot = () => {
+    const text = `📊 FINSCORE PERSONAL FINANCIAL SWOT ANALYSIS
+Overall Score: ${result.overallScore}/100 (${result.grade})
+Monthly Income: ${currSym}${profile.monthlyIncome.toLocaleString()} | Monthly Savings: ${currSym}${result.metrics.monthlySavings.toLocaleString()}
+
+💪 1. STRENGTHS (${swotData.strengths.length}):
+${swotData.strengths.map(s => `• [${s.tag}] ${s.title}: ${s.description} (${s.metric})`).join('\n')}
+
+⚠️ 2. WEAKNESSES (${swotData.weaknesses.length}):
+${swotData.weaknesses.map(w => `• [${w.tag}] ${w.title}: ${w.description} (${w.metric})`).join('\n')}
+
+🚀 3. OPPORTUNITIES (${swotData.opportunities.length}):
+${swotData.opportunities.map(o => `• [${o.tag}] ${o.title}: ${o.description} (${o.metric})`).join('\n')}
+
+🛡️ 4. THREATS (${swotData.threats.length}):
+${swotData.threats.map(t => `• [${t.tag}] ${t.title}: ${t.description} (${t.metric})`).join('\n')}
+
+Strategic Focus: ${result.biggestPriority}`;
+
+    navigator.clipboard.writeText(text);
+    setCopiedSwot(true);
+    showToast('SWOT strategic analysis copied to clipboard!');
+    setTimeout(() => setCopiedSwot(false), 2500);
+  };
+
+  const handleDiscussSwotWithAi = (topic?: string) => {
+    const query = topic 
+      ? `Based on my SWOT Financial Analysis, please provide a tailored action strategy for: "${topic}". My FinScore is ${result.overallScore}/100 and my monthly savings is ${currSym}${result.metrics.monthlySavings.toLocaleString()}.`
+      : `Based on my FinScore SWOT Strategic Analysis (Strengths: ${swotData.strengths.length}, Weaknesses: ${swotData.weaknesses.length}, Opportunities: ${swotData.opportunities.length}, Threats: ${swotData.threats.length}), what are my top 3 immediate action items for the next 30 days?`;
+    handleSendAiMessage(query);
+    setActiveTab('ai_assistant');
+  };
 
   // Pre-fill profile and expenses from existing app portfolio
   const handleSyncFromAppPortfolio = () => {
@@ -683,7 +1163,7 @@ export const FinScoreView: React.FC = () => {
             { id: 'insurance', label: '4. Insurance Score', icon: ShieldCheck },
             { id: 'emergency', label: '5. Emergency Fund', icon: AlertTriangle },
             { id: 'goals', label: '6. Future Goals', icon: Target },
-            { id: 'ai_assistant', label: '7. AI Assistant', icon: Bot },
+            { id: 'ai_assistant', label: '7. AI Assistant', icon: Bot, isAi: true },
             { id: 'admin', label: '8. Admin Portal', icon: Settings2 },
           ].map(tab => {
             const Icon = tab.icon;
@@ -693,7 +1173,7 @@ export const FinScoreView: React.FC = () => {
                 key={tab.id}
                 id={`tab-finscore-${tab.id}`}
                 onClick={() => setActiveTab(tab.id as FinScoreTab)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl whitespace-nowrap transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl whitespace-nowrap transition-all cursor-pointer ${
                   isActive
                     ? isLight
                       ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/20'
@@ -705,6 +1185,12 @@ export const FinScoreView: React.FC = () => {
               >
                 <Icon className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>
+                {'isAi' in tab && tab.isAi && (
+                  <span className="flex h-2 w-2 relative ml-0.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                )}
               </button>
             );
           })}
@@ -803,6 +1289,72 @@ export const FinScoreView: React.FC = () => {
                       </button>
                     </div>
                   </div>
+                </div>
+
+                {/* Clear Score Bands Guide for Beginners */}
+                <div className={`p-3.5 rounded-2xl border ${
+                  isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/60 border-slate-800'
+                }`}>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
+                    <span>How To Interpret Your Score</span>
+                    <span className="font-mono text-[10px] text-blue-400">Current: Grade {result.grade} ({result.overallScore}/100)</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                    <div className={`p-2 rounded-xl border transition-all ${
+                      result.overallScore >= 80
+                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400 font-bold shadow-sm'
+                        : 'bg-black/10 border-white/5 text-slate-400'
+                    }`}>
+                      <div className="font-bold text-xs">80 - 100 • Grade A</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Excellent &amp; Resilient</div>
+                    </div>
+                    <div className={`p-2 rounded-xl border transition-all ${
+                      result.overallScore >= 65 && result.overallScore < 80
+                        ? 'bg-blue-500/15 border-blue-500/40 text-blue-400 font-bold shadow-sm'
+                        : 'bg-black/10 border-white/5 text-slate-400'
+                    }`}>
+                      <div className="font-bold text-xs">65 - 79 • Grade B</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Solid Foundation</div>
+                    </div>
+                    <div className={`p-2 rounded-xl border transition-all ${
+                      result.overallScore >= 50 && result.overallScore < 65
+                        ? 'bg-amber-500/15 border-amber-500/40 text-amber-400 font-bold shadow-sm'
+                        : 'bg-black/10 border-white/5 text-slate-400'
+                    }`}>
+                      <div className="font-bold text-xs">50 - 64 • Grade C</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Vulnerable to Shocks</div>
+                    </div>
+                    <div className={`p-2 rounded-xl border transition-all ${
+                      result.overallScore < 50
+                        ? 'bg-rose-500/15 border-rose-500/40 text-rose-400 font-bold shadow-sm'
+                        : 'bg-black/10 border-white/5 text-slate-400'
+                    }`}>
+                      <div className="font-bold text-xs">&lt; 50 • Grade D</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Critical Attention</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dashboard Action Row with User's Two Buttons */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <button
+                    onClick={() => setShowHealthPlanModal(true)}
+                    className="flex-1 py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-300" />
+                    <span>Open 1-Click Health Plan</span>
+                  </button>
+                  <button
+                    onClick={() => setShowBenchmarkModal(true)}
+                    className={`flex-1 py-2 px-4 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                      isLight
+                        ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                    }`}
+                  >
+                    <TrendingUp className="w-4 h-4 text-purple-400" />
+                    <span>Peer Benchmark &amp; Report</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -996,46 +1548,394 @@ export const FinScoreView: React.FC = () => {
             </div>
           </div>
 
-          {/* Score History & Progress Graph (Step 10) */}
+          {/* NEW UNIQUE CHARTS & VISUAL ANALYTICS HUB */}
           <div className={`p-6 rounded-3xl border shadow-sm ${
             isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
           }`}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-400" />
-                  Score History & Improvement Trajectory
-                </h3>
-                <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                  Tracking month-over-month score improvement: <strong>52 → 58 → 63 → 70 → {result.overallScore}</strong>
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500">
+                    <BarChart3 className="w-4 h-4" />
+                  </span>
+                  <h3 className="text-sm font-bold uppercase tracking-wider">
+                    Score Analytics & Financial Diagnostics
+                  </h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    4 Unique Visualizations
+                  </span>
+                </div>
+                <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  Explore multi-pillar symmetry, month-over-month trajectory, cash flow allocation, and simulated shock resistance.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                  +{result.overallScore - 52} Points Growth
-                </span>
+
+              {/* Unique Chart View Switcher Controls */}
+              <div className={`flex items-center p-1 rounded-2xl border text-xs font-semibold ${
+                isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-950 border-slate-800'
+              }`}>
+                <button
+                  id="btn-chart-mode-radar"
+                  onClick={() => setDashboardChartMode('radar')}
+                  className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                    dashboardChartMode === 'radar'
+                      ? 'bg-blue-600 text-white shadow-sm font-bold'
+                      : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>Pillar Radar</span>
+                </button>
+                <button
+                  id="btn-chart-mode-trajectory"
+                  onClick={() => setDashboardChartMode('trajectory')}
+                  className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                    dashboardChartMode === 'trajectory'
+                      ? 'bg-blue-600 text-white shadow-sm font-bold'
+                      : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span>Trajectory</span>
+                </button>
+                <button
+                  id="btn-chart-mode-cashflow"
+                  onClick={() => setDashboardChartMode('cashflow')}
+                  className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                    dashboardChartMode === 'cashflow'
+                      ? 'bg-blue-600 text-white shadow-sm font-bold'
+                      : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <PieChartIcon className="w-3.5 h-3.5" />
+                  <span>Cash Flow</span>
+                </button>
+                <button
+                  id="btn-chart-mode-stresstest"
+                  onClick={() => setDashboardChartMode('stresstest')}
+                  className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                    dashboardChartMode === 'stresstest'
+                      ? 'bg-blue-600 text-white shadow-sm font-bold'
+                      : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  <span>Stress Test</span>
+                </button>
               </div>
             </div>
 
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={scoreHistory}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={isLight ? '#e2e8f0' : '#1e293b'} />
-                  <XAxis dataKey="month" stroke="#64748b" fontSize={11} />
-                  <YAxis domain={[0, 100]} stroke="#64748b" fontSize={11} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: isLight ? '#ffffff' : '#0f172a', 
-                      borderColor: isLight ? '#cbd5e1' : '#334155',
-                      borderRadius: '16px' 
-                    }} 
-                  />
-                  <Line type="monotone" dataKey="overallScore" name="FinScore" stroke="#3b82f6" strokeWidth={3} dot={{ r: 5 }} />
-                  <Line type="monotone" dataKey="savingsScore" name="Savings" stroke="#10b981" strokeWidth={2} strokeDasharray="4 4" />
-                  <Line type="monotone" dataKey="debtScore" name="Debt" stroke="#a855f7" strokeWidth={2} strokeDasharray="4 4" />
-                  <Line type="monotone" dataKey="emergencyScore" name="Emergency" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 4" />
-                </LineChart>
-              </ResponsiveContainer>
+            {/* CHART 1: MULTI-PILLAR RADAR (SPIDER CHART) */}
+            {dashboardChartMode === 'radar' && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+                <div className="lg:col-span-2 h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarPillarData}>
+                      <PolarGrid stroke={isLight ? '#cbd5e1' : '#334155'} strokeDasharray="3 3" />
+                      <PolarAngleAxis 
+                        dataKey="pillar" 
+                        tick={{ fill: isLight ? '#475569' : '#94a3b8', fontSize: 11, fontWeight: 600 }} 
+                      />
+                      <PolarRadiusAxis 
+                        angle={30} 
+                        domain={[0, 100]} 
+                        stroke={isLight ? '#94a3b8' : '#64748b'} 
+                        tick={{ fontSize: 9 }} 
+                      />
+                      <Radar
+                        name="Your Current FinScore"
+                        dataKey="score"
+                        stroke="#3b82f6"
+                        fill="#3b82f6"
+                        fillOpacity={0.45}
+                        strokeWidth={2}
+                      />
+                      <Radar
+                        name="Benchmark Target (85+)"
+                        dataKey="benchmark"
+                        stroke="#10b981"
+                        fill="#10b981"
+                        fillOpacity={0.12}
+                        strokeDasharray="4 4"
+                        strokeWidth={1.5}
+                      />
+                      <Legend 
+                        wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} 
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: isLight ? '#ffffff' : '#0f172a', 
+                          borderColor: isLight ? '#cbd5e1' : '#334155',
+                          borderRadius: '16px',
+                          fontSize: '12px'
+                        }} 
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Radar Diagnostic Takeaways */}
+                <div className="space-y-3">
+                  <div className={`p-4 rounded-2xl border ${
+                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+                  }`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        Financial Balance Index
+                      </span>
+                      <span className="text-xs font-bold text-blue-400">
+                        {Math.round(
+                          100 - (Math.max(...radarPillarData.map(d => d.score)) - Math.min(...radarPillarData.map(d => d.score))) * 0.4
+                        )}% Symmetric
+                      </span>
+                    </div>
+                    <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+                      Radar shape shows where your financial fortress is strong and where it is vulnerable.
+                    </p>
+                  </div>
+
+                  <div className={`p-3.5 rounded-2xl border ${
+                    isLight ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200'
+                  }`}>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">
+                      Strongest Pillar
+                    </span>
+                    <p className="text-xs font-bold mt-0.5">
+                      {radarPillarData.reduce((prev, curr) => curr.score > prev.score ? curr : prev).pillar} ({
+                        Math.max(...radarPillarData.map(d => d.score))
+                      }/100)
+                    </p>
+                  </div>
+
+                  <div className={`p-3.5 rounded-2xl border ${
+                    isLight ? 'bg-amber-50/60 border-amber-200 text-amber-950' : 'bg-amber-500/10 border-amber-500/20 text-amber-200'
+                  }`}>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500">
+                      Key Growth Area
+                    </span>
+                    <p className="text-xs font-bold mt-0.5">
+                      {radarPillarData.reduce((prev, curr) => curr.score < prev.score ? curr : prev).pillar} ({
+                        Math.min(...radarPillarData.map(d => d.score))
+                      }/100)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* CHART 2: SCORE IMPROVEMENT TRAJECTORY */}
+            {dashboardChartMode === 'trajectory' && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                    Tracking month-over-month score improvement: <strong>52 → 58 → 63 → 70 → {result.overallScore}</strong>
+                  </p>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    +{result.overallScore - 52} Points Growth
+                  </span>
+                </div>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={scoreHistory}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={isLight ? '#e2e8f0' : '#1e293b'} />
+                      <XAxis dataKey="month" stroke="#64748b" fontSize={11} />
+                      <YAxis domain={[0, 100]} stroke="#64748b" fontSize={11} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: isLight ? '#ffffff' : '#0f172a', 
+                          borderColor: isLight ? '#cbd5e1' : '#334155',
+                          borderRadius: '16px',
+                          fontSize: '12px'
+                        }} 
+                      />
+                      <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+                      <Line type="monotone" dataKey="overallScore" name="FinScore" stroke="#3b82f6" strokeWidth={3} dot={{ r: 5 }} />
+                      <Line type="monotone" dataKey="savingsScore" name="Savings" stroke="#10b981" strokeWidth={2} strokeDasharray="4 4" />
+                      <Line type="monotone" dataKey="debtScore" name="Debt" stroke="#a855f7" strokeWidth={2} strokeDasharray="4 4" />
+                      <Line type="monotone" dataKey="emergencyScore" name="Emergency" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 4" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* CHART 3: CASH FLOW ALLOCATION BREAKDOWN */}
+            {dashboardChartMode === 'cashflow' && (
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+                  {cashFlowAllocationData.map(item => (
+                    <div key={item.name} className={`p-3.5 rounded-2xl border ${
+                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="text-[11px] font-bold text-slate-400">{item.name}</span>
+                      </div>
+                      <div className="text-base font-extrabold font-mono">
+                        {currSym}{item.amount.toLocaleString()}
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+                        <span>{item.category}</span>
+                        <span className="font-bold text-blue-400">{item.percentage}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="h-56 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={cashFlowAllocationData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={isLight ? '#e2e8f0' : '#1e293b'} />
+                      <XAxis type="number" unit="%" domain={[0, 100]} stroke="#64748b" fontSize={11} />
+                      <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={11} width={110} />
+                      <Tooltip 
+                        formatter={(val: any) => [`${val}% of Monthly Income`, 'Allocation']}
+                        contentStyle={{ 
+                          backgroundColor: isLight ? '#ffffff' : '#0f172a', 
+                          borderColor: isLight ? '#cbd5e1' : '#334155',
+                          borderRadius: '16px',
+                          fontSize: '12px'
+                        }} 
+                      />
+                      <Bar dataKey="percentage" radius={[0, 8, 8, 0]}>
+                        {cashFlowAllocationData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* CHART 4: FINANCIAL STRESS TEST & SHOCK RESISTANCE */}
+            {dashboardChartMode === 'stresstest' && (
+              <div className="space-y-4">
+                <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  Simulated impact of personal financial shocks on your FinScore resilience and emergency runway.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {stressTestData.map(item => (
+                    <div key={item.scenario} className={`p-4 rounded-2xl border flex flex-col justify-between ${
+                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+                    }`}>
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-slate-300">{item.scenario}</span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                            item.severity === 'normal' 
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                              : item.severity === 'moderate'
+                              ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                              : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                          }`}>
+                            {item.severity}
+                          </span>
+                        </div>
+                        <div className="text-2xl font-black font-mono my-1" style={{ color: item.color }}>
+                          {item.score} <span className="text-xs font-normal text-slate-500">/ 100</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 mb-2">
+                          Runway: <strong className="text-white">{item.runwayMonths} Months</strong>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-tight pt-2 border-t border-slate-800/50">
+                        {item.impact}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ACTIVE AI ASSISTANT QUICK-LAUNCH & LIVE CHAT CARD IN SCORE DASHBOARD */}
+          <div className={`p-6 rounded-3xl border shadow-sm ${
+            isLight ? 'bg-gradient-to-br from-blue-50/60 via-indigo-50/40 to-white border-blue-200' : 'bg-gradient-to-br from-blue-950/20 via-slate-900 to-slate-900 border-blue-900/40'
+          }`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="relative">
+                  <div className="w-9 h-9 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/30">
+                    <Bot className="w-5 h-5" />
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-950 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wider">
+                      7. AI Assistant Chat — Active
+                    </h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      Online
+                    </span>
+                  </div>
+                  <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                    Ask real-time questions about your FinScore, emergency fund roadmap, or debt payoff.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                id="btn-open-full-ai-studio"
+                onClick={() => setActiveTab('ai_assistant')}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 shadow-md transition-all self-start sm:self-auto cursor-pointer"
+              >
+                <span>Open Full AI Studio</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Quick Prompt Suggestions */}
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              {[
+                'How do I reach FinScore 85+ fastest?',
+                'Should I prepay loan or build emergency buffer?',
+                'How much term insurance do I need for my family?'
+              ].map(prompt => (
+                <button
+                  key={prompt}
+                  onClick={() => {
+                    handleSendAiMessage(prompt);
+                    setActiveTab('ai_assistant');
+                  }}
+                  className={`px-3 py-1 rounded-full border text-[11px] font-medium transition-all ${
+                    isLight ? 'bg-white border-blue-200 text-blue-700 hover:bg-blue-50' : 'bg-slate-900 border-blue-900/60 text-blue-300 hover:bg-blue-950/50'
+                  }`}
+                >
+                  ✨ {prompt}
+                </button>
+              ))}
+            </div>
+
+            {/* Live Chat Input Bar */}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="Ask FinScore AI anything about your financial health, loans, or goals..."
+                value={aiQuestion}
+                onChange={e => setAiQuestion(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    handleSendAiMessage();
+                    setActiveTab('ai_assistant');
+                  }
+                }}
+                className={`flex-1 px-4 py-2.5 rounded-xl border text-xs ${
+                  isLight ? 'bg-white border-slate-300 text-slate-900 focus:border-blue-500' : 'bg-slate-950 border-slate-700 text-white focus:border-blue-500'
+                }`}
+              />
+              <button
+                onClick={() => {
+                  handleSendAiMessage();
+                  setActiveTab('ai_assistant');
+                }}
+                disabled={isAiLoading || !aiQuestion.trim()}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 disabled:opacity-50 shadow-md cursor-pointer transition-all"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Send</span>
+              </button>
             </div>
           </div>
 
@@ -1137,6 +2037,385 @@ export const FinScoreView: React.FC = () => {
               ))}
             </div>
           </div>
+
+          {/* ----------------------------------------------------------- */}
+          {/* PERSONAL FINANCIAL SWOT STRATEGIC ANALYSIS (In Last of Score Dashboard) */}
+          {/* ----------------------------------------------------------- */}
+          <div className={`p-6 sm:p-8 rounded-3xl border shadow-sm space-y-6 transition-all ${
+            isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+          }`}>
+            {/* Header: Title, Subtitle, Copy SWOT & Ask AI Buttons */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/40">
+              <div className="flex items-start gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-500 via-blue-600 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-500/20">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-lg font-bold">
+                      Personal Financial SWOT Strategic Analysis
+                    </h2>
+                    <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+                      4-Quadrant Diagnostic Matrix
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-400">
+                      ({swotData.totalFactors} Strategic Factors)
+                    </span>
+                  </div>
+                  <p className={`text-xs mt-1 leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                    An executive audit evaluating your internal financial advantages & vulnerabilities alongside external wealth compounding opportunities and macro shock exposures.
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons: Quadrant Filter & Consultation CTAs */}
+              <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
+                <button
+                  onClick={handleCopySwot}
+                  className={`px-3 py-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    copiedSwot
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                      : isLight
+                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
+                      : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-300'
+                  }`}
+                  title="Copy formatted SWOT report to clipboard"
+                >
+                  {copiedSwot ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedSwot ? 'Copied Report!' : 'Copy SWOT Report'}</span>
+                </button>
+
+                <button
+                  onClick={() => handleDiscussSwotWithAi()}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all active:scale-95"
+                >
+                  <Bot className="w-3.5 h-3.5" />
+                  <span>Consult AI Advisor</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quadrant Quick Filter Pills */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1">
+                Filter View:
+              </span>
+              {[
+                { id: 'all', label: 'All 4 Quadrants (Matrix)', count: swotData.totalFactors },
+                { id: 'strengths', label: 'Strengths (S)', count: swotData.strengths.length, color: 'text-emerald-400' },
+                { id: 'weaknesses', label: 'Weaknesses (W)', count: swotData.weaknesses.length, color: 'text-rose-400' },
+                { id: 'opportunities', label: 'Opportunities (O)', count: swotData.opportunities.length, color: 'text-blue-400' },
+                { id: 'threats', label: 'Threats (T)', count: swotData.threats.length, color: 'text-amber-400' },
+              ].map(filter => (
+                <button
+                  key={filter.id}
+                  onClick={() => setSwotQuadrant(filter.id as any)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    swotQuadrant === filter.id
+                      ? isLight
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                      : isLight
+                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300'
+                  }`}
+                >
+                  <span>{filter.label}</span>
+                  <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                    swotQuadrant === filter.id ? 'bg-white/20 text-white' : 'bg-slate-900 text-slate-400'
+                  }`}>
+                    {filter.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* 4-Quadrant SWOT Grid */}
+            <div className={`grid grid-cols-1 ${swotQuadrant === 'all' ? 'lg:grid-cols-2' : 'grid-cols-1'} gap-5`}>
+              {/* QUADRANT 1: STRENGTHS */}
+              {(swotQuadrant === 'all' || swotQuadrant === 'strengths') && (
+                <div className={`p-5 rounded-2xl border flex flex-col justify-between transition-all ${
+                  isLight ? 'bg-emerald-50/40 border-emerald-200/80' : 'bg-emerald-950/20 border-emerald-500/30'
+                }`}>
+                  <div>
+                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-emerald-500/20">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white font-extrabold flex items-center justify-center text-sm shadow-md shadow-emerald-500/20">
+                          S
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-extrabold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wide">
+                            <ShieldCheck className="w-4 h-4" />
+                            Internal Strengths
+                          </h3>
+                          <p className="text-[11px] text-slate-400">Capital advantages & disciplined habits</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        {swotData.strengths.length} Factors
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {swotData.strengths.map(item => (
+                        <div
+                          key={item.id}
+                          className={`p-3.5 rounded-xl border text-xs space-y-1.5 transition-all ${
+                            isLight ? 'bg-white/90 border-emerald-100 shadow-xs' : 'bg-slate-900/90 border-emerald-500/20'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-bold flex items-center gap-1.5 text-slate-200">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                              <span>{item.title}</span>
+                            </span>
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 shrink-0">
+                              {item.metric}
+                            </span>
+                          </div>
+                          <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                            {item.description}
+                          </p>
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[10px] uppercase font-semibold text-emerald-500/90">
+                              {item.tag} • Impact: {item.impact}
+                            </span>
+                            <button
+                              onClick={() => handleDiscussSwotWithAi(item.title)}
+                              className="text-[10px] font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <span>Explore Leverage</span>
+                              <ChevronRight className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* QUADRANT 2: WEAKNESSES */}
+              {(swotQuadrant === 'all' || swotQuadrant === 'weaknesses') && (
+                <div className={`p-5 rounded-2xl border flex flex-col justify-between transition-all ${
+                  isLight ? 'bg-rose-50/40 border-rose-200/80' : 'bg-rose-950/20 border-rose-500/30'
+                }`}>
+                  <div>
+                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-rose-500/20">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-rose-500 text-white font-extrabold flex items-center justify-center text-sm shadow-md shadow-rose-500/20">
+                          W
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-extrabold text-rose-400 flex items-center gap-1.5 uppercase tracking-wide">
+                            <AlertTriangle className="w-4 h-4" />
+                            Internal Weaknesses
+                          </h3>
+                          <p className="text-[11px] text-slate-400">Financial vulnerabilities & resource gaps</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                        {swotData.weaknesses.length} Factors
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {swotData.weaknesses.map(item => (
+                        <div
+                          key={item.id}
+                          className={`p-3.5 rounded-xl border text-xs space-y-1.5 transition-all ${
+                            isLight ? 'bg-white/90 border-rose-100 shadow-xs' : 'bg-slate-900/90 border-rose-500/20'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-bold flex items-center gap-1.5 text-slate-200">
+                              <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                              <span>{item.title}</span>
+                            </span>
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-400 shrink-0">
+                              {item.metric}
+                            </span>
+                          </div>
+                          <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                            {item.description}
+                          </p>
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[10px] uppercase font-semibold text-rose-400/90">
+                              {item.tag} • Severity: {item.impact}
+                            </span>
+                            <button
+                              onClick={() => handleDiscussSwotWithAi(item.title)}
+                              className="text-[10px] font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <span>Plan Fix with AI</span>
+                              <ChevronRight className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* QUADRANT 3: OPPORTUNITIES */}
+              {(swotQuadrant === 'all' || swotQuadrant === 'opportunities') && (
+                <div className={`p-5 rounded-2xl border flex flex-col justify-between transition-all ${
+                  isLight ? 'bg-blue-50/40 border-blue-200/80' : 'bg-blue-950/20 border-blue-500/30'
+                }`}>
+                  <div>
+                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-500/20">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-blue-600 text-white font-extrabold flex items-center justify-center text-sm shadow-md shadow-blue-500/20">
+                          O
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-extrabold text-blue-400 flex items-center gap-1.5 uppercase tracking-wide">
+                            <TrendingUp className="w-4 h-4" />
+                            Strategic Opportunities
+                          </h3>
+                          <p className="text-[11px] text-slate-400">External upside & high-ROI compounding</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        {swotData.opportunities.length} Factors
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {swotData.opportunities.map(item => (
+                        <div
+                          key={item.id}
+                          className={`p-3.5 rounded-xl border text-xs space-y-1.5 transition-all ${
+                            isLight ? 'bg-white/90 border-blue-100 shadow-xs' : 'bg-slate-900/90 border-blue-500/20'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-bold flex items-center gap-1.5 text-slate-200">
+                              <Zap className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+                              <span>{item.title}</span>
+                            </span>
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-400 shrink-0">
+                              {item.metric}
+                            </span>
+                          </div>
+                          <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                            {item.description}
+                          </p>
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[10px] uppercase font-semibold text-blue-400/90">
+                              {item.tag} • Potential: {item.impact}
+                            </span>
+                            <button
+                              onClick={() => handleDiscussSwotWithAi(item.title)}
+                              className="text-[10px] font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <span>Unlock with AI</span>
+                              <ChevronRight className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* QUADRANT 4: THREATS */}
+              {(swotQuadrant === 'all' || swotQuadrant === 'threats') && (
+                <div className={`p-5 rounded-2xl border flex flex-col justify-between transition-all ${
+                  isLight ? 'bg-amber-50/40 border-amber-200/80' : 'bg-amber-950/20 border-amber-500/30'
+                }`}>
+                  <div>
+                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-amber-500/20">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-amber-500 text-white font-extrabold flex items-center justify-center text-sm shadow-md shadow-amber-500/20">
+                          T
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-extrabold text-amber-400 flex items-center gap-1.5 uppercase tracking-wide">
+                            <ShieldAlert className="w-4 h-4" />
+                            Macro Threats & Shocks
+                          </h3>
+                          <p className="text-[11px] text-slate-400">External disruptions & systemic risks</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                        {swotData.threats.length} Factors
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {swotData.threats.map(item => (
+                        <div
+                          key={item.id}
+                          className={`p-3.5 rounded-xl border text-xs space-y-1.5 transition-all ${
+                            isLight ? 'bg-white/90 border-amber-100 shadow-xs' : 'bg-slate-900/90 border-amber-500/20'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-bold flex items-center gap-1.5 text-slate-200">
+                              <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                              <span>{item.title}</span>
+                            </span>
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-400 shrink-0">
+                              {item.metric}
+                            </span>
+                          </div>
+                          <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                            {item.description}
+                          </p>
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[10px] uppercase font-semibold text-amber-400/90">
+                              {item.tag} • Exposure: {item.impact}
+                            </span>
+                            <button
+                              onClick={() => handleDiscussSwotWithAi(item.title)}
+                              className="text-[10px] font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <span>Hedge Risk</span>
+                              <ChevronRight className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Executive Takeaway & Strategic Synthesis Banner */}
+            <div className={`p-4 sm:p-5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+              isLight ? 'bg-indigo-50/70 border-indigo-200 text-indigo-950' : 'bg-gradient-to-r from-indigo-950/40 via-blue-950/40 to-slate-900 border-indigo-500/30 text-indigo-100'
+            }`}>
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5" />
+                  Executive Strategic Synthesis
+                </span>
+                <p className="text-xs leading-relaxed font-medium">
+                  {swotData.weaknesses[0] ? (
+                    <>
+                      Mitigate your primary vulnerability (<span className="font-bold underline decoration-rose-400">{swotData.weaknesses[0].title}</span>) by channeling your top strength (<span className="font-bold underline decoration-emerald-400">{swotData.strengths[0]?.title || 'positive cash flow'}</span>) into actionable compounding.
+                    </>
+                  ) : (
+                    <>
+                      Capitalize on your financial strengths to capture high-ROI wealth opportunities and maintain full protection against macroeconomic threats.
+                    </>
+                  )}
+                </p>
+              </div>
+
+              <button
+                onClick={() => handleDiscussSwotWithAi()}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-2 shrink-0 shadow-md cursor-pointer transition-all active:scale-95"
+              >
+                <span>Run 30-Day Execution Plan</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1207,14 +2486,15 @@ export const FinScoreView: React.FC = () => {
             </div>
 
             <div>
-              <label className="block mb-1 text-slate-400">Monthly Net Income / Salary ({currSym})</label>
-              <input
-                type="number"
+              <FinScoreAmountInput
+                id="profile-monthly-income"
+                label={`Monthly Net Income / Salary (${currSym})`}
                 value={profile.monthlyIncome}
-                onChange={e => setProfile({ ...profile, monthlyIncome: parseFloat(e.target.value) || 0 })}
-                className={`w-full px-3.5 py-2.5 rounded-xl border ${
-                  isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'
-                }`}
+                onChange={val => setProfile({ ...profile, monthlyIncome: val })}
+                currSym={currSym}
+                isLight={isLight}
+                placeholder="50000"
+                presets={[25000, 50000, 75000, 100000, 150000]}
               />
             </div>
 
@@ -1317,34 +2597,41 @@ export const FinScoreView: React.FC = () => {
 
           {/* Expense Category Inputs */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Monthly Category Expense Breakdown
-            </h4>
-            <div className="divide-y divide-slate-800">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Monthly Category Expense Breakdown
+              </h4>
+              <span className="text-[11px] text-slate-500">
+                Type amount to see formatted word value below
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {expenses.map((exp, idx) => (
-                <div key={exp.id} className="py-2.5 flex items-center justify-between gap-4 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{exp.category}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                <div
+                  key={exp.id}
+                  className={`p-3.5 rounded-2xl border transition-all ${
+                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/50 border-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-xs">{exp.category}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                       exp.isEssential ? 'bg-blue-500/15 text-blue-400' : 'bg-slate-800 text-slate-400'
                     }`}>
-                      {exp.isEssential ? 'Essential' : 'Discretionary'}
+                      {exp.isEssential ? 'Essential Need' : 'Discretionary'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-400">{currSym}</span>
-                    <input
-                      type="number"
-                      value={exp.amount}
-                      onChange={e => {
-                        const val = parseFloat(e.target.value) || 0;
-                        setExpenses(prev => prev.map((item, i) => i === idx ? { ...item, amount: val } : item));
-                      }}
-                      className={`w-32 px-3 py-1.5 rounded-xl border text-right font-mono font-bold ${
-                        isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'
-                      }`}
-                    />
-                  </div>
+                  <FinScoreAmountInput
+                    id={`expense-${exp.id}`}
+                    value={exp.amount}
+                    onChange={val => {
+                      setExpenses(prev => prev.map((item, i) => i === idx ? { ...item, amount: val } : item));
+                    }}
+                    currSym={currSym}
+                    isLight={isLight}
+                    placeholder="0"
+                    compact
+                  />
                 </div>
               ))}
             </div>
@@ -1457,24 +2744,28 @@ export const FinScoreView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">Outstanding ({currSym})</label>
-                <input
-                  type="number"
-                  placeholder="e.g. 200000"
-                  value={newLoanOutstanding}
-                  onChange={e => setNewLoanOutstanding(e.target.value)}
-                  className={`w-full px-2.5 py-2 rounded-xl border ${isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'}`}
+                <FinScoreAmountInput
+                  id="debt-outstanding-input"
+                  label={`Outstanding (${currSym})`}
+                  value={newLoanOutstanding ? parseFloat(newLoanOutstanding) : 0}
+                  onChange={val => setNewLoanOutstanding(val > 0 ? val.toString() : '')}
+                  currSym={currSym}
+                  isLight={isLight}
+                  placeholder="200000"
+                  compact
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">Monthly EMI ({currSym})</label>
-                <input
-                  type="number"
-                  placeholder="e.g. 6500"
-                  value={newLoanEmi}
-                  onChange={e => setNewLoanEmi(e.target.value)}
-                  className={`w-full px-2.5 py-2 rounded-xl border ${isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'}`}
+                <FinScoreAmountInput
+                  id="debt-emi-input"
+                  label={`Monthly EMI (${currSym})`}
+                  value={newLoanEmi ? parseFloat(newLoanEmi) : 0}
+                  onChange={val => setNewLoanEmi(val > 0 ? val.toString() : '')}
+                  currSym={currSym}
+                  isLight={isLight}
+                  placeholder="6500"
+                  compact
                 />
               </div>
 
@@ -1590,12 +2881,15 @@ export const FinScoreView: React.FC = () => {
                 </label>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">Total Life Cover Sum Assured ({currSym})</label>
-                  <input
-                    type="number"
+                  <FinScoreAmountInput
+                    id="insurance-life-coverage"
+                    label={`Total Life Cover Sum Assured (${currSym})`}
                     value={insurance.lifeCoverage}
-                    onChange={e => setInsurance({ ...insurance, lifeCoverage: parseFloat(e.target.value) || 0 })}
-                    className={`w-full px-3 py-2 rounded-xl border ${isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'}`}
+                    onChange={val => setInsurance({ ...insurance, lifeCoverage: val })}
+                    currSym={currSym}
+                    isLight={isLight}
+                    placeholder="10000000"
+                    presets={[2500000, 5000000, 10000000, 15000000]}
                   />
                 </div>
 
@@ -1639,12 +2933,15 @@ export const FinScoreView: React.FC = () => {
                 </label>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">Health Sum Insured ({currSym})</label>
-                  <input
-                    type="number"
+                  <FinScoreAmountInput
+                    id="insurance-health-coverage"
+                    label={`Health Sum Insured (${currSym})`}
                     value={insurance.healthCoverage}
-                    onChange={e => setInsurance({ ...insurance, healthCoverage: parseFloat(e.target.value) || 0 })}
-                    className={`w-full px-3 py-2 rounded-xl border ${isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'}`}
+                    onChange={val => setInsurance({ ...insurance, healthCoverage: val })}
+                    currSym={currSym}
+                    isLight={isLight}
+                    placeholder="1000000"
+                    presets={[500000, 1000000, 1500000, 2500000]}
                   />
                 </div>
 
@@ -1739,16 +3036,16 @@ export const FinScoreView: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
             <div className="space-y-4 text-xs font-semibold">
               <div>
-                <label className="block text-slate-400 mb-1">
-                  Current Liquid Emergency Savings ({currSym})
-                </label>
-                <input
-                  type="number"
+                <FinScoreAmountInput
+                  id="emergency-current-savings"
+                  label={`Current Liquid Emergency Savings (${currSym})`}
                   value={emergency.currentEmergencySavings}
-                  onChange={e => setEmergency({ ...emergency, currentEmergencySavings: parseFloat(e.target.value) || 0 })}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-base font-mono font-bold ${
-                    isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'
-                  }`}
+                  onChange={val => setEmergency({ ...emergency, currentEmergencySavings: val })}
+                  currSym={currSym}
+                  isLight={isLight}
+                  placeholder="200000"
+                  presets={[50000, 100000, 200000, 500000, 1000000]}
+                  hint="Liquid savings held in savings account, auto-sweep FD or liquid mutual funds"
                 />
               </div>
 
@@ -1937,25 +3234,28 @@ export const FinScoreView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">Target Amount ({currSym})</label>
-                <input
-                  type="number"
-                  required
-                  placeholder="e.g. 800000"
-                  value={newGoalTarget}
-                  onChange={e => setNewGoalTarget(e.target.value)}
-                  className={`w-full px-3 py-2 rounded-xl border font-mono ${isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'}`}
+                <FinScoreAmountInput
+                  id="goal-target-amount"
+                  label={`Target Amount (${currSym})`}
+                  value={newGoalTarget ? parseFloat(newGoalTarget) : 0}
+                  onChange={val => setNewGoalTarget(val > 0 ? val.toString() : '')}
+                  currSym={currSym}
+                  isLight={isLight}
+                  placeholder="800000"
+                  compact
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">Current Savings ({currSym})</label>
-                <input
-                  type="number"
-                  placeholder="e.g. 150000"
-                  value={newGoalSaved}
-                  onChange={e => setNewGoalSaved(e.target.value)}
-                  className={`w-full px-3 py-2 rounded-xl border font-mono ${isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'}`}
+                <FinScoreAmountInput
+                  id="goal-current-saved"
+                  label={`Current Savings (${currSym})`}
+                  value={newGoalSaved ? parseFloat(newGoalSaved) : 0}
+                  onChange={val => setNewGoalSaved(val > 0 ? val.toString() : '')}
+                  currSym={currSym}
+                  isLight={isLight}
+                  placeholder="150000"
+                  compact
                 />
               </div>
             </div>
@@ -2114,141 +3414,322 @@ export const FinScoreView: React.FC = () => {
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* SECTION 8: AI FINANCIAL ASSISTANT (Step 8) */}
+      {/* SECTION 8: AI FINANCIAL ASSISTANT (Step 8 / Tab 7) */}
       {/* ------------------------------------------------------------- */}
       {activeTab === 'ai_assistant' && (
         <div className={`p-6 sm:p-8 rounded-3xl border shadow-sm space-y-6 ${
           isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
         }`}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-bold flex items-center gap-2">
-                <Bot className="w-5 h-5 text-blue-500" />
-                Step 8 — 🤖 AI Financial Assistant & 3-Month Action Plan
-              </h2>
-              <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Translates your scores and data into conversational plain English with a clear month-by-month execution roadmap.
-              </p>
+          {/* Header with Active AI Indicator & Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/40">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/25">
+                  <Bot className="w-6 h-6" />
+                </div>
+                <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-slate-900"></span>
+                </span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold flex items-center gap-2">
+                    7. AI Financial Health Assistant
+                  </h2>
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Active & Ready
+                  </span>
+                </div>
+                <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  Personalized financial diagnosis, strategic recommendations, and interactive month-by-month execution roadmap.
+                </p>
+              </div>
             </div>
-            <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
-              Powered by Server-side Gemini API
-            </span>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Gemini 2.5 Flash</span>
+              </span>
+              <button
+                onClick={() => {
+                  setAiChatMessages([
+                    {
+                      sender: 'ai',
+                      text: `Hello ${profile.name || 'there'}! I'm your FinScore AI Advisor. Your current FinScore is ${result.overallScore}/100 (${result.grade}). What financial questions can I help you tackle today?`,
+                      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    },
+                  ]);
+                  showToast('Chat history cleared and reset.');
+                }}
+                className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1 transition-all ${
+                  isLight ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
+                }`}
+                title="Reset conversation"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Real-time Financial Vitals Banner Evaluated by AI */}
+          <div className={`p-4 rounded-2xl border ${
+            isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'
+          }`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                Live Financial Numbers Evaluated by AI
+              </span>
+              <span className="text-[10px] font-semibold text-emerald-400 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                Synced with 5 Core Pillars
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
+              <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800/80'}`}>
+                <span className="text-[10px] text-slate-400">Current Score</span>
+                <p className="font-extrabold font-mono text-sm text-blue-400">{result.overallScore} / 100</p>
+              </div>
+              <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800/80'}`}>
+                <span className="text-[10px] text-slate-400">Monthly Income</span>
+                <p className="font-extrabold font-mono text-sm">{currSym}{profile.monthlyIncome.toLocaleString()}</p>
+              </div>
+              <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800/80'}`}>
+                <span className="text-[10px] text-slate-400">Monthly Savings</span>
+                <p className="font-extrabold font-mono text-sm text-emerald-400">{currSym}{result.metrics.monthlySavings.toLocaleString()}</p>
+              </div>
+              <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800/80'}`}>
+                <span className="text-[10px] text-slate-400">EMI to Income</span>
+                <p className={`font-extrabold font-mono text-sm ${result.metrics.emiToIncomeRatio <= 30 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {result.metrics.emiToIncomeRatio}%
+                </p>
+              </div>
+              <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800/80'}`}>
+                <span className="text-[10px] text-slate-400">Emergency Fund</span>
+                <p className={`font-extrabold font-mono text-sm ${result.metrics.emergencyFundRatio >= 100 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {result.metrics.emergencyFundRatio}%
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Key Priority Highlight Banner */}
           <div className={`p-5 rounded-2xl border ${
             isLight ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-100'
           }`}>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-500">
-              Primary Strategic Focus
-            </span>
-            <h3 className="text-base font-bold mt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-500 flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5" />
+                Primary Strategic Priority Recommended by AI
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+                Action Required
+              </span>
+            </div>
+            <h3 className="text-base font-bold mt-1.5">
               {result.biggestPriority}
             </h3>
           </div>
 
-          {/* Structured Monthly Action Plan (Month 1, Month 2, Month 3) */}
-          <div className="space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              3-Month Personalized Financial Action Plan
-            </h4>
+          {/* Structured Monthly Action Plan (Month 1, Month 2, Month 3) with Interactive Checkbox Progress */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-blue-400" />
+                3-Month Personalized Action Plan
+              </h4>
+              <span className="text-[11px] font-bold text-slate-400">
+                {Object.values(completedPlanTasks).filter(Boolean).length} of {
+                  result.monthlyActionPlan.reduce((acc, p) => acc + p.tasks.length, 0)
+                } tasks completed
+              </span>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {result.monthlyActionPlan.map(plan => (
-                <div key={plan.monthNumber} className={`p-5 rounded-2xl border flex flex-col justify-between ${
-                  isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
-                }`}>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-extrabold text-blue-400 font-mono">
-                        {plan.monthName}
-                      </span>
+              {result.monthlyActionPlan.map(plan => {
+                const completedInThisMonth = plan.tasks.filter((_, idx) => completedPlanTasks[`m${plan.monthNumber}_t${idx}`]).length;
+                const isAllCompleted = completedInThisMonth === plan.tasks.length && plan.tasks.length > 0;
+
+                return (
+                  <div key={plan.monthNumber} className={`p-5 rounded-2xl border flex flex-col justify-between transition-all ${
+                    isAllCompleted
+                      ? isLight ? 'bg-emerald-50/40 border-emerald-200' : 'bg-emerald-950/20 border-emerald-800/40'
+                      : isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+                  }`}>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-extrabold text-blue-400 font-mono">
+                          {plan.monthName}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          isAllCompleted
+                            ? 'bg-emerald-500/20 text-emerald-400'
+                            : 'bg-slate-800 text-slate-400'
+                        }`}>
+                          {completedInThisMonth}/{plan.tasks.length} Done
+                        </span>
+                      </div>
+                      <div className="text-xs font-semibold text-slate-300 mb-3">
+                        Focus: {plan.focus}
+                      </div>
+
+                      <ul className="space-y-2 text-xs">
+                        {plan.tasks.map((task, idx) => {
+                          const taskId = `m${plan.monthNumber}_t${idx}`;
+                          const isDone = !!completedPlanTasks[taskId];
+                          return (
+                            <li
+                              key={idx}
+                              onClick={() => togglePlanTask(taskId)}
+                              className={`flex items-start gap-2 p-1.5 rounded-lg cursor-pointer transition-colors ${
+                                isDone
+                                  ? isLight ? 'bg-emerald-100/50 text-emerald-900 line-through' : 'bg-emerald-950/30 text-emerald-400 line-through'
+                                  : isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-slate-900 text-slate-300'
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                className={`w-4 h-4 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                                  isDone
+                                    ? 'bg-emerald-500 text-white'
+                                    : isLight ? 'border border-slate-300 hover:border-blue-500' : 'border border-slate-700 hover:border-blue-400'
+                                }`}
+                              >
+                                {isDone && <Check className="w-3 h-3 stroke-[3]" />}
+                              </button>
+                              <span className="text-xs leading-relaxed select-none">{task}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     </div>
-                    <div className="text-xs font-semibold text-slate-300 mb-3">
-                      Focus: {plan.focus}
-                    </div>
-                    <ul className="space-y-2 text-xs text-slate-400">
-                      {plan.tasks.map((task, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                          <span>{task}</span>
-                        </li>
-                      ))}
-                    </ul>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
           {/* Interactive Chat with FinScore AI */}
-          <div className={`p-5 rounded-2xl border space-y-4 ${
+          <div className={`p-6 rounded-2xl border space-y-4 shadow-sm ${
             isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
           }`}>
-            <h4 className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <Bot className="w-4 h-4 text-blue-500" />
-              Ask FinScore AI Financial Assistant
-            </h4>
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 text-blue-400">
+                <Bot className="w-4 h-4 text-blue-500" />
+                FinScore AI Interactive Advisor Chat
+              </h4>
+              <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Live Multi-Pillar Synthesis
+              </span>
+            </div>
 
             {/* Chat message history box */}
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-2 no-scrollbar">
+            <div className="space-y-4 max-h-96 overflow-y-auto pr-2 no-scrollbar">
               {aiChatMessages.map((msg, i) => (
                 <div key={i} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div className={`max-w-xl p-3.5 rounded-2xl text-xs leading-relaxed ${
-                    msg.sender === 'user'
-                      ? 'bg-blue-600 text-white font-medium rounded-tr-none'
-                      : isLight
-                      ? 'bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-sm'
-                      : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none'
-                  }`}>
-                    {msg.text}
+                  <div className="flex items-start gap-2 max-w-2xl">
+                    {msg.sender === 'ai' && (
+                      <div className="w-7 h-7 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0 mt-1 shadow-md shadow-blue-500/20">
+                        <Bot className="w-4 h-4" />
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <div className={`p-4 rounded-2xl text-xs leading-relaxed ${
+                        msg.sender === 'user'
+                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-tr-none shadow-md'
+                          : isLight
+                          ? 'bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-sm'
+                          : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none'
+                      }`}>
+                        <div className="whitespace-pre-wrap">{msg.text}</div>
+
+                        {msg.sender === 'ai' && (
+                          <div className="mt-3 pt-2 border-t border-slate-800/40 flex items-center justify-between text-[10px] text-slate-400">
+                            <span>FinScore Strategic Guidance</span>
+                            <button
+                              onClick={() => handleCopyMessage(msg.text, i)}
+                              className={`flex items-center gap-1 px-2 py-0.5 rounded transition-all ${
+                                copiedMessageIndex === i
+                                  ? 'bg-emerald-500/20 text-emerald-400'
+                                  : 'hover:text-blue-400'
+                              }`}
+                            >
+                              {copiedMessageIndex === i ? (
+                                <>
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  <span>Copied!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>Copy Advice</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div className={`text-[10px] text-slate-500 px-1 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
+                        {msg.timestamp}
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-slate-500 mt-1 px-1">{msg.timestamp}</span>
                 </div>
               ))}
               {isAiLoading && (
-                <div className="flex items-center gap-2 text-xs text-blue-400 italic">
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>FinScore AI is thinking and formulating recommendations...</span>
+                <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-400">
+                  <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+                  <span>FinScore AI is analyzing your cash flow and calculating tailored recommendations...</span>
                 </div>
               )}
             </div>
 
-            {/* Quick suggested prompt buttons */}
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="text-[11px] text-slate-400 font-medium">Try asking:</span>
-              {[
-                'How can I reach my Car goal faster?',
-                'Should I prepay my loan or invest in emergency fund?',
-                'How much term life insurance is enough for 2 dependents?',
-              ].map(prompt => (
-                <button
-                  key={prompt}
-                  onClick={() => handleSendAiMessage(prompt)}
-                  className={`px-2.5 py-1 rounded-full border text-[11px] transition-colors ${
-                    isLight ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100' : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  {prompt}
-                </button>
-              ))}
+            {/* Quick suggested prompt buttons categorized */}
+            <div className="space-y-1.5 pt-2 border-t border-slate-800/40">
+              <span className="text-[11px] text-slate-400 font-semibold flex items-center gap-1">
+                <Zap className="w-3 h-3 text-amber-400" />
+                Suggested In-Depth Queries:
+              </span>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                {[
+                  { label: '🎯 How can I reach my goals 6 months earlier?', prompt: 'How can I reach my goals 6 months earlier with my current savings?' },
+                  { label: '💳 Prepay loan vs invest in emergency fund?', prompt: 'Should I prepay my loans or invest more in my emergency fund first?' },
+                  { label: '🛡️ Check my term insurance coverage', prompt: 'How much term life insurance is recommended for my age and dependents?' },
+                  { label: '📈 3 fastest actions to reach FinScore 85+', prompt: 'What are the 3 fastest actions I can take this month to boost my FinScore above 85?' },
+                ].map(item => (
+                  <button
+                    key={item.label}
+                    onClick={() => handleSendAiMessage(item.prompt)}
+                    className={`px-3 py-1.5 rounded-xl border text-[11px] font-medium transition-all cursor-pointer ${
+                      isLight ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-blue-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800 hover:border-blue-500/50'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Prompt Input Form */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pt-2">
               <input
                 type="text"
-                placeholder="Ask about your emergency fund, debt repayment, or financial roadmap..."
+                placeholder="Ask about emergency runway, loan avalanche, insurance gap, or tax strategy..."
                 value={aiQuestion}
                 onChange={e => setAiQuestion(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleSendAiMessage(); }}
-                className={`flex-1 px-4 py-2.5 rounded-xl border text-xs ${
+                className={`flex-1 px-4 py-3 rounded-2xl border text-xs focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 ${
                   isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
                 }`}
               />
               <button
                 onClick={() => handleSendAiMessage()}
                 disabled={isAiLoading || !aiQuestion.trim()}
-                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 disabled:opacity-50 shadow-md"
+                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-95"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Send</span>
@@ -2378,7 +3859,7 @@ export const FinScoreView: React.FC = () => {
                     <td className="p-3 text-slate-300">{profile.occupation}</td>
                     <td className="p-3 font-mono">{currSym}{profile.monthlyIncome.toLocaleString()}</td>
                     <td className="p-3 font-mono font-bold text-emerald-400">{result.overallScore}/100</td>
-                    <td className="p-3 font-mono">{(emergency.currentEmergencySavings / (result.metrics.essentialExpenses || 1)).toFixed(1)} mo</td>
+                    <td className="p-3 font-mono">{(((emergency?.currentEmergencySavings ?? 0) / (result?.metrics?.essentialExpenses || 1)) || 0).toFixed(1)} mo</td>
                     <td className="p-3 font-mono">{result.metrics.emiToIncomeRatio}%</td>
                     <td className="p-3">
                       <span className="px-2 py-0.5 rounded-full text-[10px] bg-blue-500/20 text-blue-400">
@@ -2598,15 +4079,16 @@ export const FinScoreView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block mb-1 text-slate-400">Monthly Net Income ({tempProfile.currency === 'USD' ? '$' : tempProfile.currency === 'EUR' ? '€' : tempProfile.currency === 'GBP' ? '£' : '₹'})</label>
-                <input
-                  type="number"
+                <FinScoreAmountInput
+                  id="modal-monthly-income"
+                  label={`Monthly Net Income (${tempProfile.currency === 'USD' ? '$' : tempProfile.currency === 'EUR' ? '€' : tempProfile.currency === 'GBP' ? '£' : '₹'})`}
                   value={tempProfile.monthlyIncome}
-                  onChange={e => setTempProfile({ ...tempProfile, monthlyIncome: parseFloat(e.target.value) || 0 })}
+                  onChange={val => setTempProfile({ ...tempProfile, monthlyIncome: val })}
+                  currSym={tempProfile.currency === 'USD' ? '$' : tempProfile.currency === 'EUR' ? '€' : tempProfile.currency === 'GBP' ? '£' : '₹'}
+                  isLight={isLight}
                   placeholder="50000"
-                  className={`w-full px-3.5 py-2.5 rounded-xl border ${
-                    isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-white'
-                  }`}
+                  compact
+                  presets={[25000, 50000, 75000, 100000, 150000]}
                 />
               </div>
 
@@ -2705,6 +4187,26 @@ export const FinScoreView: React.FC = () => {
           </div>
         </div>
       )}
+      {/* 1-Click Health Plan Modal */}
+      <FinScoreHealthPlanModal
+        isOpen={showHealthPlanModal}
+        onClose={() => setShowHealthPlanModal(false)}
+        result={result}
+        profile={profile}
+        currSym={currSym}
+        isLight={isLight}
+        onNavigateTab={(tab) => setActiveTab(tab)}
+      />
+
+      {/* Peer Benchmark Modal */}
+      <FinScoreBenchmarkModal
+        isOpen={showBenchmarkModal}
+        onClose={() => setShowBenchmarkModal(false)}
+        result={result}
+        profile={profile}
+        currSym={currSym}
+        isLight={isLight}
+      />
     </div>
   );
 };

@@ -216,41 +216,51 @@ export const FinScoreBenchmarkModal: React.FC<BenchmarkModalProps> = ({
     window.print();
   };
 
+  const lifeMultiplier = result?.metrics?.lifeCoverageMultiplier ?? 
+    (result?.metrics?.monthlyIncome && result.metrics.monthlyIncome > 0
+      ? (result.metrics.recommendedLifeCoverage - result.metrics.lifeCoverageShortfall) / (result.metrics.monthlyIncome * 12)
+      : 0);
+
+  const emergencyMonths = result?.metrics?.emergencyMonthsAvailable ??
+    (result?.metrics?.essentialExpenses && result.metrics.essentialExpenses > 0
+      ? ((result.metrics.requiredEmergencyFund - result.metrics.emergencyShortfall) / result.metrics.essentialExpenses)
+      : 0);
+
   const benchmarks = [
     {
       metric: 'Savings Rate',
-      yourValue: `${result.metrics.savingsRatio}%`,
+      yourValue: `${result?.metrics?.savingsRatio ?? 0}%`,
       recommended: '20% - 30%',
       top10: '40%+',
-      isGood: result.metrics.savingsRatio >= 20,
+      isGood: (result?.metrics?.savingsRatio ?? 0) >= 20,
     },
     {
       metric: 'Debt / EMI to Income',
-      yourValue: `${result.metrics.emiToIncomeRatio}%`,
+      yourValue: `${result?.metrics?.emiToIncomeRatio ?? 0}%`,
       recommended: '< 35%',
       top10: '< 15%',
-      isGood: result.metrics.emiToIncomeRatio <= 35,
+      isGood: (result?.metrics?.emiToIncomeRatio ?? 0) <= 35,
     },
     {
       metric: 'Emergency Buffer',
-      yourValue: `${result.metrics.emergencyMonthsAvailable} Months`,
+      yourValue: `${(emergencyMonths || 0).toFixed(1)} Months`,
       recommended: '6 Months',
       top10: '9-12 Months',
-      isGood: result.metrics.emergencyMonthsAvailable >= 6,
+      isGood: (emergencyMonths || 0) >= 6,
     },
     {
       metric: 'Life Insurance Coverage',
-      yourValue: `${result.metrics.lifeCoverageMultiplier.toFixed(1)}x Income`,
+      yourValue: `${(lifeMultiplier || 0).toFixed(1)}x Income`,
       recommended: '10x - 15x',
       top10: '15x - 20x',
-      isGood: result.metrics.lifeCoverageMultiplier >= 10,
+      isGood: (lifeMultiplier || 0) >= 10,
     },
     {
       metric: 'Health Insurance',
-      yourValue: result.scores.insurance >= 70 ? 'Protected' : 'Underinsured',
+      yourValue: (result?.scores?.insurance ?? 0) >= 70 ? 'Protected' : 'Underinsured',
       recommended: '₹10L+ Independent Cover',
       top10: '₹25L+ Super Top-up',
-      isGood: result.scores.insurance >= 70,
+      isGood: (result?.scores?.insurance ?? 0) >= 70,
     },
   ];
 

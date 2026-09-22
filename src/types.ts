@@ -203,7 +203,7 @@ export interface NetWorthSnapshot {
 
 export type AppTheme = 'coolors' | 'dark' | 'midnight' | 'emerald' | 'slate' | 'light';
 
-export type MainTab = 'overview' | 'wealth' | 'goals' | 'account' | 'more' | 'calendar' | 'balancesheet' | 'reports' | 'finscore' | 'settings';
+export type MainTab = 'overview' | 'wealth' | 'goals' | 'account' | 'more' | 'calendar' | 'balancesheet' | 'reports' | 'finscore' | 'settings' | 'calculators';
 
 export type WealthSubTab = 'assets' | 'liabilities' | 'networth' | 'allocation';
 export type GoalsSubTab = 'essential' | 'goals' | 'fire';
@@ -316,6 +316,8 @@ export interface FinScoreResult {
     emergencyFundRatio: number; // %
     recommendedLifeCoverage: number;
     lifeCoverageShortfall: number;
+    lifeCoverageMultiplier?: number;
+    emergencyMonthsAvailable?: number;
     totalGoalRequiredMonthlySavings: number;
   };
   monthlyActionPlan: {

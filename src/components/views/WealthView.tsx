@@ -634,7 +634,7 @@ export const WealthView: React.FC = () => {
                       style={{ width: `${Math.max(1.5, stat.percentage)}%`, backgroundColor: color }}
                       className="h-full rounded-full transition-all cursor-pointer hover:opacity-80 relative group"
                       onClick={() => setSelectedTagFilter(stat.name === 'Untagged Assets' ? 'untagged' : stat.name)}
-                      title={`${stat.name}: ${formatMoney(stat.totalVal)} (${stat.percentage.toFixed(1)}%)`}
+                      title={`${stat.name}: ${formatMoney(stat.totalVal)} (${(stat.percentage ?? 0).toFixed(1)}%)`}
                     />
                   );
                 })}
@@ -660,7 +660,7 @@ export const WealthView: React.FC = () => {
                       />
                       <span>{stat.name}</span>
                       <span className="font-mono text-[11px] text-zinc-400 font-semibold">
-                        {formatMoney(stat.totalVal)} ({stat.percentage.toFixed(0)}%)
+                        {formatMoney(stat.totalVal)} ({(stat.percentage ?? 0).toFixed(0)}%)
                       </span>
                     </button>
                   );
@@ -889,7 +889,7 @@ export const WealthView: React.FC = () => {
                               <span>{stat.name}</span>
                             </span>
                             <span className="text-xs font-mono font-bold text-zinc-300">
-                              {stat.percentage.toFixed(1)}%
+                              {(stat.percentage ?? 0).toFixed(1)}%
                             </span>
                           </div>
 
@@ -1618,7 +1618,7 @@ export const WealthView: React.FC = () => {
                     stroke="#71717a" 
                     fontSize={10} 
                     tickLine={false}
-                    tickFormatter={val => `$${(val / 1000).toFixed(0)}k`}
+                    tickFormatter={val => `$${((Number(val) || 0) / 1000).toFixed(0)}k`}
                   />
                   <Tooltip 
                     content={({ active, payload }) => {
@@ -1815,8 +1815,8 @@ export const WealthView: React.FC = () => {
                               {Math.abs(delta) < 3 
                                 ? '✓ Balanced' 
                                 : delta > 0 
-                                ? `Overweight by +${delta.toFixed(1)}%` 
-                                : `Underweight by ${delta.toFixed(1)}%`}
+                                ? `Overweight by +${(delta ?? 0).toFixed(1)}%` 
+                                : `Underweight by ${(delta ?? 0).toFixed(1)}%`}
                             </span>
                             <span className="text-zinc-500 font-mono text-[10px]">
                               {delta < 0 ? `Suggested inflow: ${formatMoney((Math.abs(delta) / 100) * totalAssets)}` : 'Hold / Harvest'}

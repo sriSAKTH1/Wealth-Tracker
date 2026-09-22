@@ -108,6 +108,13 @@ interface FinanceContextType {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 
+  // Global Keyboard Shortcuts & Accessibility
+  keyboardShortcutsEnabled: boolean;
+  setKeyboardShortcutsEnabled: (enabled: boolean) => void;
+  toggleKeyboardShortcuts: () => void;
+  isShortcutsHelpOpen: boolean;
+  setIsShortcutsHelpOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
+
   // Real-time Market Data & Synchronization
   isSyncingMarketPrices: boolean;
   lastMarketSyncTime: string | null;
@@ -226,6 +233,22 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [quickAddType, setQuickAddType] = useState<'income' | 'expense' | 'asset' | 'liability'>('income');
   const [isSearchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Global Keyboard Shortcuts State
+  const [keyboardShortcutsEnabled, setKeyboardShortcutsEnabledState] = useState<boolean>(() => {
+    const saved = localStorage.getItem('aura_keyboard_shortcuts_enabled');
+    return saved === null ? true : saved === 'true';
+  });
+  const [isShortcutsHelpOpen, setIsShortcutsHelpOpen] = useState<boolean>(false);
+
+  const setKeyboardShortcutsEnabled = (enabled: boolean) => {
+    setKeyboardShortcutsEnabledState(enabled);
+    localStorage.setItem('aura_keyboard_shortcuts_enabled', String(enabled));
+  };
+
+  const toggleKeyboardShortcuts = () => {
+    setKeyboardShortcutsEnabled(!keyboardShortcutsEnabled);
+  };
 
   // Real-time Market Live Price Synchronization
   const [isSyncingMarketPrices, setIsSyncingMarketPrices] = useState(false);
@@ -1006,6 +1029,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setSearchOpen,
         searchQuery,
         setSearchQuery,
+        keyboardShortcutsEnabled,
+        setKeyboardShortcutsEnabled,
+        toggleKeyboardShortcuts,
+        isShortcutsHelpOpen,
+        setIsShortcutsHelpOpen,
         isSyncingMarketPrices,
         lastMarketSyncTime,
         marketSyncStatus,

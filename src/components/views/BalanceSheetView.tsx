@@ -13,7 +13,8 @@ import {
   Layers,
   FileSpreadsheet,
   CheckCircle2,
-  LayoutGrid
+  LayoutGrid,
+  Printer
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { FinancialStatementChart } from '../FinancialStatementChart';
@@ -106,6 +107,19 @@ export const BalanceSheetView: React.FC = () => {
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export Report</span>
+          </button>
+
+          <button
+            onClick={handlePrint}
+            title="Print Balance Sheet or Save as PDF"
+            className={`no-print flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer ${
+              isLight 
+                ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' 
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+            }`}
+          >
+            <Printer className="w-3.5 h-3.5 text-blue-400" />
+            <span>Print Sheet</span>
           </button>
         </div>
       </div>

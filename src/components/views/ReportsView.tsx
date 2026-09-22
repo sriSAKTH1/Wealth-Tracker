@@ -86,7 +86,7 @@ export const ReportsView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="no-print flex items-center gap-2">
           <button
             onClick={exportTransactionsCSV}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 text-xs font-semibold transition-colors"
@@ -154,7 +154,7 @@ export const ReportsView: React.FC = () => {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthlyComparisonData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <XAxis dataKey="month" stroke="#71717a" fontSize={11} tickLine={false} />
-              <YAxis stroke="#71717a" fontSize={10} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+              <YAxis stroke="#71717a" fontSize={10} tickLine={false} tickFormatter={v => `$${((Number(v) || 0) / 1000).toFixed(0)}k`} />
               <Tooltip 
                 formatter={(v: number) => isPrivateMode ? '••••••' : `$${v.toLocaleString()}`}
                 contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', borderRadius: '0.75rem', fontSize: '12px' }}

@@ -1131,6 +1131,105 @@ You have saved **${currInvWords}** (${progressPct}% of your target), leaving a g
   }
 });
 
+// -------------------------------------------------------------
+// Interactive Financial AI Copilot Chat API
+// -------------------------------------------------------------
+app.post('/api/chat/financial-copilot', async (req, res) => {
+  try {
+    const { 
+      message, 
+      chatHistory = [],
+      financialContext = {} 
+    } = req.body;
+
+    const {
+      monthlyIncome = 12400,
+      monthlyExpenses = 4650,
+      netSavings = 7750,
+      savingsRate = 62.5,
+      netWorth = 425000,
+      currency = 'USD'
+    } = financialContext;
+
+    const ai = getGeminiClient();
+    if (ai) {
+      try {
+        const historyContext = chatHistory.slice(-4).map((m: any) => `${m.sender === 'user' ? 'User' : 'Assistant'}: ${m.text}`).join('\n');
+        const prompt = `You are FinAI Copilot, an elite personal finance and cash flow advisory AI.
+Current User Financial Context:
+- Currency: ${currency}
+- Monthly Income: ${monthlyIncome}
+- Monthly Expenses / Burn: ${monthlyExpenses}
+- Monthly Net Savings: ${netSavings}
+- Savings Rate: ${savingsRate}%
+- Total Net Worth: ${netWorth}
+
+Recent conversation:
+${historyContext}
+
+User query: "${message}"
+
+Give a sharp, structured, empowering, and actionable response. Use bolding for key figures and bullet points where helpful. If recommending income expansion or cashflow allocation, give concrete, practical strategies. Keep under 160 words.`;
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: prompt,
+          config: {
+            systemInstruction: 'You are an intelligent, articulate, objective personal wealth and cashflow advisory assistant. You provide high-signal, math-grounded advice with positive encouragement.'
+          }
+        });
+
+        if (response.text) {
+          return res.json({
+            success: true,
+            source: 'GEMINI_AI',
+            reply: response.text
+          });
+        }
+      } catch (geminiErr: any) {
+        console.warn('[Gemini AI Copilot] Fallback to smart financial engine:', geminiErr?.message);
+      }
+    }
+
+    // High quality deterministic fallback generator
+    let fallbackReply = `Here is your financial copilot analysis:
+• **Monthly Inflow**: You are earning **${currency} ${monthlyIncome.toLocaleString()}**/month against **${currency} ${monthlyExpenses.toLocaleString()}** in expenses.
+• **Savings Rate**: At **${savingsRate}%**, your capital retention is in the top quartile of disciplined wealth builders.
+• **Actionable Next Step**: Direct at least 70% of your **${currency} ${netSavings.toLocaleString()}** monthly surplus into diversified index funds and income-producing assets while maintaining a 6-month liquid emergency runway.`;
+
+    const lowerMsg = (message || '').toLowerCase();
+    if (lowerMsg.includes('increase') || lowerMsg.includes('scale') || lowerMsg.includes('grow') || lowerMsg.includes('more')) {
+      fallbackReply = `### 🚀 Strategies to Scale Your ${currency} ${monthlyIncome.toLocaleString()}/mo Inflow:
+1. **High-Ticket Consulting / Skill Monetization**: Package your core domain expertise into fractional advisory or project retainers to add an extra 20–30% top-line.
+2. **Dividend & Yield Layering**: Reinvest your current ${currency} ${netSavings.toLocaleString()} surplus into dividend aristocrats and high-yield instruments to generate passive cash quarterly.
+3. **Value-Based Salary Negotiation**: Leverage measurable impact metrics to target a 15–20% step-up in your primary compensation cycle.`;
+    } else if (lowerMsg.includes('burn') || lowerMsg.includes('expense') || lowerMsg.includes('cut') || lowerMsg.includes('cost')) {
+      fallbackReply = `### 🛡️ Cash Flow & Burn Rate Diagnosis:
+• **Current Outflow**: ${currency} ${monthlyExpenses.toLocaleString()} (${(100 - savingsRate).toFixed(1)}% of income).
+• **Burn Resilience**: Your net savings of ${currency} ${netSavings.toLocaleString()} provides massive protection. You can sustain your current lifestyle for multiple months on savings alone.
+• **Optimization**: Review recurring subscription leaks and discretionary auto-renewals to safely reclaim another 3–5% without reducing quality of life.`;
+    } else if (lowerMsg.includes('invest') || lowerMsg.includes('where') || lowerMsg.includes('allocate')) {
+      fallbackReply = `### 💡 Allocation Blueprint for Your ${currency} ${netSavings.toLocaleString()} Surplus:
+• **Core Growth (60%)**: Low-cost broad market index funds (Nifty 50 / S&P 500) for compounding.
+• **Satellite / High-Yield (25%)**: Quality dividend stocks or REITs for quarterly cash flow.
+• **Liquid Cushion (15%)**: Arbitrage or high-yield liquid funds until 6 months of living expenses (${currency} ${(monthlyExpenses * 6).toLocaleString()}) are fully backed.`;
+    }
+
+    return res.json({
+      success: true,
+      source: 'SMART_COPILOT_ENGINE',
+      reply: fallbackReply
+    });
+  } catch (err: any) {
+    return res.json({
+      success: true,
+      source: 'OFFLINE_FALLBACK',
+      reply: 'Your cash flow dynamics are resilient. Maintain consistent monthly allocations toward compounding assets while monitoring fixed recurring obligations.'
+    });
+  }
+});
+
+
 
 // -------------------------------------------------------------
 // VITE MIDDLEWARE & STATIC SERVING

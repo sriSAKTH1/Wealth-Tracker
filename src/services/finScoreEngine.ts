@@ -224,6 +224,8 @@ export function calculateFinScore(
         emergencyFundRatio: 0,
         recommendedLifeCoverage: 0,
         lifeCoverageShortfall: 0,
+        lifeCoverageMultiplier: 0,
+        emergencyMonthsAvailable: 0,
         totalGoalRequiredMonthlySavings: 0,
       },
       monthlyActionPlan: [
@@ -643,6 +645,8 @@ export function calculateFinScore(
       emergencyFundRatio,
       recommendedLifeCoverage,
       lifeCoverageShortfall,
+      lifeCoverageMultiplier: annualIncome > 0 ? Math.round((totalLifeCoverage / annualIncome) * 10) / 10 : 0,
+      emergencyMonthsAvailable: monthlyEssentialBasis > 0 ? Math.round((currentEmergencySavings / monthlyEssentialBasis) * 10) / 10 : 0,
       totalGoalRequiredMonthlySavings,
     },
     monthlyActionPlan,

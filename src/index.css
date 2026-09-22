@@ -216,3 +216,404 @@
 .animate-fab-pulse {
   animation: subtle-floating-pulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* =========================================================================
+   PRINT-FRIENDLY STYLES & MEDIA QUERY (@media print)
+   Optimized for paper printing and PDF export:
+   - High-contrast dark ink on clean pure white background
+   - Calculator results, input parameters, and KPI summaries neatly formatted
+   - Recharts SVG charts crisp, properly sized, with legible axis labels
+   - Tables with repeating headers and cleanly formatted row borders
+   - Automatic removal of UI chrome (navbars, sidebars, floating buttons, sliders)
+   ========================================================================= */
+
+/* On screen, hide elements designated only for paper print */
+.print-only {
+  display: none !important;
+}
+
+@media print {
+  /* Page Margin & Clean Layout */
+  @page {
+    margin: 12mm 10mm 14mm 10mm;
+    size: auto;
+  }
+
+  /* Force exact color and background fill preservation for charts and badges */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Base Document Settings */
+  html,
+  body,
+  #root,
+  .dark-theme,
+  .light-theme,
+  div[class*="min-h-screen"] {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 10pt !important;
+    line-height: 1.4 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Display print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Hide UI chrome, navigation bars, sidebars, floating buttons, range sliders, and interactive tabs */
+  nav,
+  aside,
+  header,
+  .no-print,
+  #btn-floating-quick-add,
+  .animate-fab-pulse,
+  [role="navigation"],
+  button:not(.print-keep),
+  input[type="range"],
+  .fixed.bottom-20,
+  .fixed.bottom-6,
+  div[class*="rounded-b-xl"], /* Phone simulator notch */
+  span[class*="animate-ping"],
+  span[class*="animate-pulse"] {
+    display: none !important;
+  }
+
+  /* Expand Main View to full width */
+  main,
+  .max-w-7xl,
+  .max-w-sm,
+  div[class*="max-w-7xl"] {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Remove simulated phone constraints if active */
+  div[class*="h-[780px]"],
+  div[class*="border-[6px]"],
+  div[class*="rounded-[40px]"] {
+    height: auto !important;
+    max-height: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  /* Convert dark containers and cards to crisp white surfaces */
+  .bg-slate-950,
+  .bg-zinc-950,
+  .bg-black,
+  .bg-slate-900,
+  .bg-zinc-900,
+  .bg-slate-800,
+  .bg-zinc-800,
+  .bg-slate-700,
+  .bg-zinc-700,
+  .bg-slate-950\/95,
+  .bg-slate-950\/90,
+  .bg-slate-950\/80,
+  .bg-slate-950\/70,
+  .bg-slate-950\/60,
+  .bg-slate-950\/50,
+  .bg-slate-950\/40,
+  .bg-zinc-950\/95,
+  .bg-zinc-950\/90,
+  .bg-zinc-950\/80,
+  .bg-zinc-950\/70,
+  .bg-zinc-950\/60,
+  .bg-zinc-950\/50,
+  .bg-zinc-950\/40,
+  .bg-slate-900\/95,
+  .bg-slate-900\/90,
+  .bg-slate-900\/80,
+  .bg-slate-900\/70,
+  .bg-slate-900\/60,
+  .bg-slate-900\/50,
+  .bg-slate-900\/40,
+  .bg-zinc-900\/95,
+  .bg-zinc-900\/90,
+  .bg-zinc-900\/80,
+  .bg-zinc-900\/70,
+  .bg-zinc-900\/60,
+  .bg-zinc-900\/50,
+  .bg-zinc-900\/40,
+  .bg-black\/20 {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+  }
+
+  /* Soft, paper-friendly tinted callout backgrounds for results and badges */
+  .bg-emerald-500\/10,
+  .bg-emerald-500\/15,
+  .bg-emerald-500\/20 {
+    background-color: #f0fdf4 !important;
+  }
+  .bg-blue-500\/10,
+  .bg-blue-500\/15,
+  .bg-blue-500\/20 {
+    background-color: #eff6ff !important;
+  }
+  .bg-amber-500\/10,
+  .bg-amber-500\/15,
+  .bg-amber-500\/20 {
+    background-color: #fffbeb !important;
+  }
+  .bg-rose-500\/10,
+  .bg-rose-500\/15,
+  .bg-rose-500\/20 {
+    background-color: #fff1f2 !important;
+  }
+  .bg-purple-500\/10,
+  .bg-purple-500\/15,
+  .bg-purple-500\/20 {
+    background-color: #faf5ff !important;
+  }
+  .bg-cyan-500\/10,
+  .bg-cyan-500\/20 {
+    background-color: #ecfeff !important;
+  }
+
+  /* Typography Ink Tuning: High-contrast dark charcoal and slate */
+  .text-white,
+  .text-slate-100,
+  .text-zinc-100,
+  .text-slate-200,
+  .text-zinc-200 {
+    color: #0f172a !important;
+  }
+
+  .text-slate-300,
+  .text-zinc-300 {
+    color: #1e293b !important;
+  }
+
+  .text-slate-400,
+  .text-zinc-400,
+  .text-slate-500,
+  .text-zinc-500 {
+    color: #475569 !important;
+  }
+
+  /* High contrast for colored metrics on paper */
+  .text-emerald-400,
+  .text-emerald-500 {
+    color: #047857 !important;
+  }
+
+  .text-blue-400,
+  .text-blue-500 {
+    color: #1d4ed8 !important;
+  }
+
+  .text-amber-400,
+  .text-amber-500 {
+    color: #b45309 !important;
+  }
+
+  .text-rose-400,
+  .text-rose-500 {
+    color: #be123c !important;
+  }
+
+  .text-purple-400,
+  .text-purple-500 {
+    color: #6d28d9 !important;
+  }
+
+  .text-cyan-400,
+  .text-cyan-500 {
+    color: #0e7490 !important;
+  }
+
+  /* Clean Paper Borders */
+  .border,
+  .border-b,
+  .border-t,
+  .border-l,
+  .border-r,
+  [class*="border-slate-"],
+  [class*="border-zinc-"],
+  [class*="border-white"] {
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Cards and Containers: prevent awkward page splitting */
+  .rounded-3xl,
+  .rounded-2xl,
+  .rounded-xl,
+  .p-5,
+  .p-6,
+  div[class*="rounded-3xl"],
+  div[class*="rounded-2xl"] {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+  }
+
+  /* Calculator Results & Parameters 2-column print layout */
+  .grid.grid-cols-1.lg\:grid-cols-12 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+  .lg\:col-span-6 {
+    grid-column: span 1 / span 1 !important;
+  }
+
+  /* Form & Input presentation in print */
+  input[type="number"],
+  input[type="text"],
+  select {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    font-size: 9.5pt !important;
+    padding: 4px 8px !important;
+  }
+
+  /* -------------------------------------------------------------------------
+     CHARTS & VISUALIZATIONS PRINT FIDELITY (Recharts & SVG)
+     ------------------------------------------------------------------------- */
+  .recharts-responsive-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 250px !important;
+    min-height: 220px !important;
+    display: block !important;
+    overflow: visible !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .recharts-wrapper {
+    width: 100% !important;
+    height: 100% !important;
+    overflow: visible !important;
+  }
+
+  .recharts-surface {
+    width: 100% !important;
+    height: 100% !important;
+    overflow: visible !important;
+  }
+
+  /* Chart Axis Labels & Numbers */
+  g.recharts-cartesian-axis text,
+  text.recharts-text,
+  .recharts-label {
+    fill: #1e293b !important;
+    font-size: 8pt !important;
+    font-weight: 600 !important;
+  }
+
+  /* Chart Grid Lines */
+  g.recharts-cartesian-grid line,
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line {
+    stroke: #e2e8f0 !important;
+    stroke-opacity: 1 !important;
+  }
+
+  /* Axis Lines */
+  g.recharts-cartesian-axis line,
+  .recharts-cartesian-axis-line {
+    stroke: #94a3b8 !important;
+  }
+
+  /* Chart Legend */
+  .recharts-legend-wrapper {
+    position: relative !important;
+    margin-top: 8px !important;
+  }
+
+  .recharts-legend-item-text {
+    color: #0f172a !important;
+    font-size: 8.5pt !important;
+    font-weight: 600 !important;
+  }
+
+  /* Hide interactive tooltips on paper */
+  .recharts-tooltip-wrapper,
+  .recharts-default-tooltip {
+    display: none !important;
+  }
+
+  /* Pie Chart Labels */
+  .recharts-pie text {
+    fill: #0f172a !important;
+    font-weight: 700 !important;
+    font-size: 8.5pt !important;
+  }
+
+  /* -------------------------------------------------------------------------
+     TABLES & AMORTIZATION SCHEDULES PRINT FIDELITY
+     ------------------------------------------------------------------------- */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+  }
+
+  thead {
+    display: table-header-group !important; /* Repeats table header across pages */
+  }
+
+  thead th {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-bottom: 2px solid #94a3b8 !important;
+    font-weight: 700 !important;
+    font-size: 8.5pt !important;
+    padding: 6px 8px !important;
+  }
+
+  tbody tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  tbody td {
+    padding: 5px 8px !important;
+    font-size: 8pt !important;
+    color: #1e293b !important;
+  }
+
+  /* -------------------------------------------------------------------------
+     MODAL PRINT SUPPORT (For Peer Benchmark and Diagnostics Print)
+     ------------------------------------------------------------------------- */
+  .fixed.inset-0.z-50 {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  .fixed.inset-0.z-50 > div {
+    max-height: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}

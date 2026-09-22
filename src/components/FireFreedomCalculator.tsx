@@ -17,7 +17,8 @@ import {
   CheckCircle2,
   ArrowRight,
   Calculator,
-  Info
+  Info,
+  Printer
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -244,7 +245,16 @@ export const FireFreedomCalculator: React.FC<FireFreedomCalculatorProps> = ({ on
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="no-print flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/80 text-xs font-medium transition-colors cursor-pointer"
+              title="Print or Save FIRE Report as PDF"
+            >
+              <Printer className="w-3.5 h-3.5 text-blue-400" />
+              <span>Print / PDF</span>
+            </button>
             <button
               type="button"
               onClick={handleSaveFireGoal}
@@ -263,6 +273,28 @@ export const FireFreedomCalculator: React.FC<FireFreedomCalculatorProps> = ({ on
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset</span>
             </button>
+          </div>
+        </div>
+
+        {/* Printable FIRE Report Header */}
+        <div className="print-only mb-6 pb-4 border-b border-slate-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[11px] uppercase tracking-wider font-bold text-slate-500">
+                Retirement & Independence Model
+              </div>
+              <h1 className="text-2xl font-black text-slate-900 mt-0.5">
+                Financial Independence & Early Retirement (FIRE) Report
+              </h1>
+              <p className="text-xs text-slate-600 mt-1">
+                Generated on {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • All values in INR (₹)
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="inline-block px-3 py-1 rounded border border-slate-300 text-xs font-mono font-bold text-slate-800 bg-slate-100">
+                Rule of 25x / 30x Model
+              </span>
+            </div>
           </div>
         </div>
 
