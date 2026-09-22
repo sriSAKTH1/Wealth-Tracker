@@ -95,6 +95,8 @@ interface FinanceContextType {
   convertCurrency: (amount: number, fromCurrency?: CurrencyCode, toCurrency?: CurrencyCode) => number;
   theme: AppTheme;
   setTheme: (theme: AppTheme) => void;
+  accentColor: string;
+  setAccentColor: (color: string) => void;
   isMobileFrameSimulated: boolean;
   toggleMobileFrame: () => void;
 
@@ -226,6 +228,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [theme, setThemeState] = useState<AppTheme>(() => {
     return (localStorage.getItem('aura_theme') as AppTheme) || 'light';
   });
+  const [accentColor, setAccentColorState] = useState<string>(() => {
+    return localStorage.getItem('fix_accent_color') || 'blue';
+  });
   const [isMobileFrameSimulated, setIsMobileFrameSimulated] = useState<boolean>(false);
 
   // Quick Add & Search Modals
@@ -352,6 +357,22 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setThemeState(t);
     localStorage.setItem('aura_theme', t);
   };
+
+  const setAccentColor = (color: string) => {
+    setAccentColorState(color);
+    localStorage.setItem('fix_accent_color', color);
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-accent', color);
+      document.body.setAttribute('data-accent', color);
+    }
+  };
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-accent', accentColor);
+      document.body.setAttribute('data-accent', accentColor);
+    }
+  }, [accentColor]);
 
   const toggleMobileFrame = () => {
     setIsMobileFrameSimulated(prev => !prev);
@@ -1019,6 +1040,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         convertCurrency,
         theme,
         setTheme,
+        accentColor,
+        setAccentColor,
         isMobileFrameSimulated,
         toggleMobileFrame,
         isQuickAddOpen,

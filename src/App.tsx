@@ -23,7 +23,7 @@ import { SettingsView } from './components/views/SettingsView';
 import { FinancialCalculatorsView } from './components/calculators/FinancialCalculatorsView';
 
 const MainLayout: React.FC = () => {
-  const { activeTab, theme, isMobileFrameSimulated, openQuickAdd, transactions = [] } = useFinance();
+  const { activeTab, theme, accentColor, isMobileFrameSimulated, openQuickAdd, transactions = [] } = useFinance();
   const hasNoTransactions = !transactions || transactions.length === 0;
 
   // Render current active view
@@ -67,7 +67,10 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen w-full flex flex-col font-['Plus_Jakarta_Sans',sans-serif] ${themeClasses[theme] || 'bg-zinc-950 text-zinc-100'}`}>
+    <div
+      data-accent={accentColor}
+      className={`min-h-screen w-full flex flex-col font-['Plus_Jakarta_Sans',sans-serif] ${themeClasses[theme] || 'bg-zinc-950 text-zinc-100'}`}
+    >
       {/* Top Navbar */}
       <Navbar />
 

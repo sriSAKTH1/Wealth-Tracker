@@ -921,7 +921,7 @@ function getGeminiClient(): GoogleGenAI | null {
 
 app.post('/api/finscore/ai-advisor', async (req, res) => {
   try {
-    const { profile, result, question } = req.body || {};
+    const { profile, result, question, history, model, rolePreset } = req.body || {};
 
     const profileName = profile?.name || 'Friend';
     const income = profile?.monthlyIncome || 50000;
@@ -934,78 +934,138 @@ app.post('/api/finscore/ai-advisor', async (req, res) => {
     const emergencyShortfall = result?.metrics?.emergencyShortfall ?? 70000;
     const biggestPriority = result?.biggestPriority || 'Build your emergency fund before increasing discretionary spending.';
 
+    // Choose requested model or default
+    const validModels = ['gemini-3.5-flash', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite'];
+    const selectedModel = validModels.includes(model) ? model : 'gemini-3.5-flash';
+
+    // Tailored system instruction based on role preset
+    let rolePersona = 'You are FinScore AI, an empathetic, highly knowledgeable Certified Financial Planner (CFP) and financial educator.';
+    if (rolePreset === 'debt_crusher') {
+      rolePersona = 'You are FinScore Debt Crusher AI, a relentless debt elimination strategist specializing in high-interest debt payoff (Debt Avalanche/Snowball), EMI renegotiation, and freeing up cash flow.';
+    } else if (rolePreset === 'risk_auditor') {
+      rolePersona = 'You are FinScore Risk & Safety Net Auditor AI, a defense-first financial risk specialist focusing on emergency liquidity runway, pure term life insurance adequacy (10-15x income), and healthcare catastrophe shields.';
+    } else if (rolePreset === 'wealth_accelerator') {
+      rolePersona = 'You are FinScore Wealth Accelerator AI, an aggressive growth and early financial independence (FIRE) strategist focused on index investing, SIP compounding, asset allocation, and milestone acceleration.';
+    }
+
+    const systemInstruction = `${rolePersona}
+The user is viewing their comprehensive FinScore™ Financial Health Dashboard.
+Verified Profile Data:
+- Name: ${profileName} (Age: ${profile?.age || 28})
+- Monthly Income: ${currency}${income.toLocaleString()}
+- Overall FinScore: ${overallScore}/100 (${grade})
+- Component Breakdown: Savings ${result?.scores?.savings ?? 75}/100, Expense ${result?.scores?.expenseManagement ?? 70}/100, Debt ${result?.scores?.debt ?? 80}/100, Emergency ${result?.scores?.emergencyFund ?? 50}/100, Insurance ${result?.scores?.insurance ?? 60}/100, Goals ${result?.scores?.futureGoals ?? 70}/100
+- Savings Rate: ${savingsRatio}%
+- Monthly Debt EMI Ratio: ${emiRatio}%
+- Emergency Fund Coverage: ${emergencyFundRatio}% (Target: 6 months; Shortfall: ${currency}${emergencyShortfall.toLocaleString()})
+- Biggest Primary Priority: ${biggestPriority}
+
+Instructions:
+1. Provide objective, clear, personalized, actionable financial advice.
+2. Ground all calculations and numerical guidance directly in their verified profile numbers above.
+3. Use formatted markdown with bold highlights, clear bullet points, or concise numbered action steps.
+4. Maintain full multi-turn conversational context when answering follow-up queries.
+5. Conclude responses with an empowering, constructive takeaway or 1 suggested high-impact next question.
+6. Clearly clarify that all insights are for financial health education and planning, not formal SEBI/SEC regulated security solicitations.`;
+
     const ai = getGeminiClient();
 
     if (ai) {
-      const prompt = question
-        ? `You are FinScore AI, an empathetic, highly knowledgeable certified financial planner and educator.
-The user's verified financial profile:
-- Name: ${profileName} (Age ${profile?.age || 28})
-- Monthly Income: ${currency}${income.toLocaleString()}
-- FinScore: ${overallScore}/100 (${grade})
-- Savings Ratio: ${savingsRatio}%
-- EMI to Income Burden: ${emiRatio}%
-- Emergency Fund Coverage: ${emergencyFundRatio}% (Shortfall: ${currency}${emergencyShortfall.toLocaleString()})
-- Biggest Priority: ${biggestPriority}
+      // Build contents array for multi-turn chat
+      const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
 
-The user asks: "${question}"
+      // Add previous conversation history if provided
+      if (Array.isArray(history) && history.length > 0) {
+        // Keep the last 12 turns to prevent context bloat while maintaining strong continuity
+        const recentHistory = history.slice(-12);
+        for (const item of recentHistory) {
+          const role = (item.sender === 'ai' || item.sender === 'model' || item.role === 'model') ? 'model' : 'user';
+          const text = (item.text || item.content || '').trim();
+          if (text) {
+            contents.push({
+              role,
+              parts: [{ text }],
+            });
+          }
+        }
+      }
 
-Provide a direct, inspiring, educational response (under 250 words) with actionable numbers based directly on their profile. Do not invent unrelated figures. Conclude with a supportive closing.`
-        : `You are FinScore AI, an empathetic personal financial health advisor.
-The user's verified financial profile:
-- Name: ${profileName} (Age ${profile?.age || 28})
-- Monthly Income: ${currency}${income.toLocaleString()}
-- FinScore: ${overallScore}/100 (${grade})
-- Breakdown: Savings ${result?.scores?.savings}/100, Expense ${result?.scores?.expenseManagement}/100, Debt ${result?.scores?.debt}/100, Emergency ${result?.scores?.emergencyFund}/100, Insurance ${result?.scores?.insurance}/100, Goals ${result?.scores?.futureGoals}/100
-- Savings Ratio: ${savingsRatio}%
-- EMI to Income: ${emiRatio}%
-- Emergency Fund Coverage: ${emergencyFundRatio}% (${currency}${result?.metrics?.emergencyShortfall?.toLocaleString()} needed)
-
-Generate:
-1. Executive Diagnosis: 2 sentences explaining why they earned a score of ${overallScore}/100.
-2. Single Biggest Priority.
-3. 3-Month Action Plan (Month 1, Month 2, Month 3 with concrete amounts).
-Keep it conversational, empowering, professional, and educational.`;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: prompt,
-        config: {
-          systemInstruction:
-            'You are FinScore AI Financial Assistant. Provide objective, clear, actionable personal finance education. Always present estimates as educational advice, not regulated investment solicitations.',
-        },
+      // Append current user message
+      const currentQuestion = question && question.trim() ? question.trim() : 'Please provide an updated financial health diagnosis and 3 actionable next steps for my current score.';
+      contents.push({
+        role: 'user',
+        parts: [{ text: currentQuestion }],
       });
 
-      const responseText = response.text || '';
-      return res.json({
-        success: true,
-        source: 'GEMINI_AI',
-        advice: responseText,
-      });
+      // Ensure proper alternation if history had consecutive same-role entries
+      const sanitizedContents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+      for (const turn of contents) {
+        if (sanitizedContents.length === 0) {
+          sanitizedContents.push(turn);
+        } else {
+          const prev = sanitizedContents[sanitizedContents.length - 1];
+          if (prev.role === turn.role) {
+            prev.parts[0].text += `\n\n${turn.parts[0].text}`;
+          } else {
+            sanitizedContents.push(turn);
+          }
+        }
+      }
+
+      // Ensure first turn is from user
+      if (sanitizedContents.length > 0 && sanitizedContents[0].role === 'model') {
+        sanitizedContents.shift();
+      }
+
+      try {
+        const response = await ai.models.generateContent({
+          model: selectedModel,
+          contents: sanitizedContents.length > 0 ? sanitizedContents : [{ role: 'user', parts: [{ text: currentQuestion }] }],
+          config: {
+            systemInstruction,
+          },
+        });
+
+        const responseText = response.text || '';
+        return res.json({
+          success: true,
+          source: 'GEMINI_AI',
+          modelUsed: selectedModel,
+          advice: responseText,
+        });
+      } catch (geminiError: any) {
+        console.warn('Gemini AI API request unavailable, using deterministic financial engine:', geminiError?.message || geminiError);
+      }
     }
 
-    // High quality deterministic fallback when no API key configured
+    // High quality deterministic fallback when no API key configured or API call unavailable
     const fallbackAdvice = question
       ? `Based on your monthly income of ${currency}${income.toLocaleString()} and FinScore of ${overallScore}/100 (${grade}): 
 ${biggestPriority}
-To optimize your question regarding "${question}", prioritize keeping your EMI ratio below 35% while steadily directing at least 20% of your net income toward liquid emergency buffers and recurring goal investments.`
+
+To optimize your question regarding "${question}":
+1. **Emergency Runway**: Bridge your ${emergencyShortfall > 0 ? `${currency}${emergencyShortfall.toLocaleString()} shortfall` : 'buffer'} first by earmarking ${currency}${Math.round(income * 0.15).toLocaleString()}/month.
+2. **Debt Optimization**: Keep total EMIs strictly below 35% of net income (currently at ${emiRatio}%).
+3. **Compound Wealth**: Continue automated milestone allocations once your 6-month safety net is anchored.`
       : `Based on your financial profile, your overall health score is ${overallScore}/100 (${grade}).
 
-Key Diagnosis: Your savings rate (${savingsRatio}%) demonstrates solid discipline, but your emergency buffer is at ${emergencyFundRatio}% of your target, leaving a shortfall of ${currency}${emergencyShortfall.toLocaleString()}.
+**Key Diagnosis**: Your savings rate (${savingsRatio}%) demonstrates solid discipline, but your emergency buffer is at ${emergencyFundRatio}% of your target, leaving a shortfall of ${currency}${emergencyShortfall.toLocaleString()}.
 
-🎯 Biggest Priority: ${biggestPriority}
+🎯 **Biggest Priority**: ${biggestPriority}
 
-🗓️ Recommended Action Plan:
-• Month 1: Re-allocate non-essential expenses to save at least ${currency}${Math.round(income * 0.15).toLocaleString()} directly into a high-yield liquid emergency fund.
-• Month 2: Audit existing debt commitments (current EMI ratio: ${emiRatio}%) and review personal health/term insurance adequacy.
-• Month 3: Automate systematic investments for your long-term milestones (e.g. Car, Home Downpayment).`;
+🗓️ **Recommended Action Plan**:
+• **Month 1**: Re-allocate non-essential expenses to save at least ${currency}${Math.round(income * 0.15).toLocaleString()} directly into a high-yield liquid emergency fund.
+• **Month 2**: Audit existing debt commitments (current EMI ratio: ${emiRatio}%) and verify personal health/term insurance adequacy.
+• **Month 3**: Automate systematic investments for your long-term milestones.`;
 
     res.json({
       success: true,
       source: 'FINSCORE_ENGINE',
+      modelUsed: selectedModel,
       advice: fallbackAdvice,
     });
   } catch (err: any) {
+    console.error('Error in /api/finscore/ai-advisor:', err);
     res.json({
       success: true,
       source: 'FINSCORE_FALLBACK',
@@ -1089,21 +1149,25 @@ STRICT RULES:
 4. Use simple Indian financial terminology (₹, Lakhs, Crores, SIP).
 5. Tone: Warm, empowering, and objective.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: prompt,
-        config: {
-          systemInstruction:
-            'You are an empathetic, objective AI Personal Finance Adviser specializing in Indian personal finance and FIRE planning. Always explain the pre-calculated numbers simply without altering them. Remind users that projections are educational estimates.',
-        },
-      });
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: prompt,
+          config: {
+            systemInstruction:
+              'You are an empathetic, objective AI Personal Finance Adviser specializing in Indian personal finance and FIRE planning. Always explain the pre-calculated numbers simply without altering them. Remind users that projections are educational estimates.',
+          },
+        });
 
-      const responseText = response.text || '';
-      return res.json({
-        success: true,
-        source: 'GEMINI_AI',
-        advice: responseText,
-      });
+        const responseText = response.text || '';
+        return res.json({
+          success: true,
+          source: 'GEMINI_AI',
+          advice: responseText,
+        });
+      } catch (geminiError: any) {
+        console.warn('FIRE advisor Gemini request failed, using deterministic engine:', geminiError?.message || geminiError);
+      }
     }
 
     // Deterministic fallback response
@@ -1130,105 +1194,6 @@ You have saved **${currInvWords}** (${progressPct}% of your target), leaving a g
     });
   }
 });
-
-// -------------------------------------------------------------
-// Interactive Financial AI Copilot Chat API
-// -------------------------------------------------------------
-app.post('/api/chat/financial-copilot', async (req, res) => {
-  try {
-    const { 
-      message, 
-      chatHistory = [],
-      financialContext = {} 
-    } = req.body;
-
-    const {
-      monthlyIncome = 12400,
-      monthlyExpenses = 4650,
-      netSavings = 7750,
-      savingsRate = 62.5,
-      netWorth = 425000,
-      currency = 'USD'
-    } = financialContext;
-
-    const ai = getGeminiClient();
-    if (ai) {
-      try {
-        const historyContext = chatHistory.slice(-4).map((m: any) => `${m.sender === 'user' ? 'User' : 'Assistant'}: ${m.text}`).join('\n');
-        const prompt = `You are FinAI Copilot, an elite personal finance and cash flow advisory AI.
-Current User Financial Context:
-- Currency: ${currency}
-- Monthly Income: ${monthlyIncome}
-- Monthly Expenses / Burn: ${monthlyExpenses}
-- Monthly Net Savings: ${netSavings}
-- Savings Rate: ${savingsRate}%
-- Total Net Worth: ${netWorth}
-
-Recent conversation:
-${historyContext}
-
-User query: "${message}"
-
-Give a sharp, structured, empowering, and actionable response. Use bolding for key figures and bullet points where helpful. If recommending income expansion or cashflow allocation, give concrete, practical strategies. Keep under 160 words.`;
-
-        const response = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
-          contents: prompt,
-          config: {
-            systemInstruction: 'You are an intelligent, articulate, objective personal wealth and cashflow advisory assistant. You provide high-signal, math-grounded advice with positive encouragement.'
-          }
-        });
-
-        if (response.text) {
-          return res.json({
-            success: true,
-            source: 'GEMINI_AI',
-            reply: response.text
-          });
-        }
-      } catch (geminiErr: any) {
-        console.warn('[Gemini AI Copilot] Fallback to smart financial engine:', geminiErr?.message);
-      }
-    }
-
-    // High quality deterministic fallback generator
-    let fallbackReply = `Here is your financial copilot analysis:
-• **Monthly Inflow**: You are earning **${currency} ${monthlyIncome.toLocaleString()}**/month against **${currency} ${monthlyExpenses.toLocaleString()}** in expenses.
-• **Savings Rate**: At **${savingsRate}%**, your capital retention is in the top quartile of disciplined wealth builders.
-• **Actionable Next Step**: Direct at least 70% of your **${currency} ${netSavings.toLocaleString()}** monthly surplus into diversified index funds and income-producing assets while maintaining a 6-month liquid emergency runway.`;
-
-    const lowerMsg = (message || '').toLowerCase();
-    if (lowerMsg.includes('increase') || lowerMsg.includes('scale') || lowerMsg.includes('grow') || lowerMsg.includes('more')) {
-      fallbackReply = `### 🚀 Strategies to Scale Your ${currency} ${monthlyIncome.toLocaleString()}/mo Inflow:
-1. **High-Ticket Consulting / Skill Monetization**: Package your core domain expertise into fractional advisory or project retainers to add an extra 20–30% top-line.
-2. **Dividend & Yield Layering**: Reinvest your current ${currency} ${netSavings.toLocaleString()} surplus into dividend aristocrats and high-yield instruments to generate passive cash quarterly.
-3. **Value-Based Salary Negotiation**: Leverage measurable impact metrics to target a 15–20% step-up in your primary compensation cycle.`;
-    } else if (lowerMsg.includes('burn') || lowerMsg.includes('expense') || lowerMsg.includes('cut') || lowerMsg.includes('cost')) {
-      fallbackReply = `### 🛡️ Cash Flow & Burn Rate Diagnosis:
-• **Current Outflow**: ${currency} ${monthlyExpenses.toLocaleString()} (${(100 - savingsRate).toFixed(1)}% of income).
-• **Burn Resilience**: Your net savings of ${currency} ${netSavings.toLocaleString()} provides massive protection. You can sustain your current lifestyle for multiple months on savings alone.
-• **Optimization**: Review recurring subscription leaks and discretionary auto-renewals to safely reclaim another 3–5% without reducing quality of life.`;
-    } else if (lowerMsg.includes('invest') || lowerMsg.includes('where') || lowerMsg.includes('allocate')) {
-      fallbackReply = `### 💡 Allocation Blueprint for Your ${currency} ${netSavings.toLocaleString()} Surplus:
-• **Core Growth (60%)**: Low-cost broad market index funds (Nifty 50 / S&P 500) for compounding.
-• **Satellite / High-Yield (25%)**: Quality dividend stocks or REITs for quarterly cash flow.
-• **Liquid Cushion (15%)**: Arbitrage or high-yield liquid funds until 6 months of living expenses (${currency} ${(monthlyExpenses * 6).toLocaleString()}) are fully backed.`;
-    }
-
-    return res.json({
-      success: true,
-      source: 'SMART_COPILOT_ENGINE',
-      reply: fallbackReply
-    });
-  } catch (err: any) {
-    return res.json({
-      success: true,
-      source: 'OFFLINE_FALLBACK',
-      reply: 'Your cash flow dynamics are resilient. Maintain consistent monthly allocations toward compounding assets while monitoring fixed recurring obligations.'
-    });
-  }
-});
-
 
 
 // -------------------------------------------------------------

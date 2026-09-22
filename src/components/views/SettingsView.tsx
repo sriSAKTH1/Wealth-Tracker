@@ -19,7 +19,8 @@ import {
   Palette,
   Bell,
   Search,
-  Sliders
+  Sliders,
+  Save
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { LanguageRegionSection } from '../settings/LanguageRegionSection';
@@ -28,7 +29,7 @@ import { SecuritySection } from '../settings/SecuritySection';
 import { AppearanceSection } from '../settings/AppearanceSection';
 import { NotificationsSection } from '../settings/NotificationsSection';
 
-type SettingsTab = 'all' | 'language' | 'help' | 'security' | 'appearance' | 'notifications' | 'shortcuts' | 'data' | 'danger';
+type SettingsTab = 'profile' | 'language' | 'help' | 'security' | 'appearance' | 'notifications' | 'shortcuts' | 'data' | 'danger';
 
 export const SettingsView: React.FC = () => {
   const { 
@@ -49,7 +50,7 @@ export const SettingsView: React.FC = () => {
   const isLight = theme === 'light';
 
   // Navigation Filter Tab
-  const [activeTab, setActiveSettingsTab] = useState<SettingsTab>('all');
+  const [activeTab, setActiveSettingsTab] = useState<SettingsTab>('profile');
   const [settingsSearch, setSettingsSearch] = useState('');
 
   const [areAllSettingsActive, setAreAllSettingsActive] = useState<boolean>(() => {
@@ -104,6 +105,38 @@ export const SettingsView: React.FC = () => {
   const [email, setEmail] = useState(() => localStorage.getItem('fix_user_email') || 'sudharsanm014@gmail.com');
   const [role, setRole] = useState(() => localStorage.getItem('fix_user_role') || 'Pro Investor / Software Engineer');
   const [profileSaved, setProfileSaved] = useState(false);
+  const [isSettingsSaved, setIsSettingsSaved] = useState(false);
+
+  // Auto-save user profile fields without requiring a save button
+  const updateName = (val: string) => {
+    setName(val);
+    localStorage.setItem('fix_user_name', val);
+    setProfileSaved(true);
+    setTimeout(() => setProfileSaved(false), 2000);
+  };
+
+  const updateEmail = (val: string) => {
+    setEmail(val);
+    localStorage.setItem('fix_user_email', val);
+    setProfileSaved(true);
+    setTimeout(() => setProfileSaved(false), 2000);
+  };
+
+  const updateRole = (val: string) => {
+    setRole(val);
+    localStorage.setItem('fix_user_role', val);
+    setProfileSaved(true);
+    setTimeout(() => setProfileSaved(false), 2000);
+  };
+
+  const handleSaveAllSettings = () => {
+    setIsSettingsSaved(true);
+    setActionSuccessNotice('Settings changes saved successfully!');
+    setTimeout(() => {
+      setIsSettingsSaved(false);
+      setActionSuccessNotice(null);
+    }, 2500);
+  };
 
   // Reset confirmation modal
   const [isResetZeroModalOpen, setIsResetZeroModalOpen] = useState(false);
@@ -113,15 +146,6 @@ export const SettingsView: React.FC = () => {
 
   // Import file handler
   const [importStatus, setImportStatus] = useState<string | null>(null);
-
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    localStorage.setItem('fix_user_name', name.trim());
-    localStorage.setItem('fix_user_email', email.trim());
-    localStorage.setItem('fix_user_role', role.trim());
-    setProfileSaved(true);
-    setTimeout(() => setProfileSaved(false), 3000);
-  };
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -152,8 +176,10 @@ export const SettingsView: React.FC = () => {
   };
 
   const shouldShow = (tab: SettingsTab, terms: string[]) => {
-    if (!matchesSearch(terms)) return false;
-    return activeTab === 'all' || activeTab === tab;
+    if (settingsSearch.trim()) {
+      return matchesSearch(terms);
+    }
+    return activeTab === tab;
   };
 
   return (
@@ -175,25 +201,50 @@ export const SettingsView: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Manage language, currency, help, security, appearance, notifications, and data
+                Manage personal profile, language, currency, help, security, appearance, notifications, and data
               </p>
             </div>
           </div>
         </div>
 
-        {/* Global Net Worth Badge, Search & Activate All Button */}
+        {/* Global Net Worth Badge, Search & Save / Activate Button */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            onClick={handleActivateAllSettings}
-            className="px-3.5 py-1.5 rounded-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white shadow-sm text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Activate all notification triggers, shortcuts, 2FA, and biometrics"
-          >
-            <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-            <span>Activate All Settings</span>
-            <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/20 font-mono">
-              ALL ON
-            </span>
-          </button>
+          {/* Save Button for All settings EXCEPT Profile */}
+          {activeTab !== 'profile' && (
+            <button
+              id="btn-settings-save"
+              onClick={handleSaveAllSettings}
+              className="px-4 py-1.5 rounded-xl font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-sm shadow-blue-500/25 text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Save current settings changes"
+            >
+              {isSettingsSaved ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-white" />
+                  <span>Saved!</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Settings</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {activeTab !== 'profile' && (
+            <button
+              id="btn-settings-activate-all"
+              onClick={handleActivateAllSettings}
+              className="px-3.5 py-1.5 rounded-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white shadow-sm text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Activate all notification triggers, shortcuts, 2FA, and biometrics"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+              <span>Activate All</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/20 font-mono">
+                ALL ON
+              </span>
+            </button>
+          )}
 
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
@@ -230,7 +281,7 @@ export const SettingsView: React.FC = () => {
       {/* Navigation Filter Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
         {[
-          { id: 'all', label: '⚡ All Settings (Active)', icon: <Sliders className="w-3.5 h-3.5" /> },
+          { id: 'profile', label: '👤 Profile', icon: <User className="w-3.5 h-3.5" /> },
           { id: 'language', label: '🌐 Language & Region', icon: <Globe className="w-3.5 h-3.5" /> },
           { id: 'help', label: '❓ Help & Support', icon: <HelpCircle className="w-3.5 h-3.5" /> },
           { id: 'security', label: '🔐 Security', icon: <Shield className="w-3.5 h-3.5" /> },
@@ -244,8 +295,9 @@ export const SettingsView: React.FC = () => {
           return (
             <button
               key={tab.id}
+              id={`btn-tab-${tab.id}`}
               onClick={() => setActiveSettingsTab(tab.id as SettingsTab)}
-              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
                 isActive
                   ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
                   : isLight 
@@ -273,7 +325,7 @@ export const SettingsView: React.FC = () => {
       )}
 
       {/* 1. USER PROFILE IDENTITY */}
-      {shouldShow('all', ['profile', 'identity', 'user', 'email', 'name', 'sudharsan']) && (
+      {shouldShow('profile', ['profile', 'identity', 'user', 'email', 'name', 'sudharsan']) && (
         <section id="section-profile" className={`p-6 rounded-3xl border shadow-sm space-y-5 ${
           isLight ? 'bg-white border-slate-200' : 'bg-slate-900/60 border-slate-800'
         }`}>
@@ -293,7 +345,7 @@ export const SettingsView: React.FC = () => {
             </span>
           </div>
 
-          <form onSubmit={handleSaveProfile} className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div>
               <label className="block mb-1.5 font-semibold text-slate-700 dark:text-slate-300">
                 Display Full Name
@@ -301,7 +353,7 @@ export const SettingsView: React.FC = () => {
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => updateName(e.target.value)}
                 placeholder="Sudharsan M."
                 required
                 className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
@@ -317,7 +369,7 @@ export const SettingsView: React.FC = () => {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => updateEmail(e.target.value)}
                 placeholder="sudharsanm014@gmail.com"
                 required
                 className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
@@ -333,7 +385,7 @@ export const SettingsView: React.FC = () => {
               <input
                 type="text"
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                onChange={(e) => updateRole(e.target.value)}
                 placeholder="e.g. Software Engineer / Pro Investor"
                 className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                   isLight ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'
@@ -342,24 +394,17 @@ export const SettingsView: React.FC = () => {
             </div>
 
             <div className="sm:col-span-3 flex items-center justify-between pt-2">
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                {profileSaved ? (
-                  <span className="text-emerald-500 font-semibold flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5" /> Changes saved to local storage!
-                  </span>
-                ) : (
-                  'Identity details are stored locally on your device.'
-                )}
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                <span>Profile identity automatically saves as you type.</span>
               </div>
-              <button
-                id="btn-settings-save-profile"
-                type="submit"
-                className="px-5 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/25 transition-all text-xs"
-              >
-                Update Profile
-              </button>
+              {profileSaved && (
+                <span className="text-[11px] text-emerald-500 font-semibold flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Auto-saved
+                </span>
+              )}
             </div>
-          </form>
+          </div>
         </section>
       )}
 
@@ -614,6 +659,35 @@ export const SettingsView: React.FC = () => {
             </button>
           </div>
         </section>
+      )}
+
+      {/* Bottom Save Settings Action Bar for all settings tabs except Profile */}
+      {activeTab !== 'profile' && (
+        <div className={`p-4 rounded-3xl border flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm ${
+          isLight ? 'bg-white border-slate-200' : 'bg-slate-900/60 border-slate-800'
+        }`}>
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+            <span>Settings preferences are safely stored and synced on this browser.</span>
+          </div>
+          <button
+            id="btn-settings-save-bottom"
+            onClick={handleSaveAllSettings}
+            className="w-full sm:w-auto px-6 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/25 transition-all text-xs flex items-center justify-center gap-2 cursor-pointer"
+          >
+            {isSettingsSaved ? (
+              <>
+                <Check className="w-4 h-4 text-white" />
+                <span>Settings Saved!</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>Save Settings Changes</span>
+              </>
+            )}
+          </button>
+        </div>
       )}
 
       {/* CONFIRMATION MODAL: RESET TO 0 */}

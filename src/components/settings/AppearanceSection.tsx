@@ -28,7 +28,7 @@ export const ACCENT_COLORS = [
 ];
 
 export const AppearanceSection: React.FC = () => {
-  const { theme, setTheme, isPrivateMode, togglePrivateMode, formatMoney } = useFinance();
+  const { theme, setTheme, isPrivateMode, togglePrivateMode, formatMoney, accentColor, setAccentColor } = useFinance();
   const isLight = theme === 'light';
 
   // 1. Font Size State
@@ -49,11 +49,6 @@ export const AppearanceSection: React.FC = () => {
   // 4. Chart Visual Style
   const [chartStyle, setChartStyle] = useState<string>(() => {
     return localStorage.getItem('fix_chart_curve_style') || 'smooth';
-  });
-
-  // 5. Accent Color
-  const [accentColor, setAccentColor] = useState<string>(() => {
-    return localStorage.getItem('fix_accent_color') || 'blue';
   });
 
   // 6. Default Privacy on Boot
@@ -103,8 +98,8 @@ export const AppearanceSection: React.FC = () => {
 
   const handleAccentChange = (accId: string) => {
     setAccentColor(accId);
-    localStorage.setItem('fix_accent_color', accId);
-    showNotice('Accent theme color updated');
+    const colorObj = ACCENT_COLORS.find(c => c.id === accId);
+    showNotice(`Accent color set to ${colorObj?.name || accId} across the web app`);
   };
 
   const handleMaskOnBootToggle = () => {
@@ -447,10 +442,11 @@ export const AppearanceSection: React.FC = () => {
             return (
               <button
                 key={color.id}
+                id={`btn-accent-${color.id}`}
                 onClick={() => handleAccentChange(color.id)}
-                className={`p-2.5 rounded-xl border flex items-center gap-2.5 transition-all ${
+                className={`p-2.5 rounded-xl border flex items-center gap-2.5 transition-all cursor-pointer ${
                   isSelected
-                    ? isLight ? 'bg-white border-slate-400 ring-2 ring-blue-500/30 font-bold shadow-xs' : 'bg-slate-900 border-slate-600 ring-2 ring-blue-500/30 font-bold shadow-xs'
+                    ? isLight ? 'bg-white border-slate-400 ring-2 ring-blue-500/40 font-bold shadow-xs' : 'bg-slate-900 border-slate-600 ring-2 ring-blue-500/40 font-bold shadow-xs'
                     : isLight ? 'bg-white border-slate-200 hover:bg-slate-100 text-slate-700' : 'bg-slate-900/60 border-slate-800 text-slate-300'
                 }`}
               >
@@ -459,7 +455,7 @@ export const AppearanceSection: React.FC = () => {
                   style={{ backgroundColor: color.hex }}
                 />
                 <span className="text-[11px] truncate">{color.name.split(' ')[0]}</span>
-                {isSelected && <Check className="w-3.5 h-3.5 ml-auto text-blue-500" />}
+                {isSelected && <Check className="w-3.5 h-3.5 ml-auto text-blue-500" style={{ color: color.hex }} />}
               </button>
             );
           })}

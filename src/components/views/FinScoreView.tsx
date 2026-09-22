@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   ShieldCheck,
   Target,
@@ -39,7 +39,17 @@ import {
   Shield,
   ShieldAlert,
   Zap,
-  BarChart3
+  BarChart3,
+  Volume2,
+  VolumeX,
+  Flame,
+  Scale,
+  Building,
+  CreditCard,
+  ArrowUpRight,
+  ArrowDownLeft,
+  FileSpreadsheet,
+  ExternalLink
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -100,6 +110,7 @@ import {
 } from './GoalsView';
 import { FinScoreAmountInput } from '../finscore/FinScoreAmountInput';
 import { FinScoreHealthPlanModal, FinScoreBenchmarkModal } from '../finscore/FinScoreModals';
+import { FinancialStatementChart } from '../FinancialStatementChart';
 
 type FinScoreTab = 
   | 'dashboard' 
@@ -156,11 +167,16 @@ export const FinScoreView: React.FC = () => {
 
   // AI Assistant Chat & Custom Query State
   const [aiQuestion, setAiQuestion] = useState('');
-  const [aiChatMessages, setAiChatMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string; timestamp: string }>>([
+  const [selectedAiModel, setSelectedAiModel] = useState<'gemini-3.5-flash' | 'gemini-3.1-pro-preview' | 'gemini-3.1-flash-lite'>('gemini-3.5-flash');
+  const [selectedRolePreset, setSelectedRolePreset] = useState<'advisor' | 'debt_crusher' | 'risk_auditor' | 'wealth_accelerator'>('advisor');
+  const [isSpeakingIndex, setIsSpeakingIndex] = useState<number | null>(null);
+  const chatMessagesEndRef = useRef<HTMLDivElement>(null);
+  const [aiChatMessages, setAiChatMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string; timestamp: string; modelUsed?: string }>>([
     {
       sender: 'ai',
-      text: `Hello ${profile.name}! I'm your AI Financial Health Advisor. I have analyzed your income, loan commitments, emergency savings, and future goals. What would you like guidance on today?`,
+      text: `Hello ${profile.name || 'there'}! I'm your FinScore AI Financial Advisor. I have synthesized your income, loan commitments, emergency savings, and future goals. What financial questions can I help you tackle today?`,
       timestamp: 'Just now',
+      modelUsed: 'gemini-3.5-flash',
     },
   ]);
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -362,11 +378,23 @@ export const FinScoreView: React.FC = () => {
 
   // Dynamic Personal Financial SWOT Strategic Matrix Data
   const swotData = useMemo(() => {
+    // When financial profile is cleared or reset (no income set, or zero income in reset state)
+    // SWOT analysis must be completely empty with 0 strategic factors
+    if (!profile.monthlyIncome || profile.monthlyIncome <= 0) {
+      return {
+        strengths: [],
+        weaknesses: [],
+        opportunities: [],
+        threats: [],
+        totalFactors: 0,
+      };
+    }
+
     const { metrics } = result;
     const monthlyDrain = (metrics.totalExpenses || 0) + (metrics.totalMonthlyEmi || 0);
     const emergencyRunwayMonths = monthlyDrain > 0 
       ? Number((emergency.currentEmergencySavings / monthlyDrain).toFixed(1)) 
-      : 12;
+      : emergency.currentEmergencySavings > 0 ? 12 : 0;
     const lifeInsuranceCoverageRatio = metrics.recommendedLifeCoverage > 0
       ? Math.min(100, Math.round((insurance.lifeCoverage / metrics.recommendedLifeCoverage) * 100))
       : 100;
@@ -395,18 +423,29 @@ export const FinScoreView: React.FC = () => {
       });
     }
 
-    if (metrics.emiToIncomeRatio <= 30) {
-      strengths.push({
-        id: 's-debt',
-        title: 'Prudent Debt Servicing (Low DTI)',
-        description: `Monthly loan payments consume only ${metrics.emiToIncomeRatio}% of your income, safely below the 35% debt danger limit.`,
-        metric: `${metrics.emiToIncomeRatio}% EMI/Income`,
-        tag: 'Solvency',
-        impact: 'High',
-      });
+    if (metrics.emiToIncomeRatio <= 30 && profile.monthlyIncome > 0) {
+      if (metrics.totalDebt > 0) {
+        strengths.push({
+          id: 's-debt',
+          title: 'Prudent Debt Servicing (Low DTI)',
+          description: `Monthly loan payments consume only ${metrics.emiToIncomeRatio}% of your income, safely below the 35% debt danger limit.`,
+          metric: `${metrics.emiToIncomeRatio}% EMI/Income`,
+          tag: 'Solvency',
+          impact: 'High',
+        });
+      } else {
+        strengths.push({
+          id: 's-debt-free',
+          title: 'Zero Debt Obligations',
+          description: 'You carry zero active loans or debt EMIs, preserving 100% of your discretionary cash flow for investing and compounding.',
+          metric: '0% Debt Burden',
+          tag: 'Solvency',
+          impact: 'High',
+        });
+      }
     }
 
-    if (emergencyRunwayMonths >= 3) {
+    if (emergencyRunwayMonths >= 3 && emergency.currentEmergencySavings > 0) {
       strengths.push({
         id: 's-emergency',
         title: 'Solid Emergency Liquidity Cushion',
@@ -450,7 +489,7 @@ export const FinScoreView: React.FC = () => {
       });
     }
 
-    if (strengths.length < 2) {
+    if (strengths.length < 2 && profile.monthlyIncome > 0) {
       strengths.push({
         id: 's-base',
         title: 'Steady Recurring Income Foundation',
@@ -496,7 +535,7 @@ export const FinScoreView: React.FC = () => {
       });
     }
 
-    if (lifeInsuranceCoverageRatio < 80) {
+    if (lifeInsuranceCoverageRatio < 80 && (profile.dependents || 0) > 0) {
       weaknesses.push({
         id: 'w-life-ins',
         title: 'Term Life Underinsurance Gap',
@@ -507,7 +546,7 @@ export const FinScoreView: React.FC = () => {
       });
     }
 
-    if (metrics.savingsRatio < 15) {
+    if (metrics.savingsRatio < 15 && profile.monthlyIncome > 0) {
       weaknesses.push({
         id: 'w-savings',
         title: 'Subdued Savings Rate',
@@ -542,91 +581,101 @@ export const FinScoreView: React.FC = () => {
       });
     }
 
-    opportunities.push({
-      id: 'o-compounding',
-      title: 'Automated Systematic Wealth SIPs',
-      description: `Investing monthly surplus (${currSym}${metrics.monthlySavings.toLocaleString()}/mo) systematically into diversified low-cost index funds unlocks long-term compounding.`,
-      metric: `${currSym}${metrics.monthlySavings.toLocaleString()}/mo Surplus`,
-      tag: 'Wealth Growth',
-      impact: 'High',
-    });
+    if (metrics.monthlySavings > 0) {
+      opportunities.push({
+        id: 'o-compounding',
+        title: 'Automated Systematic Wealth SIPs',
+        description: `Investing monthly surplus (${currSym}${metrics.monthlySavings.toLocaleString()}/mo) systematically into diversified low-cost index funds unlocks long-term compounding.`,
+        metric: `${currSym}${metrics.monthlySavings.toLocaleString()}/mo Surplus`,
+        tag: 'Wealth Growth',
+        impact: 'High',
+      });
+    }
 
-    opportunities.push({
-      id: 'o-super-topup',
-      title: 'Cost-Effective Super Top-Up Health Shield',
-      description: 'Acquiring a super top-up policy with high deductible multiplies medical cover by 3x-5x at a fraction of baseline premium costs.',
-      metric: '3x-5x Cover',
-      tag: 'Risk Arbitrage',
-      impact: 'Medium',
-    });
-
-    opportunities.push({
-      id: 'o-goal-auto',
-      title: 'Automated Milestone Sinking Funds',
-      description: 'Configuring automated recurring transfers specifically tagged for upcoming life goals eliminates impulse diversion.',
-      metric: 'Auto-Pilot Goals',
-      tag: 'Discipline',
-      impact: 'Medium',
-    });
-
-    opportunities.push({
-      id: 'o-finscore-target',
-      title: 'Elevate to Elite FinScore Tier (85+)',
-      description: `Executing the 3-month action plan will elevate your score from ${result.overallScore} to 85+, unlocking best-in-market loan rates and absolute peace of mind.`,
-      metric: `Target: 85+ (now ${result.overallScore})`,
-      tag: 'Score Mastery',
-      impact: 'High',
-    });
-
-    // 4. THREATS (External Macro & Shock Exposures)
-    const threats = [];
-    threats.push({
-      id: 't-medical-inflation',
-      title: 'Hospitalization & Medical Cost Inflation',
-      description: 'Healthcare inflation averages 12-14% annually; a single serious medical event can drain liquid reserves without sufficient protection.',
-      metric: '14% Annual Inflation',
-      tag: 'Inflation Shock',
-      impact: 'Critical',
-    });
-
-    threats.push({
-      id: 't-income-interruption',
-      title: 'Sudden Income or Employment Disruption',
-      description: `If regular income pauses tomorrow, current reserves sustain household living costs for approximately ${emergencyRunwayMonths.toFixed(1)} months before liquidation of assets is required.`,
-      metric: `${emergencyRunwayMonths.toFixed(1)} Mo Runway`,
-      tag: 'Cash Flow Risk',
-      impact: emergencyRunwayMonths < 4 ? 'Critical' : 'High',
-    });
-
-    if (metrics.totalDebt > 0) {
-      threats.push({
-        id: 't-interest-rate',
-        title: 'Benchmark Interest Rate Volatility',
-        description: 'Rising benchmark interest rates increase floating-rate loan tenures and monthly interest outlays.',
-        metric: 'Floating Rate Exposure',
-        tag: 'Macro Headwind',
+    if (insurance.hasHealthInsurance) {
+      opportunities.push({
+        id: 'o-super-topup',
+        title: 'Cost-Effective Super Top-Up Health Shield',
+        description: 'Acquiring a super top-up policy with high deductible multiplies medical cover by 3x-5x at a fraction of baseline premium costs.',
+        metric: '3x-5x Cover',
+        tag: 'Risk Arbitrage',
         impact: 'Medium',
       });
     }
 
-    threats.push({
-      id: 't-inflation-drag',
-      title: 'Inflation Purchasing Power Erosion',
-      description: 'Cash left idle in low-yielding bank accounts loses real purchasing power against persistent 5-7% inflation rates.',
-      metric: '~6% Purchasing Drag',
-      tag: 'Silent Depletion',
-      impact: 'Medium',
-    });
+    if (goals.length > 0) {
+      opportunities.push({
+        id: 'o-goal-auto',
+        title: 'Automated Milestone Sinking Funds',
+        description: 'Configuring automated recurring transfers specifically tagged for upcoming life goals eliminates impulse diversion.',
+        metric: 'Auto-Pilot Goals',
+        tag: 'Discipline',
+        impact: 'Medium',
+      });
+    }
 
-    if (lifeInsuranceCoverageRatio < 100) {
+    if (result.overallScore < 85 && profile.monthlyIncome > 0) {
+      opportunities.push({
+        id: 'o-finscore-target',
+        title: 'Elevate to Elite FinScore Tier (85+)',
+        description: `Executing the 3-month action plan will elevate your score from ${result.overallScore} to 85+, unlocking best-in-market loan rates and absolute peace of mind.`,
+        metric: `Target: 85+ (now ${result.overallScore})`,
+        tag: 'Score Mastery',
+        impact: 'High',
+      });
+    }
+
+    // 4. THREATS (External Macro & Shock Exposures)
+    const threats = [];
+    if (profile.monthlyIncome > 0) {
       threats.push({
-        id: 't-family-security',
-        title: 'Dependent Income Replacement Risk',
-        description: 'Unexpected loss of the breadwinner without comprehensive term insurance leaves dependent family members financially vulnerable.',
-        metric: 'Family Exposure',
-        tag: 'Mortality Risk',
+        id: 't-medical-inflation',
+        title: 'Hospitalization & Medical Cost Inflation',
+        description: 'Healthcare inflation averages 12-14% annually; a single serious medical event can drain liquid reserves without sufficient protection.',
+        metric: '14% Annual Inflation',
+        tag: 'Inflation Shock',
         impact: 'Critical',
       });
+
+      threats.push({
+        id: 't-income-interruption',
+        title: 'Sudden Income or Employment Disruption',
+        description: `If regular income pauses tomorrow, current reserves sustain household living costs for approximately ${emergencyRunwayMonths.toFixed(1)} months before liquidation of assets is required.`,
+        metric: `${emergencyRunwayMonths.toFixed(1)} Mo Runway`,
+        tag: 'Cash Flow Risk',
+        impact: emergencyRunwayMonths < 4 ? 'Critical' : 'High',
+      });
+
+      if (metrics.totalDebt > 0) {
+        threats.push({
+          id: 't-interest-rate',
+          title: 'Benchmark Interest Rate Volatility',
+          description: 'Rising benchmark interest rates increase floating-rate loan tenures and monthly interest outlays.',
+          metric: 'Floating Rate Exposure',
+          tag: 'Macro Headwind',
+          impact: 'Medium',
+        });
+      }
+
+      threats.push({
+        id: 't-inflation-drag',
+        title: 'Inflation Purchasing Power Erosion',
+        description: 'Cash left idle in low-yielding bank accounts loses real purchasing power against persistent 5-7% inflation rates.',
+        metric: '~6% Purchasing Drag',
+        tag: 'Silent Depletion',
+        impact: 'Medium',
+      });
+
+      if (lifeInsuranceCoverageRatio < 100 && (profile.dependents || 0) > 0) {
+        threats.push({
+          id: 't-family-security',
+          title: 'Dependent Income Replacement Risk',
+          description: 'Unexpected loss of the breadwinner without comprehensive term insurance leaves dependent family members financially vulnerable.',
+          metric: 'Family Exposure',
+          tag: 'Mortality Risk',
+          impact: 'Critical',
+        });
+      }
     }
 
     return {
@@ -638,7 +687,77 @@ export const FinScoreView: React.FC = () => {
     };
   }, [result, profile, emergency, loans, insurance, goals, currSym]);
 
+  // Dynamic Personal Balance Sheet derived directly from FinScore data
+  const finScoreBalanceSheet = useMemo(() => {
+    // Current Assets (Liquid & Emergency)
+    const liquidEmergency = emergency.currentEmergencySavings || 0;
+    
+    // Invested / Earmarked Goal Assets
+    const goalAssets = goals.map(g => ({
+      id: g.id,
+      name: `${g.name} Reserve Fund`,
+      category: 'Earmarked Goal Asset',
+      value: g.currentSavings || 0,
+      target: g.targetAmount,
+    }));
+    const totalGoalAssets = goalAssets.reduce((sum, g) => sum + g.value, 0);
+
+    // Insurance Cash Protection Capital Valuation (Actuarial Value of coverage in place)
+    const termCover = insurance.hasTermInsurance ? insurance.termCoverage : 0;
+    const healthCover = insurance.hasHealthInsurance ? insurance.healthCoverage : 0;
+    const totalProtectionCoverage = termCover + healthCover;
+
+    // Total Tangible / Liquid FinScore Assets
+    const totalTangibleAssets = liquidEmergency + totalGoalAssets;
+
+    // Liabilities (Active Loans & Mortgages tracked in FinScore)
+    const loanLiabilities = loans.map(l => ({
+      id: l.id,
+      type: l.type,
+      outstanding: l.outstandingAmount || 0,
+      monthlyEmi: l.monthlyEmi || 0,
+      interestRate: l.interestRate || 0,
+    }));
+    const totalDebt = loans.reduce((sum, l) => sum + (l.outstandingAmount || 0), 0);
+    const totalMonthlyEmi = loans.reduce((sum, l) => sum + (l.monthlyEmi || 0), 0);
+
+    // Net Worth (Assets - Liabilities)
+    const netWorth = totalTangibleAssets - totalDebt;
+    const isSolvent = netWorth >= 0;
+
+    // Solvency Ratios
+    const debtToAssetRatio = totalTangibleAssets > 0 
+      ? Math.round((totalDebt / totalTangibleAssets) * 100) 
+      : (totalDebt > 0 ? 100 : 0);
+
+    const liquidityRatio = (result.metrics.totalExpenses + totalMonthlyEmi) > 0
+      ? (liquidEmergency / (result.metrics.totalExpenses + totalMonthlyEmi)).toFixed(1)
+      : '0.0';
+
+    return {
+      liquidEmergency,
+      goalAssets,
+      totalGoalAssets,
+      totalTangibleAssets,
+      totalProtectionCoverage,
+      termCover,
+      healthCover,
+      loanLiabilities,
+      totalDebt,
+      totalMonthlyEmi,
+      netWorth,
+      isSolvent,
+      debtToAssetRatio,
+      liquidityRatio,
+      isEmpty: totalTangibleAssets === 0 && totalDebt === 0,
+    };
+  }, [emergency, goals, insurance, loans, result.metrics]);
+
   const handleCopySwot = () => {
+    if (swotData.totalFactors === 0) {
+      showToast('SWOT analysis is empty. Add your income & financial data to generate SWOT factors.');
+      return;
+    }
     const text = `📊 FINSCORE PERSONAL FINANCIAL SWOT ANALYSIS
 Overall Score: ${result.overallScore}/100 (${result.grade})
 Monthly Income: ${currSym}${profile.monthlyIncome.toLocaleString()} | Monthly Savings: ${currSym}${result.metrics.monthlySavings.toLocaleString()}
@@ -664,6 +783,11 @@ Strategic Focus: ${result.biggestPriority}`;
   };
 
   const handleDiscussSwotWithAi = (topic?: string) => {
+    if (swotData.totalFactors === 0) {
+      handleSendAiMessage("My financial details in FinScore are currently cleared/reset. What are the essential first steps I should take to assess and optimize my financial health?");
+      setActiveTab('ai_assistant');
+      return;
+    }
     const query = topic 
       ? `Based on my SWOT Financial Analysis, please provide a tailored action strategy for: "${topic}". My FinScore is ${result.overallScore}/100 and my monthly savings is ${currSym}${result.metrics.monthlySavings.toLocaleString()}.`
       : `Based on my FinScore SWOT Strategic Analysis (Strengths: ${swotData.strengths.length}, Weaknesses: ${swotData.weaknesses.length}, Opportunities: ${swotData.opportunities.length}, Threats: ${swotData.threats.length}), what are my top 3 immediate action items for the next 30 days?`;
@@ -739,6 +863,8 @@ Strategic Focus: ${result.biggestPriority}`;
     setGoals([]);
     setSimEmergencyAdd(0);
     setSimPrepayDebt(0);
+    setSwotQuadrant('all');
+    setCopiedSwot(false);
     setAiChatMessages([
       {
         sender: 'ai',
@@ -746,7 +872,7 @@ Strategic Focus: ${result.biggestPriority}`;
         timestamp: 'Just now',
       },
     ]);
-    showToast('All information cleared in Financial Health Score & Planner.');
+    showToast('All information cleared in Financial Health Score & Planner (SWOT matrix reset to empty).');
   };
 
   // Load benchmark sample profile & data for demo / testing
@@ -844,7 +970,35 @@ Strategic Focus: ${result.biggestPriority}`;
     setLoans(prev => prev.filter(l => l.id !== id));
   };
 
-  // Send message to AI Assistant
+  // Auto-scroll chat to latest message
+  useEffect(() => {
+    if (activeTab === 'ai_assistant') {
+      chatMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [aiChatMessages, isAiLoading, activeTab]);
+
+  // Text to speech toggling for AI messages
+  const handleToggleSpeak = (text: string, index: number) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      showToast('Text-to-speech is not supported by your browser.');
+      return;
+    }
+    if (isSpeakingIndex === index) {
+      window.speechSynthesis.cancel();
+      setIsSpeakingIndex(null);
+    } else {
+      window.speechSynthesis.cancel();
+      const cleanText = text.replace(/[*#_`]/g, '');
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.rate = 1.0;
+      utterance.onend = () => setIsSpeakingIndex(null);
+      utterance.onerror = () => setIsSpeakingIndex(null);
+      window.speechSynthesis.speak(utterance);
+      setIsSpeakingIndex(index);
+    }
+  };
+
+  // Send message to AI Assistant with full multi-turn history
   const handleSendAiMessage = async (customPrompt?: string) => {
     const textToSend = customPrompt || aiQuestion;
     if (!textToSend.trim()) return;
@@ -854,7 +1008,9 @@ Strategic Focus: ${result.biggestPriority}`;
       text: textToSend,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
-    setAiChatMessages(prev => [...prev, userMsg]);
+
+    const updatedHistory = [...aiChatMessages, userMsg];
+    setAiChatMessages(updatedHistory);
     if (!customPrompt) setAiQuestion('');
     setIsAiLoading(true);
 
@@ -866,6 +1022,9 @@ Strategic Focus: ${result.biggestPriority}`;
           profile,
           result,
           question: textToSend,
+          history: updatedHistory,
+          model: selectedAiModel,
+          rolePreset: selectedRolePreset,
         }),
       });
 
@@ -878,6 +1037,7 @@ Strategic Focus: ${result.biggestPriority}`;
           sender: 'ai',
           text: aiReply,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          modelUsed: data?.modelUsed || selectedAiModel,
         },
       ]);
     } catch (err) {
@@ -887,6 +1047,7 @@ Strategic Focus: ${result.biggestPriority}`;
           sender: 'ai',
           text: `Here is your priority assessment: Build your emergency fund of ₹${result.metrics.emergencyShortfall.toLocaleString()} before taking on further obligations. Your current savings rate is ${result.metrics.savingsRatio}%.`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          modelUsed: selectedAiModel,
         },
       ]);
     } finally {
@@ -1156,7 +1317,6 @@ Strategic Focus: ${result.biggestPriority}`;
         {/* Navigation Tabs */}
         <div className="flex items-center gap-1.5 mt-6 pt-4 border-t overflow-x-auto no-scrollbar text-xs font-semibold">
           {[
-            { id: 'dashboard', label: 'Score Dashboard', icon: Activity },
             { id: 'profile', label: '1. Profile', icon: User },
             { id: 'income_expenses', label: '2. Income & Expenses', icon: DollarSign },
             { id: 'debt', label: '3. Debt Score', icon: Briefcase },
@@ -1164,7 +1324,7 @@ Strategic Focus: ${result.biggestPriority}`;
             { id: 'emergency', label: '5. Emergency Fund', icon: AlertTriangle },
             { id: 'goals', label: '6. Future Goals', icon: Target },
             { id: 'ai_assistant', label: '7. AI Assistant', icon: Bot, isAi: true },
-            { id: 'admin', label: '8. Admin Portal', icon: Settings2 },
+            { id: 'dashboard', label: '8. Score Dashboard', icon: Activity },
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1335,18 +1495,18 @@ Strategic Focus: ${result.biggestPriority}`;
                   </div>
                 </div>
 
-                {/* Dashboard Action Row with User's Two Buttons */}
+                {/* Dashboard Action Row with User's Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   <button
                     onClick={() => setShowHealthPlanModal(true)}
-                    className="flex-1 py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all"
+                    className="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all"
                   >
                     <Sparkles className="w-4 h-4 text-amber-300" />
                     <span>Open 1-Click Health Plan</span>
                   </button>
                   <button
                     onClick={() => setShowBenchmarkModal(true)}
-                    className={`flex-1 py-2 px-4 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
                       isLight
                         ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
                         : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
@@ -1354,6 +1514,20 @@ Strategic Focus: ${result.biggestPriority}`;
                   >
                     <TrendingUp className="w-4 h-4 text-purple-400" />
                     <span>Peer Benchmark &amp; Report</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById('finscore-balance-sheet-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className={`py-2 px-3 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                      isLight
+                        ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
+                        : 'bg-indigo-950/40 hover:bg-indigo-900/60 text-indigo-300 border-indigo-500/30'
+                    }`}
+                  >
+                    <Scale className="w-4 h-4 text-indigo-400" />
+                    <span>Balance Sheet &amp; Solvency</span>
                   </button>
                 </div>
               </div>
@@ -2130,6 +2304,47 @@ Strategic Focus: ${result.biggestPriority}`;
               ))}
             </div>
 
+            {/* When all SWOT factors are empty (after Clear All, Reset, or initial empty state) */}
+            {swotData.totalFactors === 0 && (
+              <div className={`p-6 rounded-2xl border text-center space-y-3 ${
+                isLight ? 'bg-slate-50/80 border-slate-200' : 'bg-slate-950/40 border-slate-800'
+              }`}>
+                <div className={`w-12 h-12 mx-auto rounded-2xl flex items-center justify-center ${
+                  isLight ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                }`}>
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <div className="max-w-md mx-auto space-y-1">
+                  <h3 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+                    SWOT Strategic Matrix is Empty (0 Factors)
+                  </h3>
+                  <p className={`text-xs leading-relaxed ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    All financial information has been cleared or reset. Add your profile, monthly income, and expenses to generate a tailored 4-quadrant SWOT matrix, or load sample benchmark data.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+                  <button
+                    onClick={() => setActiveTab('profile')}
+                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer transition-all active:scale-95"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Enter Financial Profile (Step 1)</span>
+                  </button>
+                  <button
+                    onClick={handleLoadSampleData}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                      isLight
+                        ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                    }`}
+                  >
+                    <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Load Benchmark Sample Data</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* 4-Quadrant SWOT Grid */}
             <div className={`grid grid-cols-1 ${swotQuadrant === 'all' ? 'lg:grid-cols-2' : 'grid-cols-1'} gap-5`}>
               {/* QUADRANT 1: STRENGTHS */}
@@ -2157,39 +2372,47 @@ Strategic Focus: ${result.biggestPriority}`;
                     </div>
 
                     <div className="space-y-3">
-                      {swotData.strengths.map(item => (
-                        <div
-                          key={item.id}
-                          className={`p-3.5 rounded-xl border text-xs space-y-1.5 transition-all ${
-                            isLight ? 'bg-white/90 border-emerald-100 shadow-xs' : 'bg-slate-900/90 border-emerald-500/20'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="font-bold flex items-center gap-1.5 text-slate-200">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                              <span>{item.title}</span>
-                            </span>
-                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 shrink-0">
-                              {item.metric}
-                            </span>
-                          </div>
-                          <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                            {item.description}
-                          </p>
-                          <div className="flex items-center justify-between pt-1">
-                            <span className="text-[10px] uppercase font-semibold text-emerald-500/90">
-                              {item.tag} • Impact: {item.impact}
-                            </span>
-                            <button
-                              onClick={() => handleDiscussSwotWithAi(item.title)}
-                              className="text-[10px] font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-0.5 cursor-pointer"
-                            >
-                              <span>Explore Leverage</span>
-                              <ChevronRight className="w-3 h-3" />
-                            </button>
-                          </div>
+                      {swotData.strengths.length === 0 ? (
+                        <div className={`p-4 rounded-xl border border-dashed text-center text-xs ${
+                          isLight ? 'bg-white/60 border-emerald-200 text-slate-500' : 'bg-slate-900/60 border-emerald-500/20 text-slate-400'
+                        }`}>
+                          No internal strengths recorded yet. Enter your income & savings in Step 1 to identify financial advantages.
                         </div>
-                      ))}
+                      ) : (
+                        swotData.strengths.map(item => (
+                          <div
+                            key={item.id}
+                            className={`p-3.5 rounded-xl border text-xs space-y-1.5 transition-all ${
+                              isLight ? 'bg-white/90 border-emerald-100 shadow-xs' : 'bg-slate-900/90 border-emerald-500/20'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="font-bold flex items-center gap-1.5 text-slate-200">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                                <span>{item.title}</span>
+                              </span>
+                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 shrink-0">
+                                {item.metric}
+                              </span>
+                            </div>
+                            <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                              {item.description}
+                            </p>
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-[10px] uppercase font-semibold text-emerald-500/90">
+                                {item.tag} • Impact: {item.impact}
+                              </span>
+                              <button
+                                onClick={() => handleDiscussSwotWithAi(item.title)}
+                                className="text-[10px] font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-0.5 cursor-pointer"
+                              >
+                                <span>Explore Leverage</span>
+                                <ChevronRight className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2220,39 +2443,47 @@ Strategic Focus: ${result.biggestPriority}`;
                     </div>
 
                     <div className="space-y-3">
-                      {swotData.weaknesses.map(item => (
-                        <div
-                          key={item.id}
-                          className={`p-3.5 rounded-xl border text-xs space-y-1.5 transition-all ${
-                            isLight ? 'bg-white/90 border-rose-100 shadow-xs' : 'bg-slate-900/90 border-rose-500/20'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="font-bold flex items-center gap-1.5 text-slate-200">
-                              <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
-                              <span>{item.title}</span>
-                            </span>
-                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-400 shrink-0">
-                              {item.metric}
-                            </span>
-                          </div>
-                          <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                            {item.description}
-                          </p>
-                          <div className="flex items-center justify-between pt-1">
-                            <span className="text-[10px] uppercase font-semibold text-rose-400/90">
-                              {item.tag} • Severity: {item.impact}
-                            </span>
-                            <button
-                              onClick={() => handleDiscussSwotWithAi(item.title)}
-                              className="text-[10px] font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-0.5 cursor-pointer"
-                            >
-                              <span>Plan Fix with AI</span>
-                              <ChevronRight className="w-3 h-3" />
-                            </button>
-                          </div>
+                      {swotData.weaknesses.length === 0 ? (
+                        <div className={`p-4 rounded-xl border border-dashed text-center text-xs ${
+                          isLight ? 'bg-white/60 border-rose-200 text-slate-500' : 'bg-slate-900/60 border-rose-500/20 text-slate-400'
+                        }`}>
+                          No internal weaknesses recorded yet.
                         </div>
-                      ))}
+                      ) : (
+                        swotData.weaknesses.map(item => (
+                          <div
+                            key={item.id}
+                            className={`p-3.5 rounded-xl border text-xs space-y-1.5 transition-all ${
+                              isLight ? 'bg-white/90 border-rose-100 shadow-xs' : 'bg-slate-900/90 border-rose-500/20'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="font-bold flex items-center gap-1.5 text-slate-200">
+                                <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                                <span>{item.title}</span>
+                              </span>
+                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-400 shrink-0">
+                                {item.metric}
+                              </span>
+                            </div>
+                            <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                              {item.description}
+                            </p>
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-[10px] uppercase font-semibold text-rose-400/90">
+                                {item.tag} • Severity: {item.impact}
+                              </span>
+                              <button
+                                onClick={() => handleDiscussSwotWithAi(item.title)}
+                                className="text-[10px] font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-0.5 cursor-pointer"
+                              >
+                                <span>Plan Fix with AI</span>
+                                <ChevronRight className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2283,39 +2514,47 @@ Strategic Focus: ${result.biggestPriority}`;
                     </div>
 
                     <div className="space-y-3">
-                      {swotData.opportunities.map(item => (
-                        <div
-                          key={item.id}
-                          className={`p-3.5 rounded-xl border text-xs space-y-1.5 transition-all ${
-                            isLight ? 'bg-white/90 border-blue-100 shadow-xs' : 'bg-slate-900/90 border-blue-500/20'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="font-bold flex items-center gap-1.5 text-slate-200">
-                              <Zap className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
-                              <span>{item.title}</span>
-                            </span>
-                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-400 shrink-0">
-                              {item.metric}
-                            </span>
-                          </div>
-                          <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                            {item.description}
-                          </p>
-                          <div className="flex items-center justify-between pt-1">
-                            <span className="text-[10px] uppercase font-semibold text-blue-400/90">
-                              {item.tag} • Potential: {item.impact}
-                            </span>
-                            <button
-                              onClick={() => handleDiscussSwotWithAi(item.title)}
-                              className="text-[10px] font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-0.5 cursor-pointer"
-                            >
-                              <span>Unlock with AI</span>
-                              <ChevronRight className="w-3 h-3" />
-                            </button>
-                          </div>
+                      {swotData.opportunities.length === 0 ? (
+                        <div className={`p-4 rounded-xl border border-dashed text-center text-xs ${
+                          isLight ? 'bg-white/60 border-blue-200 text-slate-500' : 'bg-slate-900/60 border-blue-500/20 text-slate-400'
+                        }`}>
+                          No strategic opportunities calculated without income data.
                         </div>
-                      ))}
+                      ) : (
+                        swotData.opportunities.map(item => (
+                          <div
+                            key={item.id}
+                            className={`p-3.5 rounded-xl border text-xs space-y-1.5 transition-all ${
+                              isLight ? 'bg-white/90 border-blue-100 shadow-xs' : 'bg-slate-900/90 border-blue-500/20'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="font-bold flex items-center gap-1.5 text-slate-200">
+                                <Zap className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+                                <span>{item.title}</span>
+                              </span>
+                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-400 shrink-0">
+                                {item.metric}
+                              </span>
+                            </div>
+                            <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                              {item.description}
+                            </p>
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-[10px] uppercase font-semibold text-blue-400/90">
+                                {item.tag} • Potential: {item.impact}
+                              </span>
+                              <button
+                                onClick={() => handleDiscussSwotWithAi(item.title)}
+                                className="text-[10px] font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-0.5 cursor-pointer"
+                              >
+                                <span>Unlock with AI</span>
+                                <ChevronRight className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2346,39 +2585,47 @@ Strategic Focus: ${result.biggestPriority}`;
                     </div>
 
                     <div className="space-y-3">
-                      {swotData.threats.map(item => (
-                        <div
-                          key={item.id}
-                          className={`p-3.5 rounded-xl border text-xs space-y-1.5 transition-all ${
-                            isLight ? 'bg-white/90 border-amber-100 shadow-xs' : 'bg-slate-900/90 border-amber-500/20'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="font-bold flex items-center gap-1.5 text-slate-200">
-                              <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                              <span>{item.title}</span>
-                            </span>
-                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-400 shrink-0">
-                              {item.metric}
-                            </span>
-                          </div>
-                          <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                            {item.description}
-                          </p>
-                          <div className="flex items-center justify-between pt-1">
-                            <span className="text-[10px] uppercase font-semibold text-amber-400/90">
-                              {item.tag} • Exposure: {item.impact}
-                            </span>
-                            <button
-                              onClick={() => handleDiscussSwotWithAi(item.title)}
-                              className="text-[10px] font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-0.5 cursor-pointer"
-                            >
-                              <span>Hedge Risk</span>
-                              <ChevronRight className="w-3 h-3" />
-                            </button>
-                          </div>
+                      {swotData.threats.length === 0 ? (
+                        <div className={`p-4 rounded-xl border border-dashed text-center text-xs ${
+                          isLight ? 'bg-white/60 border-amber-200 text-slate-500' : 'bg-slate-900/60 border-amber-500/20 text-slate-400'
+                        }`}>
+                          No macro threat exposures calculated without financial data.
                         </div>
-                      ))}
+                      ) : (
+                        swotData.threats.map(item => (
+                          <div
+                            key={item.id}
+                            className={`p-3.5 rounded-xl border text-xs space-y-1.5 transition-all ${
+                              isLight ? 'bg-white/90 border-amber-100 shadow-xs' : 'bg-slate-900/90 border-amber-500/20'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="font-bold flex items-center gap-1.5 text-slate-200">
+                                <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                                <span>{item.title}</span>
+                              </span>
+                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-400 shrink-0">
+                                {item.metric}
+                              </span>
+                            </div>
+                            <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                              {item.description}
+                            </p>
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-[10px] uppercase font-semibold text-amber-400/90">
+                                {item.tag} • Exposure: {item.impact}
+                              </span>
+                              <button
+                                onClick={() => handleDiscussSwotWithAi(item.title)}
+                                className="text-[10px] font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-0.5 cursor-pointer"
+                              >
+                                <span>Hedge Risk</span>
+                                <ChevronRight className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2399,21 +2646,438 @@ Strategic Focus: ${result.biggestPriority}`;
                     <>
                       Mitigate your primary vulnerability (<span className="font-bold underline decoration-rose-400">{swotData.weaknesses[0].title}</span>) by channeling your top strength (<span className="font-bold underline decoration-emerald-400">{swotData.strengths[0]?.title || 'positive cash flow'}</span>) into actionable compounding.
                     </>
-                  ) : (
+                  ) : swotData.totalFactors > 0 ? (
                     <>
                       Capitalize on your financial strengths to capture high-ROI wealth opportunities and maintain full protection against macroeconomic threats.
+                    </>
+                  ) : (
+                    <>
+                      SWOT Analysis is currently empty. Financial profile has been reset or cleared. Enter your income, expenses, and protection policies to generate your personalized strategic synthesis.
                     </>
                   )}
                 </p>
               </div>
 
               <button
-                onClick={() => handleDiscussSwotWithAi()}
+                onClick={() => swotData.totalFactors > 0 ? handleDiscussSwotWithAi() : setActiveTab('profile')}
                 className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-2 shrink-0 shadow-md cursor-pointer transition-all active:scale-95"
               >
-                <span>Run 30-Day Execution Plan</span>
+                <span>{swotData.totalFactors > 0 ? 'Run 30-Day Execution Plan' : 'Enter Financial Data'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
+            </div>
+          </div>
+
+          {/* ------------------------------------------------------------- */}
+          {/* SECTION 1.6: FINSCORE PERSONAL BALANCE SHEET & SOLVENCY STATEMENT */}
+          {/* Derived directly from FinScore Data (Emergency, Goals, Loans, Protection) */}
+          {/* ------------------------------------------------------------- */}
+          <div id="finscore-balance-sheet-section" className={`p-6 sm:p-8 rounded-3xl border shadow-lg space-y-6 ${
+            isLight ? 'bg-white border-slate-200/90 text-slate-900' : 'bg-slate-900/90 border-slate-800 text-white'
+          }`}>
+            {/* Header with Title & Quick Controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-2xl flex items-center justify-center shadow-md ${
+                  isLight ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' : 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30'
+                }`}>
+                  <Scale className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-lg font-bold tracking-tight">
+                      FinScore™ Personal Balance Sheet & Solvency
+                    </h2>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      Live FinScore™ Data
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      finScoreBalanceSheet.isSolvent
+                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                    }`}>
+                      {finScoreBalanceSheet.isSolvent ? 'Solvent Position' : 'Deficit Position'}
+                    </span>
+                  </div>
+                  <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Real-time audited statement synthesized directly from your FinScore™ liquid emergency reserves, goal funds, and loan liabilities
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setActiveTab('goals')}
+                  className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer transition-all active:scale-95"
+                >
+                  <Target className="w-3.5 h-3.5" />
+                  <span>Earmark Goals</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Empty State Warning if no data added */}
+            {finScoreBalanceSheet.isEmpty && (
+              <div className={`p-4 rounded-2xl border text-center space-y-2 ${
+                isLight ? 'bg-amber-50/70 border-amber-200 text-amber-900' : 'bg-amber-500/10 border-amber-500/20 text-amber-200'
+              }`}>
+                <p className="text-xs font-medium">
+                  <strong>Notice:</strong> Your FinScore™ balance sheet is currently at zero baseline. Add emergency fund savings, goals, or loans across the steps above to populate your audited statement.
+                </p>
+              </div>
+            )}
+
+            {/* 3 Core KPI Cards: Assets = Liabilities + Net Worth */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* 1. Total Assets */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                isLight ? 'bg-emerald-50/40 border-emerald-200 shadow-xs' : 'bg-emerald-950/20 border-emerald-500/30'
+              }`}>
+                <div className="flex items-center justify-between pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                      1. Total Tangible Assets
+                    </span>
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div className={`text-2xl font-extrabold font-mono tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  {currSym}{finScoreBalanceSheet.totalTangibleAssets.toLocaleString()}
+                </div>
+                <div className={`mt-2 flex items-center justify-between text-xs pt-2 border-t ${
+                  isLight ? 'border-emerald-100 text-slate-500' : 'border-emerald-500/20 text-slate-400'
+                }`}>
+                  <span>Liquid Emergency Cash:</span>
+                  <span className={`font-mono font-semibold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+                    {currSym}{finScoreBalanceSheet.liquidEmergency.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* 2. Total Liabilities */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                isLight ? 'bg-rose-50/40 border-rose-200 shadow-xs' : 'bg-rose-950/20 border-rose-500/30'
+              }`}>
+                <div className="flex items-center justify-between pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+                      2. Total Liabilities
+                    </span>
+                  </div>
+                  <ArrowDownLeft className="w-4 h-4 text-rose-500" />
+                </div>
+                <div className="text-2xl font-extrabold font-mono tracking-tight text-rose-500">
+                  {currSym}{finScoreBalanceSheet.totalDebt.toLocaleString()}
+                </div>
+                <div className={`mt-2 flex items-center justify-between text-xs pt-2 border-t ${
+                  isLight ? 'border-rose-100 text-slate-500' : 'border-rose-500/20 text-slate-400'
+                }`}>
+                  <span>Monthly Debt Outlay:</span>
+                  <span className="font-mono font-semibold text-rose-500">
+                    {currSym}{finScoreBalanceSheet.totalMonthlyEmi.toLocaleString()}/mo
+                  </span>
+                </div>
+              </div>
+
+              {/* 3. Equity / Net Worth */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                isLight ? 'bg-blue-50/40 border-blue-200 shadow-xs' : 'bg-blue-950/20 border-blue-500/30'
+              }`}>
+                <div className="flex items-center justify-between pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                      3. Net Equity (Net Worth)
+                    </span>
+                  </div>
+                  <ShieldCheck className="w-4 h-4 text-blue-500" />
+                </div>
+                <div className={`text-2xl font-extrabold font-mono tracking-tight ${
+                  finScoreBalanceSheet.netWorth >= 0 
+                    ? isLight ? 'text-blue-700' : 'text-blue-400'
+                    : 'text-rose-500'
+                }`}>
+                  {currSym}{finScoreBalanceSheet.netWorth.toLocaleString()}
+                </div>
+                <div className={`mt-2 flex items-center justify-between text-xs pt-2 border-t ${
+                  isLight ? 'border-blue-100 text-slate-500' : 'border-blue-500/20 text-slate-400'
+                }`}>
+                  <span>Debt-to-Asset Load:</span>
+                  <span className={`font-mono font-semibold ${
+                    finScoreBalanceSheet.debtToAssetRatio > 50 ? 'text-rose-500' : 'text-emerald-500'
+                  }`}>
+                    {finScoreBalanceSheet.debtToAssetRatio}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Accounting Equation Proportional Progress Bar */}
+            <div className={`p-4 sm:p-5 rounded-2xl border space-y-3 ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/50 border-slate-800'
+            }`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <div>
+                  <h3 className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+                    Accounting Equation: Assets ({currSym}{finScoreBalanceSheet.totalTangibleAssets.toLocaleString()}) = Liabilities ({currSym}{finScoreBalanceSheet.totalDebt.toLocaleString()}) + Net Equity ({currSym}{finScoreBalanceSheet.netWorth.toLocaleString()})
+                  </h3>
+                  <p className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Visual capital structure of assets versus loan leverage recorded in FinScore™
+                  </p>
+                </div>
+                <div className="flex items-center gap-4 text-xs font-mono">
+                  <span className="flex items-center gap-1.5 text-emerald-500 font-bold">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                    Equity: {finScoreBalanceSheet.totalTangibleAssets > 0 ? Math.max(0, Math.min(100, Math.round((finScoreBalanceSheet.netWorth / finScoreBalanceSheet.totalTangibleAssets) * 100))) : 0}%
+                  </span>
+                  <span className="flex items-center gap-1.5 text-rose-500 font-bold">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                    Debt: {finScoreBalanceSheet.debtToAssetRatio}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Dual-tone Progress Track */}
+              <div className="w-full h-3.5 rounded-full overflow-hidden flex bg-slate-200/80 dark:bg-slate-800">
+                <div 
+                  className="bg-emerald-500 h-full transition-all duration-500" 
+                  style={{ 
+                    width: `${finScoreBalanceSheet.totalTangibleAssets > 0 ? Math.max(0, Math.min(100, Math.round((finScoreBalanceSheet.netWorth / finScoreBalanceSheet.totalTangibleAssets) * 100))) : 0}%` 
+                  }}
+                  title="Equity Share"
+                />
+                <div 
+                  className="bg-rose-500 h-full transition-all duration-500" 
+                  style={{ 
+                    width: `${finScoreBalanceSheet.totalTangibleAssets > 0 ? Math.min(100, Math.round((finScoreBalanceSheet.totalDebt / finScoreBalanceSheet.totalTangibleAssets) * 100)) : (finScoreBalanceSheet.totalDebt > 0 ? 100 : 0)}%` 
+                  }}
+                  title="Liabilities Share"
+                />
+              </div>
+            </div>
+
+            {/* Two-Column Formal Statement Ledger: Assets vs Liabilities & Protection */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* LEFT COLUMN: ASSETS LEDGER */}
+              <div className={`p-5 rounded-2xl border space-y-4 ${
+                isLight ? 'bg-slate-50/50 border-slate-200' : 'bg-slate-950/40 border-slate-800'
+              }`}>
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Building className="w-4 h-4 text-emerald-500" />
+                    <h3 className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+                      Assets Portfolio (What You Own)
+                    </h3>
+                  </div>
+                  <span className="font-mono font-bold text-xs text-emerald-500">
+                    {currSym}{finScoreBalanceSheet.totalTangibleAssets.toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  {/* Liquid Emergency Savings Line Item */}
+                  <div className={`p-3 rounded-xl border flex items-center justify-between gap-3 ${
+                    isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-900 border-slate-800'
+                  }`}>
+                    <div>
+                      <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Liquid Emergency Reserve Fund</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Immediate bank liquidity • {result.metrics.emergencyMonthsAvailable.toFixed(1)} months living coverage
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-mono font-bold text-sm text-emerald-500">
+                        {currSym}{finScoreBalanceSheet.liquidEmergency.toLocaleString()}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-mono">
+                        Target: {currSym}{result.metrics.requiredEmergencyFund.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Goal Funds Saved Line Items */}
+                  {finScoreBalanceSheet.goalAssets.map(item => {
+                    const pctOfAssets = finScoreBalanceSheet.totalTangibleAssets > 0 
+                      ? Math.round((item.value / finScoreBalanceSheet.totalTangibleAssets) * 100) 
+                      : 0;
+                    const goalCompletion = item.target > 0 ? Math.round((item.value / item.target) * 100) : 0;
+                    return (
+                      <div 
+                        key={item.id} 
+                        className={`p-3 rounded-xl border flex items-center justify-between gap-3 ${
+                          isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-900 border-slate-800'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                            <Target className="w-3.5 h-3.5 text-blue-400" />
+                            <span>{item.name}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {item.category} • {pctOfAssets}% of assets • {goalCompletion}% of target
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-mono font-bold text-sm text-blue-500">
+                            {currSym}{item.value.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            Goal Target: {currSym}{item.target.toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {finScoreBalanceSheet.totalTangibleAssets === 0 && (
+                    <div className="py-6 text-center text-slate-400 text-xs">
+                      No tangible assets or goal savings recorded in FinScore™.
+                    </div>
+                  )}
+                </div>
+
+                {/* Subtotal of Tangible Assets */}
+                <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between font-bold text-xs">
+                  <span className={isLight ? 'text-slate-700' : 'text-slate-300'}>TOTAL TANGIBLE ASSETS</span>
+                  <span className="font-mono text-emerald-500 text-sm">
+                    {currSym}{finScoreBalanceSheet.totalTangibleAssets.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: LIABILITIES & EQUITY LEDGER */}
+              <div className="space-y-6">
+                {/* Liabilities Block */}
+                <div className={`p-5 rounded-2xl border space-y-4 ${
+                  isLight ? 'bg-slate-50/50 border-slate-200' : 'bg-slate-950/40 border-slate-800'
+                }`}>
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-rose-500" />
+                      <h3 className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+                        Liabilities (What You Owe)
+                      </h3>
+                    </div>
+                    <span className="font-mono font-bold text-xs text-rose-500">
+                      {currSym}{finScoreBalanceSheet.totalDebt.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    {finScoreBalanceSheet.loanLiabilities.map(loan => (
+                      <div 
+                        key={loan.id} 
+                        className={`p-3 rounded-xl border flex items-center justify-between gap-3 ${
+                          isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-900 border-slate-800'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                            <span>{loan.type}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Interest Rate: {loan.interestRate}% p.a. • EMI: {currSym}{loan.monthlyEmi.toLocaleString()}/mo
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-mono font-bold text-sm text-rose-500">
+                            {currSym}{loan.outstanding.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] text-slate-400">
+                            Outstanding Balance
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {finScoreBalanceSheet.loanLiabilities.length === 0 && (
+                      <div className={`p-4 rounded-xl border border-dashed text-center text-xs ${
+                        isLight ? 'bg-emerald-50/50 border-emerald-200 text-emerald-700' : 'bg-emerald-950/20 border-emerald-500/30 text-emerald-400'
+                      }`}>
+                        🎉 Zero debt recorded! 100% of your assets represent unencumbered net equity.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Subtotal of Liabilities */}
+                  <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between font-bold text-xs">
+                    <span className={isLight ? 'text-slate-700' : 'text-slate-300'}>TOTAL LIABILITIES</span>
+                    <span className="font-mono text-rose-500 text-sm">
+                      {currSym}{finScoreBalanceSheet.totalDebt.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Net Worth & Solvency Diagnostic Summary Box */}
+                <div className={`p-4 rounded-2xl border flex items-center justify-between ${
+                  isLight ? 'bg-blue-50/70 border-blue-200' : 'bg-blue-950/30 border-blue-500/30'
+                }`}>
+                  <div>
+                    <div className="text-xs font-bold text-blue-500 uppercase tracking-wide">
+                      Net Equity (Net Worth) Position
+                    </div>
+                    <div className={`text-xl font-mono font-extrabold ${
+                      finScoreBalanceSheet.netWorth >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-rose-500'
+                    }`}>
+                      {currSym}{finScoreBalanceSheet.netWorth.toLocaleString()}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Liquidity Runway: <span className="font-bold text-slate-700 dark:text-slate-200">{finScoreBalanceSheet.liquidityRatio} months</span> of fixed living outlays
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${
+                      finScoreBalanceSheet.isSolvent
+                        ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30'
+                        : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                    }`}>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      {finScoreBalanceSheet.isSolvent ? 'Solvent Balance Sheet' : 'Leverage Alert'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Contingent Off-Balance-Sheet Asset: Insurance Protection Shield */}
+            <div className={`p-4 sm:p-5 rounded-2xl border space-y-2 ${
+              isLight ? 'bg-indigo-50/50 border-indigo-100' : 'bg-indigo-950/20 border-indigo-500/20'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
+                    Contingent Protection Capital (Insurance Coverage in Place)
+                  </span>
+                </div>
+                <span className="font-mono font-bold text-xs text-indigo-400">
+                  {currSym}{finScoreBalanceSheet.totalProtectionCoverage.toLocaleString()} Total Cover
+                </span>
+              </div>
+              <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                Actuarial risk shield safeguarding your balance sheet against catastrophic medical shocks or loss of earning capacity. Term life coverage: <strong>{currSym}{finScoreBalanceSheet.termCover.toLocaleString()}</strong> • Health coverage: <strong>{currSym}{finScoreBalanceSheet.healthCover.toLocaleString()}</strong>.
+              </p>
+            </div>
+
+            {/* Quadrant Visualizer: Income Statement & Balance Sheet Quadrant Box Diagram (Compact) */}
+            <div className="pt-2">
+              <FinancialStatementChart
+                id="finscore-financial-statement-quadrant-chart"
+                compact={true}
+                income={result.metrics.monthlyIncome}
+                expenses={result.metrics.totalExpenses}
+                assets={finScoreBalanceSheet.totalTangibleAssets}
+                liabilities={finScoreBalanceSheet.totalDebt}
+                title="FinScore™ Cashflow & Balance Sheet Visual Quadrants"
+                subtitle="Visual proportional heights for income flow vs living expenses, and liquid/earmarked assets vs total liabilities"
+              />
             </div>
           </div>
         </div>
@@ -3421,10 +4085,10 @@ Strategic Focus: ${result.biggestPriority}`;
           isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
         }`}>
           {/* Header with Active AI Indicator & Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/40">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/40">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/25">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/25">
                   <Bot className="w-6 h-6" />
                 </div>
                 <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5">
@@ -3433,44 +4097,151 @@ Strategic Focus: ${result.biggestPriority}`;
                 </span>
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-lg font-bold flex items-center gap-2">
                     7. AI Financial Health Assistant
                   </h2>
                   <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Active & Ready
+                    Multi-Turn Active
                   </span>
                 </div>
                 <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                  Personalized financial diagnosis, strategic recommendations, and interactive month-by-month execution roadmap.
+                  Conversational financial intelligence grounded directly in your 5-pillar FinScore™ metrics.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-              <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Gemini 2.5 Flash</span>
-              </span>
+            {/* Model Selector Bar */}
+            <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
+              <div className={`p-1 rounded-2xl border flex items-center gap-1 ${
+                isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-950 border-slate-800'
+              }`}>
+                {[
+                  { id: 'gemini-3.5-flash', label: '3.5 Flash', subtitle: 'General Tasks' },
+                  { id: 'gemini-3.1-pro-preview', label: '3.1 Pro', subtitle: 'Complex Tasks' },
+                  { id: 'gemini-3.1-flash-lite', label: '3.1 Flash Lite', subtitle: 'Fast Tasks' },
+                ].map(m => {
+                  const isSelected = selectedAiModel === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => {
+                        setSelectedAiModel(m.id as any);
+                        showToast(`Model set to ${m.label} (${m.subtitle})`);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex flex-col items-center transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                          : isLight
+                          ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      }`}
+                      title={`${m.label} — Best for ${m.subtitle}`}
+                    >
+                      <span className="flex items-center gap-1 leading-none">
+                        <Sparkles className="w-3 h-3" />
+                        {m.label}
+                      </span>
+                      <span className="text-[9px] opacity-75 font-normal leading-tight">{m.subtitle}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
               <button
                 onClick={() => {
+                  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    setIsSpeakingIndex(null);
+                  }
                   setAiChatMessages([
                     {
                       sender: 'ai',
                       text: `Hello ${profile.name || 'there'}! I'm your FinScore AI Advisor. Your current FinScore is ${result.overallScore}/100 (${result.grade}). What financial questions can I help you tackle today?`,
                       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                      modelUsed: selectedAiModel,
                     },
                   ]);
-                  showToast('Chat history cleared and reset.');
+                  showToast('Conversation history reset.');
                 }}
-                className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1 transition-all ${
+                className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   isLight ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
                 }`}
-                title="Reset conversation"
+                title="Reset conversation thread"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Reset</span>
               </button>
+            </div>
+          </div>
+
+          {/* Role Persona Presets */}
+          <div className="space-y-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Compass className="w-3.5 h-3.5 text-blue-400" />
+              Select Advisor Persona:
+            </span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+              {[
+                {
+                  id: 'advisor',
+                  name: 'CFP & Holistic Advisor',
+                  desc: 'Balanced 5-pillar health, budgeting & milestones',
+                  icon: ShieldCheck,
+                  color: 'text-blue-400',
+                },
+                {
+                  id: 'debt_crusher',
+                  name: 'Debt Crusher AI',
+                  desc: 'High-interest elimination & Avalanche strategy',
+                  icon: Flame,
+                  color: 'text-rose-400',
+                },
+                {
+                  id: 'risk_auditor',
+                  name: 'Risk & Safety Auditor',
+                  desc: 'Emergency liquidity runway & insurance shield',
+                  icon: Shield,
+                  color: 'text-amber-400',
+                },
+                {
+                  id: 'wealth_accelerator',
+                  name: 'Wealth Accelerator',
+                  desc: 'SIP compounding & FIRE milestone acceleration',
+                  icon: TrendingUp,
+                  color: 'text-emerald-400',
+                },
+              ].map(r => {
+                const isSelected = selectedRolePreset === r.id;
+                const IconComponent = r.icon;
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => {
+                      setSelectedRolePreset(r.id as any);
+                      showToast(`Advisor persona switched to: ${r.name}`);
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? isLight
+                          ? 'bg-blue-50/80 border-blue-400 ring-2 ring-blue-400/20'
+                          : 'bg-blue-950/40 border-blue-500 ring-2 ring-blue-500/20'
+                        : isLight
+                        ? 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                        : 'bg-slate-950/60 border-slate-800 hover:bg-slate-800/60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 font-bold text-xs mb-1">
+                      <IconComponent className={`w-3.5 h-3.5 ${r.color}`} />
+                      <span className={isSelected ? (isLight ? 'text-blue-900' : 'text-blue-300') : ''}>{r.name}</span>
+                    </div>
+                    <p className={`text-[10px] leading-tight line-clamp-2 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                      {r.desc}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -3481,17 +4252,17 @@ Strategic Focus: ${result.biggestPriority}`;
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                Live Financial Numbers Evaluated by AI
+                Live Financial Grounding Context
               </span>
               <span className="text-[10px] font-semibold text-emerald-400 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" />
-                Synced with 5 Core Pillars
+                Synced with Current Profile
               </span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
               <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800/80'}`}>
-                <span className="text-[10px] text-slate-400">Current Score</span>
-                <p className="font-extrabold font-mono text-sm text-blue-400">{result.overallScore} / 100</p>
+                <span className="text-[10px] text-slate-400">FinScore</span>
+                <p className="font-extrabold font-mono text-sm text-blue-400">{result.overallScore} / 100 ({result.grade})</p>
               </div>
               <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800/80'}`}>
                 <span className="text-[10px] text-slate-400">Monthly Income</span>
@@ -3499,10 +4270,10 @@ Strategic Focus: ${result.biggestPriority}`;
               </div>
               <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800/80'}`}>
                 <span className="text-[10px] text-slate-400">Monthly Savings</span>
-                <p className="font-extrabold font-mono text-sm text-emerald-400">{currSym}{result.metrics.monthlySavings.toLocaleString()}</p>
+                <p className="font-extrabold font-mono text-sm text-emerald-400">{currSym}{result.metrics.monthlySavings.toLocaleString()} ({result.metrics.savingsRatio}%)</p>
               </div>
               <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800/80'}`}>
-                <span className="text-[10px] text-slate-400">EMI to Income</span>
+                <span className="text-[10px] text-slate-400">EMI Burden</span>
                 <p className={`font-extrabold font-mono text-sm ${result.metrics.emiToIncomeRatio <= 30 ? 'text-emerald-400' : 'text-amber-400'}`}>
                   {result.metrics.emiToIncomeRatio}%
                 </p>
@@ -3612,28 +4383,38 @@ Strategic Focus: ${result.biggestPriority}`;
             </div>
           </div>
 
-          {/* Interactive Chat with FinScore AI */}
-          <div className={`p-6 rounded-2xl border space-y-4 shadow-sm ${
+          {/* Interactive Multi-Turn Chat with FinScore AI */}
+          <div className={`p-6 rounded-3xl border space-y-4 shadow-sm ${
             isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
           }`}>
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 text-blue-400">
-                <Bot className="w-4 h-4 text-blue-500" />
-                FinScore AI Interactive Advisor Chat
-              </h4>
-              <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                Live Multi-Pillar Synthesis
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                    FinScore AI Multi-Turn Advisor Chat
+                  </h4>
+                  <p className="text-[10px] text-slate-400">
+                    Maintains full context across questions • Powered by {selectedAiModel}
+                  </p>
+                </div>
+              </div>
+
+              <span className="text-[10px] text-slate-400 flex items-center gap-1.5 bg-slate-900/60 px-2.5 py-1 rounded-full border border-slate-800">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Thread Active ({aiChatMessages.length} turns)</span>
               </span>
             </div>
 
-            {/* Chat message history box */}
-            <div className="space-y-4 max-h-96 overflow-y-auto pr-2 no-scrollbar">
+            {/* Scrollable Chat thread container */}
+            <div className="space-y-4 max-h-[480px] min-h-[340px] overflow-y-auto pr-2 custom-scrollbar border border-slate-800/40 p-4 rounded-2xl bg-black/20">
               {aiChatMessages.map((msg, i) => (
                 <div key={i} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div className="flex items-start gap-2 max-w-2xl">
+                  <div className="flex items-start gap-2.5 max-w-2xl">
                     {msg.sender === 'ai' && (
-                      <div className="w-7 h-7 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0 mt-1 shadow-md shadow-blue-500/20">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shrink-0 mt-1 shadow-md shadow-blue-500/20">
                         <Bot className="w-4 h-4" />
                       </div>
                     )}
@@ -3643,33 +4424,64 @@ Strategic Focus: ${result.biggestPriority}`;
                           ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-tr-none shadow-md'
                           : isLight
                           ? 'bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-sm'
-                          : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none'
+                          : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none shadow-sm'
                       }`}>
                         <div className="whitespace-pre-wrap">{msg.text}</div>
 
                         {msg.sender === 'ai' && (
-                          <div className="mt-3 pt-2 border-t border-slate-800/40 flex items-center justify-between text-[10px] text-slate-400">
-                            <span>FinScore Strategic Guidance</span>
-                            <button
-                              onClick={() => handleCopyMessage(msg.text, i)}
-                              className={`flex items-center gap-1 px-2 py-0.5 rounded transition-all ${
-                                copiedMessageIndex === i
-                                  ? 'bg-emerald-500/20 text-emerald-400'
-                                  : 'hover:text-blue-400'
-                              }`}
-                            >
-                              {copiedMessageIndex === i ? (
-                                <>
-                                  <Check className="w-3 h-3 text-emerald-400" />
-                                  <span>Copied!</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-3 h-3" />
-                                  <span>Copy Advice</span>
-                                </>
-                              )}
-                            </button>
+                          <div className="mt-3 pt-2.5 border-t border-slate-800/40 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400">
+                            <span className="flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-blue-400" />
+                              <span className="font-mono text-[9px]">{msg.modelUsed || selectedAiModel}</span>
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                              {/* Read Aloud Text-to-Speech Button */}
+                              <button
+                                onClick={() => handleToggleSpeak(msg.text, i)}
+                                className={`flex items-center gap-1 px-2 py-0.5 rounded transition-all cursor-pointer ${
+                                  isSpeakingIndex === i
+                                    ? 'bg-blue-500/20 text-blue-400'
+                                    : 'hover:text-blue-400'
+                                }`}
+                                title={isSpeakingIndex === i ? 'Stop listening' : 'Listen to advice'}
+                              >
+                                {isSpeakingIndex === i ? (
+                                  <>
+                                    <VolumeX className="w-3 h-3 text-rose-400" />
+                                    <span className="text-rose-400 font-semibold">Stop</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Volume2 className="w-3 h-3" />
+                                    <span>Read Aloud</span>
+                                  </>
+                                )}
+                              </button>
+
+                              {/* Copy Message Button */}
+                              <button
+                                onClick={() => handleCopyMessage(msg.text, i)}
+                                className={`flex items-center gap-1 px-2 py-0.5 rounded transition-all cursor-pointer ${
+                                  copiedMessageIndex === i
+                                    ? 'bg-emerald-500/20 text-emerald-400'
+                                    : 'hover:text-blue-400'
+                                }`}
+                                title="Copy advice"
+                              >
+                                {copiedMessageIndex === i ? (
+                                  <>
+                                    <Check className="w-3 h-3 text-emerald-400" />
+                                    <span>Copied!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3" />
+                                    <span>Copy Advice</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -3680,27 +4492,41 @@ Strategic Focus: ${result.biggestPriority}`;
                   </div>
                 </div>
               ))}
+
               {isAiLoading && (
-                <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-400">
+                <div className="flex items-center gap-3 p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-400 animate-pulse">
                   <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
-                  <span>FinScore AI is analyzing your cash flow and calculating tailored recommendations...</span>
+                  <span>FinScore AI ({selectedAiModel}) is reviewing your 5-pillar context and generating custom guidance...</span>
                 </div>
               )}
+              <div ref={chatMessagesEndRef} />
             </div>
 
-            {/* Quick suggested prompt buttons categorized */}
+            {/* Quick suggested prompt buttons tailored to role preset */}
             <div className="space-y-1.5 pt-2 border-t border-slate-800/40">
               <span className="text-[11px] text-slate-400 font-semibold flex items-center gap-1">
                 <Zap className="w-3 h-3 text-amber-400" />
-                Suggested In-Depth Queries:
+                Suggested Queries for {selectedRolePreset === 'debt_crusher' ? 'Debt Crusher' : selectedRolePreset === 'risk_auditor' ? 'Risk Auditor' : selectedRolePreset === 'wealth_accelerator' ? 'Wealth Accelerator' : 'Holistic CFP'}:
               </span>
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                {[
-                  { label: '🎯 How can I reach my goals 6 months earlier?', prompt: 'How can I reach my goals 6 months earlier with my current savings?' },
+                {(selectedRolePreset === 'debt_crusher' ? [
+                  { label: '⚡ Snowball vs Avalanche for my current loans?', prompt: 'Compare the Avalanche vs Snowball method for paying off my loans given my income and interest rates.' },
+                  { label: '💳 How can I reduce my EMI burden by ₹5,000/mo?', prompt: 'What concrete steps can I take to cut down my monthly loan EMI burden and improve cash flow?' },
+                  { label: '🔄 Prepay high-interest loan vs invest in mutual funds?', prompt: 'Should I prepay my personal/credit debt or keep investing in mutual funds right now?' },
+                ] : selectedRolePreset === 'risk_auditor' ? [
+                  { label: '🛡️ Audit my pure term insurance requirement', prompt: 'Based on my age, income, and liabilities, how much term life insurance do I actually need?' },
+                  { label: '☂️ Safe high-yield places to park my emergency fund', prompt: 'Where should I park my 6-month emergency reserve so it beats inflation while remaining 100% liquid?' },
+                  { label: '🏥 Health cover adequacy check for a family', prompt: 'Is my current health insurance sufficient to protect against medical emergencies?' },
+                ] : selectedRolePreset === 'wealth_accelerator' ? [
+                  { label: '🚀 How much monthly SIP to reach ₹1 Crore?', prompt: 'Calculate the monthly SIP and expected timeline needed to accumulate ₹1 Crore at 12% CAGR.' },
+                  { label: '📈 Recommended asset allocation for my age', prompt: 'What is the optimal equity, debt, and gold asset allocation for my profile and goals?' },
+                  { label: '🔥 Estimate my earliest FIRE financial independence date', prompt: 'Based on my savings rate and expenses, when could I realistically achieve financial independence?' },
+                ] : [
+                  { label: '🎯 How can I reach my goals 6 months earlier?', prompt: 'How can I reach my goals 6 months earlier with my current savings and income?' },
                   { label: '💳 Prepay loan vs invest in emergency fund?', prompt: 'Should I prepay my loans or invest more in my emergency fund first?' },
-                  { label: '🛡️ Check my term insurance coverage', prompt: 'How much term life insurance is recommended for my age and dependents?' },
                   { label: '📈 3 fastest actions to reach FinScore 85+', prompt: 'What are the 3 fastest actions I can take this month to boost my FinScore above 85?' },
-                ].map(item => (
+                  { label: '📊 Optimal 50-30-20 budget check for my income', prompt: 'How does my current spending and debt compare against the standard 50-30-20 rule?' },
+                ]).map(item => (
                   <button
                     key={item.label}
                     onClick={() => handleSendAiMessage(item.prompt)}
@@ -3718,7 +4544,7 @@ Strategic Focus: ${result.biggestPriority}`;
             <div className="flex items-center gap-2 pt-2">
               <input
                 type="text"
-                placeholder="Ask about emergency runway, loan avalanche, insurance gap, or tax strategy..."
+                placeholder="Ask about emergency runway, loan avalanche, insurance gap, or SIP strategy..."
                 value={aiQuestion}
                 onChange={e => setAiQuestion(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleSendAiMessage(); }}
@@ -3731,8 +4557,25 @@ Strategic Focus: ${result.biggestPriority}`;
                 disabled={isAiLoading || !aiQuestion.trim()}
                 className="px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-95"
               >
-                <Send className="w-3.5 h-3.5" />
+                {isAiLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                 <span>Send</span>
+              </button>
+            </div>
+
+            {/* Step Navigation to Score Dashboard */}
+            <div className={`pt-4 border-t flex justify-between items-center ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
+              <button
+                onClick={() => setActiveTab('goals')}
+                className={`px-5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'}`}
+              >
+                Back to 6. Future Goals
+              </button>
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer transition-all active:scale-95"
+              >
+                <span>Next: 8. Score Dashboard</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>

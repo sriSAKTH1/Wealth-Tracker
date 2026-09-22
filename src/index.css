@@ -201,15 +201,252 @@
   background-color: #e2e8f0 !important;
 }
 
+/* =========================================================================
+   ACCENT COLOR THEMES & DYNAMIC WEB APP HIGHLIGHT ENGINE
+   Supports: blue (Electric Blue), indigo (Royal Indigo), emerald (Emerald Vault),
+   purple (Amethyst Purple), rose (Rose Wealth), amber (Sunset Amber)
+   ========================================================================= */
+:root, [data-accent="blue"] {
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-200: #bfdbfe;
+  --accent-300: #93c5fd;
+  --accent-400: #60a5fa;
+  --accent-500: #3b82f6;
+  --accent-600: #2563eb;
+  --accent-700: #1d4ed8;
+  --accent-800: #1e40af;
+  --accent-rgb: 59, 130, 246;
+  --accent-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
+}
+
+[data-accent="indigo"] {
+  --accent-50: #eef2ff;
+  --accent-100: #e0e7ff;
+  --accent-200: #c7d2fe;
+  --accent-300: #a5b4fc;
+  --accent-400: #818cf8;
+  --accent-500: #6366f1;
+  --accent-600: #4f46e5;
+  --accent-700: #4338ca;
+  --accent-800: #3730a3;
+  --accent-rgb: 99, 102, 241;
+  --accent-gradient: linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #818cf8 100%);
+}
+
+[data-accent="emerald"] {
+  --accent-50: #ecfdf5;
+  --accent-100: #d1fae5;
+  --accent-200: #a7f3d0;
+  --accent-300: #6ee7b7;
+  --accent-400: #34d399;
+  --accent-500: #10b981;
+  --accent-600: #059669;
+  --accent-700: #047857;
+  --accent-800: #065f46;
+  --accent-rgb: 16, 185, 129;
+  --accent-gradient: linear-gradient(135deg, #047857 0%, #059669 50%, #34d399 100%);
+}
+
+[data-accent="purple"] {
+  --accent-50: #faf5ff;
+  --accent-100: #f3e8ff;
+  --accent-200: #e9d5ff;
+  --accent-300: #d8b4fe;
+  --accent-400: #c084fc;
+  --accent-500: #a855f7;
+  --accent-600: #9333ea;
+  --accent-700: #7e22ce;
+  --accent-800: #6b21a8;
+  --accent-rgb: 168, 85, 247;
+  --accent-gradient: linear-gradient(135deg, #7e22ce 0%, #9333ea 50%, #c084fc 100%);
+}
+
+[data-accent="rose"] {
+  --accent-50: #fff1f2;
+  --accent-100: #ffe4e6;
+  --accent-200: #fecdd3;
+  --accent-300: #fda4af;
+  --accent-400: #fb7185;
+  --accent-500: #f43f5e;
+  --accent-600: #e11d48;
+  --accent-700: #be123c;
+  --accent-800: #9f1239;
+  --accent-rgb: 244, 63, 94;
+  --accent-gradient: linear-gradient(135deg, #be123c 0%, #e11d48 50%, #fb7185 100%);
+}
+
+[data-accent="amber"] {
+  --accent-50: #fffbeb;
+  --accent-100: #fef3c7;
+  --accent-200: #fde68a;
+  --accent-300: #fcd34d;
+  --accent-400: #fbbf24;
+  --accent-500: #f59e0b;
+  --accent-600: #d97706;
+  --accent-700: #b45309;
+  --accent-800: #92400e;
+  --accent-rgb: 245, 158, 11;
+  --accent-gradient: linear-gradient(135deg, #b45309 0%, #d97706 50%, #fbbf24 100%);
+}
+
+/* Global Dynamic Accent Highlights for App Elements */
+[data-accent] .bg-blue-600 {
+  background-color: var(--accent-600) !important;
+}
+[data-accent] .bg-blue-500 {
+  background-color: var(--accent-500) !important;
+}
+[data-accent] .bg-blue-700 {
+  background-color: var(--accent-700) !important;
+}
+[data-accent] .hover\:bg-blue-500:hover {
+  background-color: var(--accent-500) !important;
+}
+[data-accent] .hover\:bg-blue-600:hover {
+  background-color: var(--accent-600) !important;
+}
+[data-accent] .hover\:bg-blue-700:hover {
+  background-color: var(--accent-700) !important;
+}
+[data-accent] .bg-blue-50 {
+  background-color: var(--accent-50) !important;
+}
+[data-accent] .bg-blue-50\/60 {
+  background-color: rgba(var(--accent-rgb), 0.08) !important;
+}
+[data-accent] .hover\:bg-blue-100:hover {
+  background-color: var(--accent-100) !important;
+}
+[data-accent] .bg-blue-600\/15,
+[data-accent] .bg-blue-500\/15 {
+  background-color: rgba(var(--accent-rgb), 0.15) !important;
+}
+[data-accent] .bg-blue-600\/20,
+[data-accent] .bg-blue-500\/20 {
+  background-color: rgba(var(--accent-rgb), 0.2) !important;
+}
+[data-accent] .bg-blue-600\/25,
+[data-accent] .bg-blue-500\/25 {
+  background-color: rgba(var(--accent-rgb), 0.25) !important;
+}
+[data-accent] .bg-blue-500\/10 {
+  background-color: rgba(var(--accent-rgb), 0.1) !important;
+}
+[data-accent] .bg-blue-500\/30 {
+  background-color: rgba(var(--accent-rgb), 0.3) !important;
+}
+[data-accent] .bg-blue-500\/40 {
+  background-color: rgba(var(--accent-rgb), 0.4) !important;
+}
+[data-accent] .hover\:bg-blue-600\/25:hover {
+  background-color: rgba(var(--accent-rgb), 0.25) !important;
+}
+
+[data-accent] .text-blue-400 {
+  color: var(--accent-400) !important;
+}
+[data-accent] .text-blue-500 {
+  color: var(--accent-500) !important;
+}
+[data-accent] .text-blue-600 {
+  color: var(--accent-600) !important;
+}
+[data-accent] .text-blue-700 {
+  color: var(--accent-700) !important;
+}
+[data-accent] .text-blue-800 {
+  color: var(--accent-800) !important;
+}
+[data-accent] .hover\:text-blue-300:hover {
+  color: var(--accent-300) !important;
+}
+[data-accent] .hover\:text-blue-400:hover {
+  color: var(--accent-400) !important;
+}
+
+[data-accent] .border-blue-600 {
+  border-color: var(--accent-600) !important;
+}
+[data-accent] .border-blue-500 {
+  border-color: var(--accent-500) !important;
+}
+[data-accent] .border-blue-400 {
+  border-color: var(--accent-400) !important;
+}
+[data-accent] .border-blue-200 {
+  border-color: var(--accent-200) !important;
+}
+[data-accent] .border-blue-500\/20 {
+  border-color: rgba(var(--accent-rgb), 0.2) !important;
+}
+[data-accent] .border-blue-500\/30 {
+  border-color: rgba(var(--accent-rgb), 0.3) !important;
+}
+[data-accent] .border-blue-500\/40 {
+  border-color: rgba(var(--accent-rgb), 0.4) !important;
+}
+[data-accent] .border-blue-400\/30 {
+  border-color: rgba(var(--accent-rgb), 0.3) !important;
+}
+[data-accent] .hover\:border-blue-500\/40:hover {
+  border-color: rgba(var(--accent-rgb), 0.4) !important;
+}
+
+[data-accent] .shadow-blue-500\/20,
+[data-accent] .shadow-blue-500\/25,
+[data-accent] .shadow-blue-500\/30,
+[data-accent] .shadow-blue-600\/20,
+[data-accent] .shadow-blue-600\/25,
+[data-accent] .shadow-blue-600\/30 {
+  box-shadow: 0 10px 15px -3px rgba(var(--accent-rgb), 0.25), 0 4px 6px -4px rgba(var(--accent-rgb), 0.2) !important;
+}
+
+[data-accent] .ring-blue-500,
+[data-accent] .ring-blue-500\/30,
+[data-accent] .ring-blue-500\/40,
+[data-accent] .focus\:ring-blue-500:focus,
+[data-accent] .focus\:ring-blue-500\/30:focus,
+[data-accent] .focus\:ring-blue-400:focus {
+  --tw-ring-color: var(--accent-500) !important;
+  outline-color: var(--accent-500) !important;
+}
+
+/* Floating Action Button and Dynamic CTA Gradients */
+[data-accent] #btn-floating-quick-add {
+  background: var(--accent-gradient) !important;
+  box-shadow: 0 20px 25px -5px rgba(var(--accent-rgb), 0.35) !important;
+}
+
+[data-accent] #btn-settings-activate-all {
+  background: var(--accent-gradient) !important;
+}
+
+/* Text Selection Glow with Active Accent */
+[data-accent] ::selection {
+  background-color: var(--accent-500) !important;
+  color: #ffffff !important;
+}
+
+/* Day Mode / Light theme adaptations for active nav pills */
+.light-theme[data-accent] .text-blue-700,
+.light-theme [data-accent] .text-blue-700 {
+  color: var(--accent-700) !important;
+}
+.light-theme[data-accent] .text-blue-800,
+.light-theme [data-accent] .text-blue-800 {
+  color: var(--accent-800) !important;
+}
+
 /* --- Floating Action Button Subtle Pulse Animation --- */
 @keyframes subtle-floating-pulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4), 0 0 0 0 rgba(59, 130, 246, 0.5);
+    box-shadow: 0 10px 25px -5px rgba(var(--accent-rgb, 59, 130, 246), 0.4), 0 0 0 0 rgba(var(--accent-rgb, 59, 130, 246), 0.5);
   }
   50% {
     transform: scale(1.06);
-    box-shadow: 0 16px 30px -5px rgba(59, 130, 246, 0.6), 0 0 0 10px rgba(59, 130, 246, 0);
+    box-shadow: 0 16px 30px -5px rgba(var(--accent-rgb, 59, 130, 246), 0.6), 0 0 0 10px rgba(var(--accent-rgb, 59, 130, 246), 0);
   }
 }
 
