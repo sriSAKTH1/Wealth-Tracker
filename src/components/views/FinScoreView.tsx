@@ -257,6 +257,46 @@ export const FinScoreView: React.FC = () => {
   // Currency symbol helper based on user profile or active currency
   const currSym = profile.currency === 'INR' || currency === 'INR' ? '₹' : '$';
 
+  // Future Goals Totals & Required Monthly Addition
+  const totalGoalsTargetAmount = useMemo(() => {
+    return goals.reduce((acc, g) => acc + (Number(g.targetAmount) || 0), 0);
+  }, [goals]);
+
+  const totalGoalsSavedSoFar = useMemo(() => {
+    return goals.reduce((acc, g) => acc + (Number(g.currentSavings) || 0), 0);
+  }, [goals]);
+
+  const totalGoalsFundingGap = Math.max(0, totalGoalsTargetAmount - totalGoalsSavedSoFar);
+
+  const overallGoalsProgressPct = totalGoalsTargetAmount > 0
+    ? Math.min(100, Math.round((totalGoalsSavedSoFar / totalGoalsTargetAmount) * 100))
+    : 0;
+
+  const goalsWithCalculatedSip = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return goals.map(g => {
+      const tenureYears = g.tenureYears || Math.max(1, (g.targetYear || currentYear + 4) - currentYear);
+      const reqSip = calculateRequiredMonthlySaving(
+        g.targetAmount,
+        g.currentSavings,
+        g.targetYear,
+        g.expectedReturnRate || 9,
+        tenureYears
+      );
+      const progressPct = Math.min(100, Math.round(((Number(g.currentSavings) || 0) / (Number(g.targetAmount) || 1)) * 100));
+      return {
+        ...g,
+        tenureYears,
+        reqSip,
+        progressPct
+      };
+    });
+  }, [goals]);
+
+  const totalRequiredMonthlySip = useMemo(() => {
+    return goalsWithCalculatedSip.reduce((acc, g) => acc + g.reqSip, 0);
+  }, [goalsWithCalculatedSip]);
+
   // NEW UNIQUE CHART 1: Multi-Pillar Radar Symmetry Data (Spider Chart)
   const radarPillarData = useMemo(() => {
     return [
@@ -3786,74 +3826,325 @@ Strategic Focus: ${result.biggestPriority}`;
         <div className={`p-6 sm:p-8 rounded-3xl border shadow-sm space-y-6 ${
           isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
         }`}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          {/* Header Title with Quick Badge */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold">Step 6 — 🎯 Future Goals Planner ({result.scores.futureGoals}/100)</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg font-bold">Step 6 — 🎯 Future Goals Planner ({result.scores.futureGoals}/100)</h2>
+                <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400 font-bold border border-blue-500/30">
+                  {goals.length} Active {goals.length === 1 ? 'Milestone' : 'Milestones'}
+                </span>
+              </div>
               <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 Define milestones (e.g. Car, Higher Education, House, Marriage, Travel). The system calculates the exact monthly saving/SIP required.
               </p>
             </div>
+
+            {/* Quick Hero Badge */}
+            <div className={`px-4 py-2.5 rounded-2xl border flex items-center gap-2.5 shrink-0 ${
+              isLight ? 'bg-emerald-50 border-emerald-200' : 'bg-emerald-950/40 border-emerald-500/30'
+            }`}>
+              <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                <TrendingUp className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Total Monthly Add</span>
+                <span className="font-mono font-black text-sm text-emerald-500 dark:text-emerald-400 block">
+                  {currSym}{totalRequiredMonthlySip.toLocaleString()}/mo
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ============================================================== */}
+          {/* TOTAL REQUIRED MONTHLY ADD (SIP) HERO METRIC CARD & BREAKDOWN */}
+          {/* ============================================================== */}
+          <div className={`p-5 sm:p-6 rounded-2xl border ${
+            isLight
+              ? 'bg-gradient-to-br from-emerald-50/80 via-blue-50/40 to-slate-50 border-emerald-200'
+              : 'bg-gradient-to-br from-emerald-950/30 via-slate-900 to-blue-950/20 border-emerald-500/30'
+          } shadow-sm space-y-5`}>
+            
+            {/* Top row with primary headline */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                    <TrendingUp className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-500 dark:text-emerald-400">
+                      Total Required Monthly Contribution (All Goals Combined)
+                    </span>
+                    <div className="flex items-baseline gap-2 mt-0.5">
+                      <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
+                        {currSym}{totalRequiredMonthlySip.toLocaleString()}
+                      </span>
+                      <span className="text-sm font-bold text-slate-400 font-mono">/ month</span>
+                    </div>
+                  </div>
+                </div>
+                <p className={`text-xs mt-2.5 max-w-xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  Sum of all monthly SIP contributions required across your <strong>{goals.length} milestones</strong> to reach target amounts within the specified tenures at expected return rates.
+                </p>
+              </div>
+
+              {/* Monthly Surplus Capacity vs Required Monthly Add */}
+              <div className={`p-4 rounded-xl border flex flex-col justify-center min-w-[260px] ${
+                isLight ? 'bg-white/90 border-slate-200' : 'bg-slate-950/70 border-slate-800'
+              }`}>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Available Monthly Surplus:</span>
+                  <span className={`font-mono font-bold ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+                    {currSym}{result.metrics.monthlySavings.toLocaleString()}/mo
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs mt-2">
+                  <span className="text-slate-400">All Goals Required SIP:</span>
+                  <span className="font-mono font-bold text-emerald-400">
+                    {currSym}{totalRequiredMonthlySip.toLocaleString()}/mo
+                  </span>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px]">
+                  <span className="font-medium text-slate-400">Cash Flow Capacity:</span>
+                  {result.metrics.monthlySavings >= totalRequiredMonthlySip ? (
+                    <span className="px-2 py-0.5 rounded-md font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                      <span>✓ Fully Funded</span>
+                      <span className="font-mono text-[10px]">(+{currSym}{(result.metrics.monthlySavings - totalRequiredMonthlySip).toLocaleString()})</span>
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-md font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                      <span>⚠️ Shortfall of</span>
+                      <span className="font-mono text-[10px]">{currSym}{(totalRequiredMonthlySip - result.metrics.monthlySavings).toLocaleString()}/mo</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Supporting 3-column stats bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-200/70 dark:border-slate-800/80">
+              <div className={`p-3.5 rounded-xl border ${isLight ? 'bg-white/80 border-slate-200' : 'bg-slate-950/50 border-slate-800/80'}`}>
+                <div className="text-[11px] font-medium text-slate-400 flex items-center justify-between">
+                  <span>Total Milestones Value</span>
+                  <Target className="w-3.5 h-3.5 text-blue-400" />
+                </div>
+                <div className={`text-xl font-bold font-mono mt-1 ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+                  {currSym}{totalGoalsTargetAmount.toLocaleString()}
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5">Across {goals.length} target goals</div>
+              </div>
+
+              <div className={`p-3.5 rounded-xl border ${isLight ? 'bg-white/80 border-slate-200' : 'bg-slate-950/50 border-slate-800/80'}`}>
+                <div className="text-[11px] font-medium text-slate-400 flex items-center justify-between">
+                  <span>Already Saved So Far</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                </div>
+                <div className="text-xl font-bold font-mono text-emerald-500 dark:text-emerald-400 mt-1">
+                  {currSym}{totalGoalsSavedSoFar.toLocaleString()}
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5">
+                  {overallGoalsProgressPct}% overall progress completed
+                </div>
+              </div>
+
+              <div className={`p-3.5 rounded-xl border ${isLight ? 'bg-white/80 border-slate-200' : 'bg-slate-950/50 border-slate-800/80'}`}>
+                <div className="text-[11px] font-medium text-slate-400 flex items-center justify-between">
+                  <span>Total Net Funding Gap</span>
+                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                </div>
+                <div className="text-xl font-bold font-mono text-amber-500 dark:text-amber-400 mt-1">
+                  {currSym}{totalGoalsFundingGap.toLocaleString()}
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5">Covered via monthly additions</div>
+              </div>
+            </div>
+          </div>
+
+          {/* ============================================================== */}
+          {/* ALL GOALS MONTHLY ADDITIONS BREAKDOWN TABLE                    */}
+          {/* ============================================================== */}
+          <div className={`rounded-2xl border overflow-hidden ${
+            isLight ? 'bg-white border-slate-200' : 'bg-slate-950/60 border-slate-800'
+          }`}>
+            <div className={`px-5 py-3 border-b flex items-center justify-between ${
+              isLight ? 'bg-slate-50/80 border-slate-200' : 'bg-slate-900/60 border-slate-800'
+            }`}>
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-blue-400" />
+                <h3 className="text-xs font-bold uppercase tracking-wider">All Goals Required Monthly Addition Schedule</h3>
+              </div>
+              <span className="text-[11px] font-mono text-slate-400">
+                Sum: <strong className="text-emerald-400">{currSym}{totalRequiredMonthlySip.toLocaleString()}/mo</strong>
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className={`text-[11px] uppercase tracking-wider font-semibold border-b ${
+                  isLight ? 'bg-slate-50 text-slate-600 border-slate-200' : 'bg-slate-900/50 text-slate-400 border-slate-800'
+                }`}>
+                  <tr>
+                    <th className="py-3 px-4">Milestone Goal</th>
+                    <th className="py-3 px-4">Tenure & Year</th>
+                    <th className="py-3 px-4 text-right">Target Amount</th>
+                    <th className="py-3 px-4 text-right">Saved So Far</th>
+                    <th className="py-3 px-4 text-center">Progress</th>
+                    <th className="py-3 px-4 text-right">Required Monthly Add</th>
+                    <th className="py-3 px-4 text-right">Share of Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 font-medium">
+                  {goalsWithCalculatedSip.map(g => {
+                    const sharePct = totalRequiredMonthlySip > 0
+                      ? Math.round((g.reqSip / totalRequiredMonthlySip) * 100)
+                      : 0;
+
+                    return (
+                      <tr key={g.id} className={isLight ? 'hover:bg-slate-50/60' : 'hover:bg-slate-900/40'}>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                              {g.category}
+                            </span>
+                            <span className="font-bold">{g.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 font-mono text-slate-400">
+                          {g.tenureYears}y (Target {g.targetYear})
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-bold">
+                          {currSym}{g.targetAmount.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono text-slate-400">
+                          {currSym}{g.currentSavings.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2 max-w-[120px] mx-auto">
+                            <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                              <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${g.progressPct}%` }} />
+                            </div>
+                            <span className="text-[10px] font-mono text-slate-400 shrink-0">{g.progressPct}%</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-emerald-500 dark:text-emerald-400 text-sm">
+                          {currSym}{g.reqSip.toLocaleString()}/mo
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono text-slate-400 text-[11px]">
+                          {sharePct}%
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot className={`border-t font-bold ${
+                  isLight ? 'bg-emerald-50/60 text-slate-900 border-slate-200' : 'bg-emerald-950/20 text-slate-100 border-slate-800'
+                }`}>
+                  <tr>
+                    <td colSpan={2} className="py-3 px-4 uppercase text-[11px] tracking-wider text-slate-400 font-bold">
+                      All Goals Total Combined
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-sm">
+                      {currSym}{totalGoalsTargetAmount.toLocaleString()}
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-sm text-slate-400">
+                      {currSym}{totalGoalsSavedSoFar.toLocaleString()}
+                    </td>
+                    <td className="py-3 px-4 text-center font-mono text-xs">
+                      {overallGoalsProgressPct}%
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono font-black text-emerald-500 dark:text-emerald-400 text-base">
+                      {currSym}{totalRequiredMonthlySip.toLocaleString()}/mo
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-xs text-emerald-400">
+                      100%
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
 
           {/* Active Goals Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {goals.map(g => {
-              const currentYear = new Date().getFullYear();
-              const tenureYears = g.tenureYears || Math.max(1, (g.targetYear || currentYear + 4) - currentYear);
-              const reqSip = calculateRequiredMonthlySaving(g.targetAmount, g.currentSavings, g.targetYear, g.expectedReturnRate, tenureYears);
-              const progressPct = Math.min(100, Math.round((g.currentSavings / (g.targetAmount || 1)) * 100));
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 text-slate-400">
+                <Target className="w-3.5 h-3.5 text-blue-400" />
+                <span>Individual Milestone Goal Cards</span>
+              </h3>
+              <span className="text-[11px] text-slate-400">
+                Each card displays its required monthly addition
+              </span>
+            </div>
 
-              return (
-                <div key={g.id} className={`p-5 rounded-2xl border space-y-3 relative ${
-                  isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
-                }`}>
-                  <button
-                    onClick={() => handleDeleteGoal(g.id)}
-                    className="absolute top-4 right-4 text-slate-500 hover:text-rose-400 p-1 cursor-pointer"
-                    title="Delete goal"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {goalsWithCalculatedSip.map(g => {
+                const sharePct = totalRequiredMonthlySip > 0
+                  ? Math.round((g.reqSip / totalRequiredMonthlySip) * 100)
+                  : 0;
 
-                  <div className="pr-8">
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
-                      {g.category}
-                    </span>
-                    <h4 className="text-sm font-bold mt-1.5">{g.name}</h4>
-                  </div>
+                return (
+                  <div key={g.id} className={`p-5 rounded-2xl border space-y-3 relative ${
+                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+                  }`}>
+                    <button
+                      onClick={() => handleDeleteGoal(g.id)}
+                      className="absolute top-4 right-4 text-slate-500 hover:text-rose-400 p-1 cursor-pointer transition-colors"
+                      title="Delete goal"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
 
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between text-slate-400">
-                      <span>Target Amount:</span>
-                      <span className={`font-mono font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{currSym}{g.targetAmount.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-400">
-                      <span>Saved so far:</span>
-                      <span className={`font-mono ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>{currSym}{g.currentSavings.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-blue-400" />
-                        <span>Tenure & Target:</span>
+                    <div className="pr-8">
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                        {g.category}
                       </span>
-                      <span className="font-mono font-bold text-blue-400">
-                        {tenureYears} {tenureYears === 1 ? 'Year' : 'Years'} · Target {g.targetYear}
+                      <h4 className="text-sm font-bold mt-1.5">{g.name}</h4>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between text-slate-400">
+                        <span>Target Amount:</span>
+                        <span className={`font-mono font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{currSym}{g.targetAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400">
+                        <span>Saved so far:</span>
+                        <span className={`font-mono ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>{currSym}{g.currentSavings.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-blue-400" />
+                          <span>Tenure & Target:</span>
+                        </span>
+                        <span className="font-mono font-bold text-blue-400">
+                          {g.tenureYears} {g.tenureYears === 1 ? 'Year' : 'Years'} · Target {g.targetYear}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${g.progressPct}%` }} />
+                    </div>
+
+                    {/* Highlighted Required Monthly Add Badge */}
+                    <div className={`p-2.5 rounded-xl border flex items-center justify-between text-xs ${
+                      isLight ? 'bg-emerald-50/70 border-emerald-200' : 'bg-emerald-950/30 border-emerald-500/30'
+                    }`}>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Required Monthly Add:</span>
+                        <span className="font-mono font-extrabold text-sm text-emerald-500 dark:text-emerald-400">
+                          {currSym}{g.reqSip.toLocaleString()}/mo
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400 bg-slate-800/40 px-2 py-0.5 rounded border border-slate-700/50">
+                        {sharePct}% of total SIP
                       </span>
                     </div>
                   </div>
-
-                  {/* Progress Bar */}
-                  <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${progressPct}%` }} />
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                    <span className="text-slate-400">Required Monthly SIP:</span>
-                    <span className="font-mono font-bold text-emerald-400">{currSym}{reqSip.toLocaleString()}/mo</span>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
 
           {/* Add Goal Form with Tenure Controls */}
@@ -4028,25 +4319,41 @@ Strategic Focus: ${result.biggestPriority}`;
             </div>
 
             {/* Live SIP Forecast Preview for Tenure */}
-            {newGoalTarget && (
-              <div className={`p-3 rounded-xl border flex flex-wrap items-center justify-between gap-2 text-xs ${
-                isLight ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-blue-950/40 border-blue-800/60 text-blue-200'
-              }`}>
-                <span className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-blue-400" />
-                  <span>Calculated SIP for <strong>{newGoalTenureYears}-year tenure</strong> (Target Year {new Date().getFullYear() + newGoalTenureYears}):</span>
-                </span>
-                <span className="font-mono font-bold text-sm text-emerald-400">
-                  {currSym}{calculateRequiredMonthlySaving(
-                    parseFloat(newGoalTarget) || 0,
-                    parseFloat(newGoalSaved) || 0,
-                    new Date().getFullYear() + newGoalTenureYears,
-                    9,
-                    newGoalTenureYears
-                  ).toLocaleString()}/mo
-                </span>
-              </div>
-            )}
+            {newGoalTarget && (() => {
+              const previewSip = calculateRequiredMonthlySaving(
+                parseFloat(newGoalTarget) || 0,
+                parseFloat(newGoalSaved) || 0,
+                new Date().getFullYear() + newGoalTenureYears,
+                9,
+                newGoalTenureYears
+              );
+              const combinedTotalSip = totalRequiredMonthlySip + previewSip;
+
+              return (
+                <div className={`p-4 rounded-xl border space-y-2 text-xs ${
+                  isLight ? 'bg-emerald-50/80 border-emerald-200 text-slate-800' : 'bg-emerald-950/30 border-emerald-500/30 text-emerald-100'
+                }`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <Clock className="w-4 h-4 text-emerald-400" />
+                      <span>This Goal's Required Monthly Add ({newGoalTenureYears}y tenure):</span>
+                    </span>
+                    <span className="font-mono font-black text-sm text-emerald-500 dark:text-emerald-400">
+                      +{currSym}{previewSip.toLocaleString()}/mo
+                    </span>
+                  </div>
+
+                  <div className="pt-2 border-t border-emerald-200/60 dark:border-emerald-500/20 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <span className="text-slate-400">
+                      Updated Total Required Monthly Add (All Goals Combined):
+                    </span>
+                    <span className="font-mono font-bold text-xs text-blue-400">
+                      {currSym}{combinedTotalSip.toLocaleString()}/month
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="flex justify-end pt-1">
               <button
