@@ -590,3 +590,249 @@ export function calculateCAGR(input: CAGRInput): CAGRResult {
     trajectory,
   };
 }
+
+// ---------------------------------------------------------------------------
+// 11. Income Growth & Career Trajectory Calculation
+// ---------------------------------------------------------------------------
+export interface IncomeGrowthInput {
+  currentMonthlyIncome: number;
+  annualHikePercent: number; // e.g. 10%
+  promotionJumpPercent?: number; // e.g. 20%
+  promotionIntervalYears?: number; // e.g. every 3 years
+  sideIncomeMonthly?: number; // e.g. 10000
+  sideIncomeGrowthPercent?: number; // e.g. 8%
+  years: number; // e.g. 15 years
+  currentAge?: number; // e.g. 26
+  inflationRatePercent?: number; // e.g. 6%
+}
+
+export interface IncomeGrowthYearData {
+  year: number;
+  age: number;
+  baseMonthlyIncome: number;
+  sideMonthlyIncome: number;
+  totalMonthlyIncome: number;
+  baseAnnualIncome: number;
+  sideAnnualIncome: number;
+  totalAnnualIncome: number;
+  cumulativeEarnings: number;
+  inflationDiscountFactor: number;
+  realMonthlyPurchasingPower: number;
+  realAnnualPurchasingPower: number;
+  isPromotionYear: boolean;
+  hikeRateApplied: number;
+}
+
+export interface IncomeGrowthResult {
+  finalMonthlyIncome: number;
+  finalAnnualIncome: number;
+  totalLifetimeEarnings: number;
+  finalRealMonthlyPurchasingPower: number;
+  growthMultiplier: number;
+  annualizedGrowthRate: number; // CAGR %
+  milestones: {
+    monthlyTarget: number;
+    yearReached: number | null;
+    ageReached: number | null;
+  }[];
+  trajectory: IncomeGrowthYearData[];
+}
+
+export function calculateIncomeGrowth(input: IncomeGrowthInput): IncomeGrowthResult {
+  const {
+    currentMonthlyIncome,
+    annualHikePercent,
+    promotionJumpPercent = 0,
+    promotionIntervalYears = 0,
+    sideIncomeMonthly = 0,
+    sideIncomeGrowthPercent = 0,
+    years,
+    currentAge = 25,
+    inflationRatePercent = 6,
+  } = input;
+
+  const validYears = Math.min(40, Math.max(1, Math.round(years)));
+  const trajectory: IncomeGrowthYearData[] = [];
+  
+  let currBaseMonthly = Math.max(0, currentMonthlyIncome);
+  let currSideMonthly = Math.max(0, sideIncomeMonthly);
+  let runningCumulative = 0;
+
+  const standardMilestones = [50000, 100000, 150000, 200000, 300000, 500000, 1000000];
+  const milestoneTracking: { monthlyTarget: number; yearReached: number | null; ageReached: number | null }[] = standardMilestones.map(m => ({
+    monthlyTarget: m,
+    yearReached: null,
+    ageReached: null,
+  }));
+
+  // Initial Year 0 starting point check for milestones
+  const initialTotalMonthly = currBaseMonthly + currSideMonthly;
+  milestoneTracking.forEach(m => {
+    if (initialTotalMonthly >= m.monthlyTarget && m.yearReached === null) {
+      m.yearReached = 0;
+      m.ageReached = currentAge;
+    }
+  });
+
+  for (let y = 1; y <= validYears; y++) {
+    const isPromo = promotionIntervalYears > 0 && y % promotionIntervalYears === 0;
+    const hikeRate = annualHikePercent + (isPromo ? promotionJumpPercent : 0);
+    
+    // Apply hike to base monthly
+    currBaseMonthly = currBaseMonthly * (1 + hikeRate / 100);
+    
+    // Apply side income growth
+    if (currSideMonthly > 0 && sideIncomeGrowthPercent > 0) {
+      currSideMonthly = currSideMonthly * (1 + sideIncomeGrowthPercent / 100);
+    }
+
+    const totalMonthly = currBaseMonthly + currSideMonthly;
+    const baseAnnual = currBaseMonthly * 12;
+    const sideAnnual = currSideMonthly * 12;
+    const totalAnnual = totalMonthly * 12;
+    runningCumulative += totalAnnual;
+
+    // Inflation discount factor (1 + inf)^-y
+    const infFactor = Math.pow(1 + Math.max(0, inflationRatePercent) / 100, -y);
+    const realMonthly = totalMonthly * infFactor;
+    const realAnnual = totalAnnual * infFactor;
+    const age = currentAge + y;
+
+    // Track milestone achievements
+    milestoneTracking.forEach(m => {
+      if (totalMonthly >= m.monthlyTarget && m.yearReached === null) {
+        m.yearReached = y;
+        m.ageReached = age;
+      }
+    });
+
+    trajectory.push({
+      year: y,
+      age,
+      baseMonthlyIncome: Math.round(currBaseMonthly),
+      sideMonthlyIncome: Math.round(currSideMonthly),
+      totalMonthlyIncome: Math.round(totalMonthly),
+      baseAnnualIncome: Math.round(baseAnnual),
+      sideAnnualIncome: Math.round(sideAnnual),
+      totalAnnualIncome: Math.round(totalAnnual),
+      cumulativeEarnings: Math.round(runningCumulative),
+      inflationDiscountFactor: Math.round(infFactor * 1000) / 1000,
+      realMonthlyPurchasingPower: Math.round(realMonthly),
+      realAnnualPurchasingPower: Math.round(realAnnual),
+      isPromotionYear: isPromo,
+      hikeRateApplied: Math.round(hikeRate * 10) / 10,
+    });
+  }
+
+  const lastYearData = trajectory[trajectory.length - 1];
+  const finalMonthlyIncome = lastYearData ? lastYearData.totalMonthlyIncome : Math.round(initialTotalMonthly);
+  const finalAnnualIncome = lastYearData ? lastYearData.totalAnnualIncome : Math.round(initialTotalMonthly * 12);
+  const finalRealMonthlyPurchasingPower = lastYearData ? lastYearData.realMonthlyPurchasingPower : Math.round(initialTotalMonthly);
+  const growthMultiplier = initialTotalMonthly > 0 ? Math.round((finalMonthlyIncome / initialTotalMonthly) * 100) / 100 : 1;
+  
+  // CAGR of income over the period
+  const annualizedGrowthRate = initialTotalMonthly > 0 && validYears > 0
+    ? Math.round((Math.pow(finalMonthlyIncome / initialTotalMonthly, 1 / validYears) - 1) * 10000) / 100
+    : annualHikePercent;
+
+  return {
+    finalMonthlyIncome,
+    finalAnnualIncome,
+    totalLifetimeEarnings: Math.round(runningCumulative),
+    finalRealMonthlyPurchasingPower,
+    growthMultiplier,
+    annualizedGrowthRate,
+    milestones: milestoneTracking,
+    trajectory,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 12. Step-Up SIP (Top-Up SIP) Calculation
+// ---------------------------------------------------------------------------
+export interface StepUpSIPInput {
+  initialMonthlySIP: number;
+  annualStepUpPercent: number; // e.g. 10%
+  years: number;
+  annualReturn: number; // e.g. 12%
+}
+
+export interface StepUpSIPResult {
+  totalInvestment: number;
+  estimatedReturns: number;
+  maturityValue: number;
+  flatSipMaturityValue: number;
+  stepUpAdvantage: number;
+  finalMonthlySIP: number;
+  trajectory: {
+    year: number;
+    monthlySip: number;
+    yearlyInvested: number;
+    cumulativeInvested: number;
+    stepUpValue: number;
+    flatSipValue: number;
+  }[];
+}
+
+export function calculateStepUpSIP(input: StepUpSIPInput): StepUpSIPResult {
+  const { initialMonthlySIP, annualStepUpPercent, years, annualReturn } = input;
+  const validYears = Math.min(40, Math.max(1, Math.round(years)));
+  const monthlyRate = annualReturn / 12 / 100;
+  const totalMonths = validYears * 12;
+
+  let cumulativeInvested = 0;
+  let runningStepUpMaturity = 0;
+  let runningFlatSipMaturity = 0;
+  let flatCumulativeInvested = 0;
+  
+  const trajectory: StepUpSIPResult['trajectory'] = [];
+  let currentYearMonthlySip = initialMonthlySIP;
+
+  for (let y = 1; y <= validYears; y++) {
+    // Current monthly SIP for this year
+    currentYearMonthlySip = Math.round(initialMonthlySIP * Math.pow(1 + annualStepUpPercent / 100, y - 1));
+    const yearlyInvested = currentYearMonthlySip * 12;
+    cumulativeInvested += yearlyInvested;
+    flatCumulativeInvested += initialMonthlySIP * 12;
+
+    // Compute trajectory portfolio value at end of year y
+    // We can simulate compound balance month-by-month for precision
+    let stepUpBalanceAtYearEnd = 0;
+    let flatBalanceAtYearEnd = 0;
+    const monthsElapsed = y * 12;
+
+    for (let m = 1; m <= monthsElapsed; m++) {
+      const yearOfDeposit = Math.floor((m - 1) / 12);
+      const sipAtDeposit = initialMonthlySIP * Math.pow(1 + annualStepUpPercent / 100, yearOfDeposit);
+      const monthsCompounding = monthsElapsed - m + 1;
+      stepUpBalanceAtYearEnd += sipAtDeposit * Math.pow(1 + monthlyRate, monthsCompounding);
+      flatBalanceAtYearEnd += initialMonthlySIP * Math.pow(1 + monthlyRate, monthsCompounding);
+    }
+
+    trajectory.push({
+      year: y,
+      monthlySip: currentYearMonthlySip,
+      yearlyInvested: Math.round(yearlyInvested),
+      cumulativeInvested: Math.round(cumulativeInvested),
+      stepUpValue: Math.round(stepUpBalanceAtYearEnd),
+      flatSipValue: Math.round(flatBalanceAtYearEnd),
+    });
+  }
+
+  const finalEntry = trajectory[trajectory.length - 1];
+  const maturityValue = finalEntry ? finalEntry.stepUpValue : 0;
+  const flatSipMaturityValue = finalEntry ? finalEntry.flatSipValue : 0;
+  const estimatedReturns = Math.max(0, maturityValue - cumulativeInvested);
+  const stepUpAdvantage = Math.max(0, maturityValue - flatSipMaturityValue);
+
+  return {
+    totalInvestment: Math.round(cumulativeInvested),
+    estimatedReturns: Math.round(estimatedReturns),
+    maturityValue: Math.round(maturityValue),
+    flatSipMaturityValue: Math.round(flatSipMaturityValue),
+    stepUpAdvantage: Math.round(stepUpAdvantage),
+    finalMonthlySIP: Math.round(currentYearMonthlySip),
+    trajectory,
+  };
+}
+

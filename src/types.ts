@@ -102,6 +102,19 @@ export interface Asset {
   priceChange24hAmount?: number;// 24h absolute change (e.g. 4.30)
   lastPriceSyncedAt?: string;  // Timestamp of latest price sync
   autoSyncMarketPrice?: boolean; // Automatically refresh price on load
+
+  // Fixed Income, Schemes & Contractual Holding Details
+  interestRate?: number;       // Annual % p.a. for FD, RD, Bonds, PPF, EPF, SSY, Loan Given
+  maturityDate?: string;       // Maturity date for FDs, Bonds, Policies, Loans
+  tenure?: string;             // e.g. '3 Years', '5 Years'
+  compoundingFrequency?: string; // 'Monthly' | 'Quarterly' | 'Annual' | 'Cumulative'
+  sumAssured?: number;         // Life Cover for ULIP / Endowment
+  annualPremium?: number;      // Annual insurance premium
+  strikePrice?: number;        // Strike price for ESOP / RSU
+  fairMarketValue?: number;    // Current FMV per share for ESOP
+  vestingDate?: string;        // Vesting date
+  accountNumberMasked?: string;// e.g. UAN, PRAN, Account No.
+  borrowerName?: string;       // For Loan Given
 }
 
 export interface Liability {

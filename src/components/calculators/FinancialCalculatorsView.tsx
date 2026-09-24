@@ -18,7 +18,12 @@ import {
   CheckCircle2,
   AlertTriangle,
   Info,
-  Printer
+  Printer,
+  MessageSquarePlus,
+  ArrowUpRight,
+  Star,
+  Sliders,
+  ThumbsUp
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -50,9 +55,14 @@ import {
   CompoundingFrequency
 } from '../../utils/financialCalculations';
 import { calculateXIRR, CashFlowTransaction } from '../../utils/xirr';
+import { IncomeGrowthCalculator } from './IncomeGrowthCalculator';
+import { StepUpSIPCalculator } from './StepUpSIPCalculator';
+import { ToolsFeedbackSection } from './ToolsFeedbackSection';
 
 export type CalculatorType =
   | 'sip'
+  | 'income_growth'
+  | 'stepup_sip'
   | 'swp'
   | 'lumpsum'
   | 'emi'
@@ -61,28 +71,33 @@ export type CalculatorType =
   | 'fd'
   | 'rd'
   | 'xirr'
-  | 'cagr';
+  | 'cagr'
+  | 'feedback';
 
 interface CalculatorTabItem {
   id: CalculatorType;
   label: string;
   shortLabel: string;
   badge?: string;
+  category: 'career' | 'investments' | 'loans' | 'banking' | 'feedback';
   icon: any;
   color: string;
 }
 
 const CALCULATORS: CalculatorTabItem[] = [
-  { id: 'sip', label: 'SIP Calculator', shortLabel: 'SIP', icon: TrendingUp, color: 'text-emerald-400' },
-  { id: 'swp', label: 'SWP Calculator', shortLabel: 'SWP', icon: ArrowDownRight, color: 'text-blue-400' },
-  { id: 'lumpsum', label: 'Lumpsum Calculator', shortLabel: 'Lumpsum', icon: Coins, color: 'text-cyan-400' },
-  { id: 'emi', label: 'Loan / EMI Calculator', shortLabel: 'EMI', icon: Landmark, color: 'text-amber-400' },
-  { id: 'compound', label: 'Compound Interest', shortLabel: 'Compound Interest', icon: Sparkles, color: 'text-indigo-400' },
-  { id: 'inflation', label: 'Inflation Calculator', shortLabel: 'Inflation', icon: AlertTriangle, color: 'text-rose-400' },
-  { id: 'fd', label: 'FD Calculator', shortLabel: 'FD', icon: ShieldCheck, color: 'text-teal-400' },
-  { id: 'rd', label: 'RD Calculator', shortLabel: 'RD', icon: PiggyBank, color: 'text-purple-400' },
-  { id: 'xirr', label: 'XIRR Calculator', shortLabel: 'XIRR', icon: FileSpreadsheet, color: 'text-amber-400' },
-  { id: 'cagr', label: 'CAGR Calculator', shortLabel: 'CAGR', icon: Percent, color: 'text-blue-400' },
+  { id: 'sip', label: 'SIP Calculator', shortLabel: 'SIP', category: 'investments', icon: TrendingUp, color: 'text-emerald-400' },
+  { id: 'income_growth', label: 'Income Growth Graph', shortLabel: 'Income Growth', badge: '✨ New', category: 'career', icon: TrendingUp, color: 'text-blue-400' },
+  { id: 'stepup_sip', label: 'Step-Up SIP Calculator', shortLabel: 'Step-Up SIP', badge: '📈 2x', category: 'investments', icon: ArrowUpRight, color: 'text-emerald-400' },
+  { id: 'swp', label: 'SWP Calculator', shortLabel: 'SWP', category: 'investments', icon: ArrowDownRight, color: 'text-blue-400' },
+  { id: 'lumpsum', label: 'Lumpsum Calculator', shortLabel: 'Lumpsum', category: 'investments', icon: Coins, color: 'text-cyan-400' },
+  { id: 'emi', label: 'Loan / EMI Calculator', shortLabel: 'EMI', category: 'loans', icon: Landmark, color: 'text-amber-400' },
+  { id: 'compound', label: 'Compound Interest', shortLabel: 'Compound Interest', category: 'banking', icon: Sparkles, color: 'text-indigo-400' },
+  { id: 'inflation', label: 'Inflation Calculator', shortLabel: 'Inflation', category: 'banking', icon: AlertTriangle, color: 'text-rose-400' },
+  { id: 'fd', label: 'FD Calculator', shortLabel: 'FD', category: 'banking', icon: ShieldCheck, color: 'text-teal-400' },
+  { id: 'rd', label: 'RD Calculator', shortLabel: 'RD', category: 'banking', icon: PiggyBank, color: 'text-purple-400' },
+  { id: 'xirr', label: 'XIRR Calculator', shortLabel: 'XIRR', category: 'investments', icon: FileSpreadsheet, color: 'text-amber-400' },
+  { id: 'cagr', label: 'CAGR Calculator', shortLabel: 'CAGR', category: 'investments', icon: Percent, color: 'text-blue-400' },
+  { id: 'feedback', label: 'Feedback & Suggestions', shortLabel: 'Feedback & Ideas', badge: '💬 Community', category: 'feedback', icon: MessageSquarePlus, color: 'text-amber-400' },
 ];
 
 export const FinancialCalculatorsView: React.FC = () => {
@@ -90,6 +105,12 @@ export const FinancialCalculatorsView: React.FC = () => {
   const isLight = theme === 'light';
 
   const [activeCalc, setActiveCalc] = useState<CalculatorType>('sip');
+  const [calcCategory, setCalcCategory] = useState<string>('all');
+
+  const filteredCalculators = useMemo(() => {
+    if (calcCategory === 'all') return CALCULATORS;
+    return CALCULATORS.filter(c => c.category === calcCategory);
+  }, [calcCategory]);
 
   // -------------------------------------------------------------------------
   // 1. SIP State
@@ -407,31 +428,93 @@ export const FinancialCalculatorsView: React.FC = () => {
             <span className="p-2 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
               <TrendingUp className="w-5 h-5" />
             </span>
-            <span>Financial Calculators</span>
+            <span>Tools & Financial Calculators</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Complete suite of 10 deterministic financial engines with Indian Rupee formatting, visual charts, and formulas.
+            Complete suite of 13 deterministic engines, interactive income growth simulator, community wishlist, and print-ready reports.
           </p>
         </div>
 
-        {/* Quick Calculator Counter Badge & Print Button */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Quick Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0 no-print">
+          <button
+            onClick={() => setActiveCalc('income_growth')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-sm ${
+              activeCalc === 'income_growth'
+                ? 'bg-blue-600 text-white border-blue-500'
+                : isLight
+                ? 'bg-blue-50 hover:bg-blue-100/80 text-blue-700 border-blue-200'
+                : 'bg-blue-950/40 hover:bg-blue-900/50 text-blue-300 border-blue-800/60'
+            }`}
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+            </span>
+            <span>Income Growth Graph</span>
+          </button>
+
+          <button
+            onClick={() => setActiveCalc('feedback')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-sm ${
+              activeCalc === 'feedback'
+                ? 'bg-amber-500 text-slate-950 border-amber-400'
+                : isLight
+                ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200'
+                : 'bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 border-amber-800/60'
+            }`}
+          >
+            <MessageSquarePlus className="w-3.5 h-3.5" />
+            <span>Feedback & Ideas</span>
+          </button>
+
           <button
             onClick={() => window.print()}
             title="Print or Save Results as PDF"
-            className={`no-print flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer shadow-sm ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer shadow-sm ${
               isLight
                 ? 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 shadow-slate-200/50'
                 : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-700 shadow-black/40'
             }`}
           >
             <Printer className="w-3.5 h-3.5 text-blue-400" />
-            <span>Print / Save PDF</span>
+            <span>Print / PDF</span>
           </button>
-          <span className="px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold font-mono no-print">
-            10 Calculators Active
-          </span>
         </div>
+      </div>
+
+      {/* Category Filter Chips & Quick Counter */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 no-print">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          {[
+            { id: 'all', label: 'All Tools (13)' },
+            { id: 'career', label: 'Career & Income' },
+            { id: 'investments', label: 'Investments & SIP' },
+            { id: 'loans', label: 'Loans & Debt' },
+            { id: 'banking', label: 'Banking & Savings' },
+            { id: 'feedback', label: 'Community Feedback' },
+          ].map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setCalcCategory(cat.id)}
+              className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                calcCategory === cat.id
+                  ? isLight
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-zinc-100 text-zinc-900 shadow-sm'
+                  : isLight
+                  ? 'bg-slate-200/70 text-slate-700 hover:bg-slate-200'
+                  : 'bg-zinc-800/60 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        <span className="text-[11px] font-mono text-slate-400 hidden sm:inline-block">
+          Active: <strong className="text-blue-400">{CALCULATORS.find(c => c.id === activeCalc)?.label}</strong>
+        </span>
       </div>
 
       {/* Printable Report Header (Only visible on paper / PDF) */}
@@ -461,7 +544,7 @@ export const FinancialCalculatorsView: React.FC = () => {
         isLight ? 'bg-slate-100 border-slate-200' : 'bg-zinc-900/90 border-zinc-800'
       } overflow-x-auto no-scrollbar`}>
         <div className="flex items-center gap-1 min-w-max">
-          {CALCULATORS.map(tab => {
+          {filteredCalculators.map(tab => {
             const Icon = tab.icon;
             const isActive = activeCalc === tab.id;
             return (
@@ -479,6 +562,15 @@ export const FinancialCalculatorsView: React.FC = () => {
               >
                 <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : tab.color}`} />
                 <span>{tab.shortLabel}</span>
+                {tab.badge && (
+                  <span className={`text-[9px] px-1.5 py-0.2 rounded-md font-extrabold tracking-tight ${
+                    isActive
+                      ? 'bg-white/25 text-white'
+                      : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                  }`}>
+                    {tab.badge}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -692,6 +784,27 @@ export const FinancialCalculatorsView: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ------------------------------------------------------------------- */}
+      {/* 1B. INCOME GROWTH & CAREER PROGRESSION SIMULATOR WITH GRAPH */}
+      {/* ------------------------------------------------------------------- */}
+      {activeCalc === 'income_growth' && (
+        <IncomeGrowthCalculator
+          isLight={isLight}
+          onNavigateToFeedback={() => setActiveCalc('feedback')}
+          onNavigateToStepUpSip={() => setActiveCalc('stepup_sip')}
+        />
+      )}
+
+      {/* ------------------------------------------------------------------- */}
+      {/* 1C. STEP-UP SIP CALCULATOR */}
+      {/* ------------------------------------------------------------------- */}
+      {activeCalc === 'stepup_sip' && (
+        <StepUpSIPCalculator
+          isLight={isLight}
+          onNavigateToIncomeGrowth={() => setActiveCalc('income_growth')}
+        />
       )}
 
       {/* ------------------------------------------------------------------- */}
@@ -2044,6 +2157,16 @@ export const FinancialCalculatorsView: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ------------------------------------------------------------------- */}
+      {/* 11. TOOLS FEEDBACK & SUGGESTIONS SECTION */}
+      {/* ------------------------------------------------------------------- */}
+      {activeCalc === 'feedback' && (
+        <ToolsFeedbackSection
+          isLight={isLight}
+          onSelectCalculator={(calcId) => setActiveCalc(calcId as CalculatorType)}
+        />
       )}
 
       {/* Mandatory Regulatory & Educational Disclaimer */}

@@ -11,6 +11,7 @@ import {
   Building2, 
   Check, 
   ChevronLeft, 
+  ChevronRight,
   TrendingUp, 
   ExternalLink,
   Plus, 
@@ -19,26 +20,37 @@ import {
   Search,
   Layers,
   Clock,
-  Info,
-  SlidersHorizontal
+  Landmark,
+  Shield,
+  Heart,
+  Briefcase,
+  Percent,
+  FileText,
+  PiggyBank,
+  Wallet
 } from 'lucide-react';
 import { useFinance, CURRENCY_CONFIGS } from '../context/FinanceContext';
 import { 
   AssetCategory, 
   LiabilityCategory, 
-  ExpenseCategory, 
-  IncomeCategory, 
   CurrencyCode,
   DEFAULT_ASSET_TAGS
 } from '../types';
-import { ASSET_TAXONOMY, LIABILITY_TAXONOMY, AssetCategoryInfo } from '../data/assetTaxonomy';
+import { 
+  ASSET_TAXONOMY, 
+  LIABILITY_TAXONOMY, 
+  AssetCategoryInfo,
+  EQUITY_SUBTYPES,
+  DEBT_GROUPS,
+  DEBT_SUBTYPES,
+  AssetSubType
+} from '../data/assetTaxonomy';
 import { 
   MasterAsset, 
   marketDataService, 
   getGoogleFinanceUrl, 
   MOCK_MASTER_ASSETS 
 } from '../services/marketDataService';
-import { estimateHistoricalBuyPrice } from '../data/marketStocks';
 
 export const QuickAddModal: React.FC = () => {
   const { 
@@ -46,7 +58,7 @@ export const QuickAddModal: React.FC = () => {
     closeQuickAdd, 
     quickAddType, 
     accounts, 
-    currency, 
+    currency,
     addTransaction, 
     addAsset, 
     addLiability 
@@ -54,12 +66,24 @@ export const QuickAddModal: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'income' | 'expense' | 'asset' | 'liability'>('asset');
 
-  // Asset Flow Mode: 'search' (default for market assets) vs 'category' (for manual/physical assets) vs 'configure' (after clicking + Add)
-  const [assetFlowMode, setAssetFlowMode] = useState<'search' | 'category' | 'configure'>('search');
+  // Asset Flow Modes:
+  // 'hub': Default component shown first when adding an asset (Features Equity, Debt, and other asset classes)
+  // 'equity_menu': Shows the 10 specific Equity investment types
+  // 'debt_menu': Shows the 7 categorized Debt groups & types (FD/RD, Bonds, Govt Schemes, Debt MFs, Insurance, Retirement, Other)
+  // 'category_menu': Shows sub-types for other categories (Real Estate, Commodities, Cash, Crypto, Alternatives, Other)
+  // 'search': Focused live search tailored to the chosen asset type (e.g. only Direct Stocks, only Equity MFs, only ETFs)
+  // 'manual_form': Tailored form for contractual/fixed holdings (Bank FD, PPF, EPF, Loan Given, ESOP, etc.)
+  // 'configure': Configure shares, buy price, broker after selecting from search
+  const [assetFlowMode, setAssetFlowMode] = useState<
+    'hub' | 'equity_menu' | 'debt_menu' | 'category_menu' | 'search' | 'manual_form' | 'configure'
+  >('hub');
   
+  const [activeAssetClass, setActiveAssetClass] = useState<string>('Equity');
+  const [selectedSubTypeInfo, setSelectedSubTypeInfo] = useState<AssetSubType | null>(null);
+
   // Market Search State
   const [marketSearchQuery, setMarketSearchQuery] = useState('');
-  const [marketFilter, setMarketFilter] = useState<'all' | 'stock' | 'mutual_fund'>('all');
+  const [marketFilter, setMarketFilter] = useState<'all' | 'stock' | 'mutual_fund' | 'equity_mf' | 'hybrid_mf' | 'arbitrage_mf' | 'debt_mf' | 'liquid_mf' | 'etf'>('all');
   const [searchResults, setSearchResults] = useState<MasterAsset[]>(MOCK_MASTER_ASSETS.slice(0, 12));
   const [isSearching, setIsSearching] = useState(false);
   const [selectedMasterAsset, setSelectedMasterAsset] = useState<MasterAsset | null>(null);
@@ -72,44 +96,28 @@ export const QuickAddModal: React.FC = () => {
   const [holdingTags, setHoldingTags] = useState<string[]>(['Long-term Savings']);
   const [holdingCustomTag, setHoldingCustomTag] = useState('');
 
-  // Manual/Physical Asset Category state
+  // Manual Asset Form State
   const [selectedAssetCategory, setSelectedAssetCategory] = useState<AssetCategoryInfo | null>(null);
-  const [selectedAssetSubType, setSelectedAssetSubType] = useState<{ id: string; name: string; isDefaultLiquid?: boolean; suggestedInstitutions?: string[] } | null>(null);
   const [manualAssetName, setManualAssetName] = useState('');
   const [manualAssetValue, setManualAssetValue] = useState('');
   const [manualAssetCostBasis, setManualAssetCostBasis] = useState('');
   const [manualAssetInstitution, setManualAssetInstitution] = useState('');
+  const [manualInterestRate, setManualInterestRate] = useState('');
+  const [manualTenure, setManualTenure] = useState('3 Years');
+  const [manualMaturityDate, setManualMaturityDate] = useState('');
+  const [manualCompounding, setManualCompounding] = useState('Cumulative (at Maturity)');
+  const [manualSumAssured, setManualSumAssured] = useState('');
+  const [manualAnnualPremium, setManualAnnualPremium] = useState('');
+  const [manualAccountNumber, setManualAccountNumber] = useState('');
+  const [manualBorrowerName, setManualBorrowerName] = useState('');
+  const [manualStrikePrice, setManualStrikePrice] = useState('');
+  const [manualFairMarketValue, setManualFairMarketValue] = useState('');
+  const [manualShares, setManualShares] = useState('');
+  const [manualVestingDate, setManualVestingDate] = useState('');
+  const [manualNotes, setManualNotes] = useState('');
   const [manualAssetIsLiquid, setManualAssetIsLiquid] = useState(true);
   const [manualTags, setManualTags] = useState<string[]>(['Long-term Savings']);
   const [manualCustomTag, setManualCustomTag] = useState('');
-
-  const toggleHoldingTag = (tagName: string) => {
-    setHoldingTags(prev => 
-      prev.includes(tagName) ? prev.filter(t => t !== tagName) : [...prev, tagName]
-    );
-  };
-
-  const addHoldingCustomTag = () => {
-    const trimmed = holdingCustomTag.trim();
-    if (trimmed && !holdingTags.includes(trimmed)) {
-      setHoldingTags(prev => [...prev, trimmed]);
-      setHoldingCustomTag('');
-    }
-  };
-
-  const toggleManualTag = (tagName: string) => {
-    setManualTags(prev => 
-      prev.includes(tagName) ? prev.filter(t => t !== tagName) : [...prev, tagName]
-    );
-  };
-
-  const addManualCustomTag = () => {
-    const trimmed = manualCustomTag.trim();
-    if (trimmed && !manualTags.includes(trimmed)) {
-      setManualTags(prev => [...prev, trimmed]);
-      setManualCustomTag('');
-    }
-  };
 
   // Liability state
   const [liabStep, setLiabStep] = useState<1 | 2>(1);
@@ -130,14 +138,16 @@ export const QuickAddModal: React.FC = () => {
 
   const [submittedMessage, setSubmittedMessage] = useState<string | null>(null);
 
+  // Initialize or Reset Modal when opened
   useEffect(() => {
     if (quickAddType) {
       setActiveTab(quickAddType);
       if (quickAddType === 'asset') {
-        setAssetFlowMode('search');
+        // First show the Asset Class Hub component!
+        setAssetFlowMode('hub');
         setSelectedMasterAsset(null);
+        setSelectedSubTypeInfo(null);
         setSelectedAssetCategory(null);
-        setSelectedAssetSubType(null);
       } else if (quickAddType === 'liability') {
         setLiabStep(1);
       }
@@ -158,19 +168,26 @@ export const QuickAddModal: React.FC = () => {
     }
   }, [activeTab]);
 
-  // Live Market & Mutual Fund Search
+  // Live Market Search Effect
   useEffect(() => {
+    if (activeTab !== 'asset' || (assetFlowMode !== 'search' && assetFlowMode !== 'configure')) {
+      return;
+    }
+
     let isCurrent = true;
     setIsSearching(true);
 
     const timer = setTimeout(async () => {
       try {
-        const results = await marketDataService.search(marketSearchQuery, marketFilter === 'all' ? undefined : marketFilter);
+        const results = await marketDataService.search(
+          marketSearchQuery, 
+          marketFilter === 'all' ? undefined : marketFilter
+        );
         if (isCurrent) {
           setSearchResults(results);
         }
       } catch (err) {
-        // Fallback to local
+        // Fallback
       } finally {
         if (isCurrent) setIsSearching(false);
       }
@@ -180,24 +197,137 @@ export const QuickAddModal: React.FC = () => {
       isCurrent = false;
       clearTimeout(timer);
     };
-  }, [marketSearchQuery, marketFilter]);
+  }, [marketSearchQuery, marketFilter, activeTab, assetFlowMode]);
+
+  // Auto-calculate ESOP total valuation
+  useEffect(() => {
+    if (selectedSubTypeInfo?.id === 'esop-rsu' && manualShares && manualFairMarketValue) {
+      const sh = parseFloat(manualShares) || 0;
+      const fmv = parseFloat(manualFairMarketValue) || 0;
+      if (sh > 0 && fmv > 0) {
+        setManualAssetValue((sh * fmv).toFixed(2));
+      }
+    }
+  }, [manualShares, manualFairMarketValue, selectedSubTypeInfo]);
 
   if (!isQuickAddOpen) return null;
 
   const currentSymbol = CURRENCY_CONFIGS[currency]?.symbol || '₹';
 
-  // Quick suggestion chips
-  const QUICK_SEARCH_CHIPS = [
-    { label: 'Reliance', query: 'Reliance' },
-    { label: 'RELIANCE', query: 'RELIANCE' },
-    { label: 'TCS', query: 'TCS' },
-    { label: 'HDFC Bank', query: 'HDFC Bank' },
-    { label: 'HDFC Flexi Cap Fund', query: 'HDFC Flexi Cap Fund' },
-    { label: 'SBI Bluechip Fund', query: 'SBI Bluechip' },
-    { label: 'NIFTY 50', query: 'NIFTYBEES' }
-  ];
+  // Quick Search Chips based on active filter
+  const getQuickSearchChips = () => {
+    if (marketFilter === 'stock') {
+      return [
+        { label: 'Reliance', query: 'Reliance' },
+        { label: 'TCS', query: 'TCS' },
+        { label: 'HDFC Bank', query: 'HDFC Bank' },
+        { label: 'Infosys', query: 'INFY' },
+        { label: 'Tata Motors', query: 'TATAMOTORS' },
+        { label: 'Apple', query: 'AAPL' },
+        { label: 'Nvidia', query: 'NVDA' }
+      ];
+    } else if (marketFilter === 'equity_mf') {
+      return [
+        { label: 'Parag Parikh Flexi Cap', query: 'Parag Parikh Flexi Cap' },
+        { label: 'Quant Small Cap', query: 'Quant Small Cap' },
+        { label: 'Mirae Asset Large & Midcap', query: 'Mirae Asset' },
+        { label: 'HDFC Flexi Cap', query: 'HDFC Flexi Cap' },
+        { label: 'SBI Bluechip', query: 'SBI Bluechip' }
+      ];
+    } else if (marketFilter === 'hybrid_mf') {
+      return [
+        { label: 'ICICI Multi-Asset', query: 'ICICI Prudential Multi Asset' },
+        { label: 'SBI Equity Hybrid', query: 'SBI Equity Hybrid' },
+        { label: 'HDFC Balanced Advantage', query: 'HDFC Balanced Advantage' },
+        { label: 'Kotak Balanced Advantage', query: 'Kotak Balanced Advantage' }
+      ];
+    } else if (marketFilter === 'arbitrage_mf') {
+      return [
+        { label: 'Kotak Equity Arbitrage', query: 'Kotak Equity Arbitrage' },
+        { label: 'SBI Arbitrage Fund', query: 'SBI Arbitrage' },
+        { label: 'Invesco Arbitrage', query: 'Invesco India Arbitrage' }
+      ];
+    } else if (marketFilter === 'debt_mf') {
+      return [
+        { label: 'HDFC Short Term', query: 'HDFC Short Term' },
+        { label: 'Aditya Birla Corporate Bond', query: 'Aditya Birla Sun Life Corporate Bond' },
+        { label: 'ICICI Prudential All Seasons', query: 'ICICI Prudential All Seasons Bond' }
+      ];
+    } else if (marketFilter === 'liquid_mf') {
+      return [
+        { label: 'Quantum Liquid', query: 'Quantum Liquid' },
+        { label: 'Nippon India Liquid', query: 'Nippon India Liquid' },
+        { label: 'SBI Liquid Fund', query: 'SBI Liquid' },
+        { label: 'ICICI Liquid', query: 'ICICI Prudential Liquid' }
+      ];
+    } else if (marketFilter === 'etf') {
+      return selectedSubTypeInfo?.group === 'Mutual Funds / ETF' ? [
+        { label: 'BHARAT BOND ETF', query: 'BHARAT' },
+        { label: 'LIQUIDBEES', query: 'LIQUIDBEES' },
+        { label: 'GSEC10YBEES', query: 'GSEC' }
+      ] : [
+        { label: 'NIFTYBEES', query: 'NIFTYBEES' },
+        { label: 'BANKBEES', query: 'BANKBEES' },
+        { label: 'GOLDBEES', query: 'GOLDBEES' },
+        { label: 'MON100', query: 'MON100' },
+        { label: 'ITBEES', query: 'ITBEES' }
+      ];
+    }
+    return [
+      { label: 'Reliance', query: 'Reliance' },
+      { label: 'TCS', query: 'TCS' },
+      { label: 'HDFC Flexi Cap', query: 'HDFC Flexi Cap' },
+      { label: 'NIFTYBEES', query: 'NIFTYBEES' },
+      { label: 'SBI Bluechip', query: 'SBI Bluechip' }
+    ];
+  };
 
-  // Initiate [+ Add] for a security
+  // Helper to open manual form pre-filled with specific subtype details
+  const openManualFormForSubtype = (sub: AssetSubType, categoryName: string) => {
+    setSelectedSubTypeInfo(sub);
+    setActiveAssetClass(categoryName);
+    setSelectedAssetCategory(ASSET_TAXONOMY.find(c => c.id === categoryName) || null);
+
+    setManualAssetName(sub.name);
+    setManualAssetValue('');
+    setManualAssetCostBasis('');
+    setManualAssetInstitution(sub.suggestedInstitutions?.[0] || '');
+    setManualAssetIsLiquid(sub.isDefaultLiquid ?? true);
+    setManualTags([sub.badge || 'Long-term Savings']);
+    setManualBorrowerName('');
+    setManualInterestRate(
+      sub.id === 'ppf' ? '7.1' :
+      sub.id === 'epf-vpf' ? '8.25' :
+      sub.id === 'ssy' ? '8.2' :
+      sub.id === 'bank-fd' ? '7.25' :
+      sub.id === 'corporate-fd' ? '8.6' :
+      sub.id === 'loan-given' ? '0' : ''
+    );
+    setManualTenure(sub.id === 'ppf' ? '15 Years' : '3 Years');
+    setManualMaturityDate('');
+    setManualCompounding('Cumulative (at Maturity)');
+    setManualSumAssured('');
+    setManualAnnualPremium('');
+    setManualAccountNumber('');
+    setManualStrikePrice('');
+    setManualFairMarketValue('');
+    setManualShares('');
+    setManualVestingDate('');
+    setManualNotes('');
+
+    setAssetFlowMode('manual_form');
+  };
+
+  // Helper to trigger dedicated focused search
+  const openDedicatedSearch = (sub: AssetSubType, categoryName: string, filterType: any) => {
+    setSelectedSubTypeInfo(sub);
+    setActiveAssetClass(categoryName);
+    setMarketFilter(filterType);
+    setMarketSearchQuery('');
+    setAssetFlowMode('search');
+  };
+
+  // Initiate [+ Add] for a security from live search
   const handleInitiateAdd = (asset: MasterAsset) => {
     setSelectedMasterAsset(asset);
     setHoldingShares('1');
@@ -229,21 +359,35 @@ export const QuickAddModal: React.FC = () => {
     const costBasis = Math.round(shares * buyPrice * 100) / 100;
 
     let category: AssetCategory = 'Equity';
-    if (selectedMasterAsset.asset_type === 'crypto') category = 'Crypto';
-    else if (selectedMasterAsset.asset_type === 'commodity') category = 'Commodities';
-    else if (selectedMasterAsset.asset_type === 'mutual_fund') category = 'Equity';
+    if (activeAssetClass === 'Debt' || selectedSubTypeInfo?.group || selectedSubTypeInfo?.id === 'debt-mf' || selectedSubTypeInfo?.id === 'liquid-fund' || selectedSubTypeInfo?.id === 'debt-etf') {
+      category = 'Debt';
+    } else if (selectedMasterAsset.asset_type === 'crypto') {
+      category = 'Crypto';
+    } else if (selectedMasterAsset.asset_type === 'commodity') {
+      category = 'Commodities';
+    } else {
+      category = 'Equity';
+    }
+
+    const subTypeName = selectedSubTypeInfo?.name || (
+      selectedMasterAsset.asset_type === 'mutual_fund' 
+        ? 'Equity Mutual Fund' 
+        : selectedMasterAsset.asset_type === 'etf' 
+          ? 'ETF' 
+          : 'Direct Stock'
+    );
 
     addAsset({
       name: selectedMasterAsset.name,
       category: category,
-      subType: selectedMasterAsset.asset_type === 'mutual_fund' ? 'Equity Mutual Fund' : selectedMasterAsset.asset_type === 'etf' ? 'Index ETF' : 'Direct Equity (Stocks)',
+      subType: subTypeName,
       institution: holdingInstitution,
       value: totalValue,
       costBasis: costBasis,
       currency: selectedMasterAsset.currency === 'USD' ? 'USD' : 'INR',
       isLiquid: true,
-      tags: holdingTags.length > 0 ? holdingTags : ['Long-term Savings'],
-      purpose: holdingTags[0] || 'Long-term Savings',
+      tags: holdingTags.length > 0 ? holdingTags : [selectedSubTypeInfo?.badge || 'Long-term Savings'],
+      purpose: holdingTags[0] || selectedSubTypeInfo?.badge || 'Long-term Savings',
       masterAssetId: selectedMasterAsset.id,
       isin: selectedMasterAsset.isin,
       bseCode: selectedMasterAsset.exchange === 'BSE' ? selectedMasterAsset.symbol : undefined,
@@ -274,28 +418,44 @@ export const QuickAddModal: React.FC = () => {
     }, 1200);
   };
 
-  // Submit manual / physical asset
+  // Submit manual / contractual asset
   const handleSaveManualAsset = (e: React.FormEvent) => {
     e.preventDefault();
     const val = parseFloat(manualAssetValue) || 0;
     const cost = manualAssetCostBasis ? parseFloat(manualAssetCostBasis) : val;
 
+    const categoryName: AssetCategory = (activeAssetClass as AssetCategory) || (selectedAssetCategory?.id as AssetCategory) || 'Other';
+    const subTypeName = selectedSubTypeInfo?.name || 'Custom Asset';
+
     addAsset({
-      name: manualAssetName || selectedAssetSubType?.name || 'Custom Asset',
-      category: selectedAssetCategory?.id || 'Other',
-      subType: selectedAssetSubType?.name || 'Manual Asset',
-      institution: manualAssetInstitution || 'Personal Asset',
+      name: manualAssetName || subTypeName,
+      category: categoryName,
+      subType: subTypeName,
+      institution: manualAssetInstitution || (subTypeName === 'Loan Given' ? (manualBorrowerName ? `Borrower: ${manualBorrowerName}` : 'Personal Loan Given') : 'Personal Holding'),
       value: val,
       costBasis: cost,
       currency: currency,
       isLiquid: manualAssetIsLiquid,
-      tags: manualTags.length > 0 ? manualTags : ['Long-term Savings'],
-      purpose: manualTags[0] || 'Long-term Savings',
+      tags: manualTags.length > 0 ? manualTags : [selectedSubTypeInfo?.badge || 'Long-term Savings'],
+      purpose: manualTags[0] || selectedSubTypeInfo?.badge || 'Long-term Savings',
       assetType: 'manual',
+      interestRate: manualInterestRate ? parseFloat(manualInterestRate) : undefined,
+      maturityDate: manualMaturityDate || undefined,
+      tenure: manualTenure || undefined,
+      compoundingFrequency: manualCompounding || undefined,
+      sumAssured: manualSumAssured ? parseFloat(manualSumAssured) : undefined,
+      annualPremium: manualAnnualPremium ? parseFloat(manualAnnualPremium) : undefined,
+      strikePrice: manualStrikePrice ? parseFloat(manualStrikePrice) : undefined,
+      fairMarketValue: manualFairMarketValue ? parseFloat(manualFairMarketValue) : undefined,
+      shares: manualShares ? parseFloat(manualShares) : undefined,
+      vestingDate: manualVestingDate || undefined,
+      accountNumberMasked: manualAccountNumber || undefined,
+      borrowerName: manualBorrowerName || undefined,
+      notes: manualNotes || (manualBorrowerName ? `Loan given to ${manualBorrowerName}` : undefined),
       lastPriceSyncedAt: new Date().toISOString(),
     });
 
-    setSubmittedMessage(`Saved ${manualAssetName} to assets!`);
+    setSubmittedMessage(`Added ${manualAssetName || subTypeName} to your portfolio!`);
     setTimeout(() => {
       setSubmittedMessage(null);
       closeQuickAdd();
@@ -306,57 +466,75 @@ export const QuickAddModal: React.FC = () => {
   const handleSaveLiability = (e: React.FormEvent) => {
     e.preventDefault();
     const bal = parseFloat(liabBalance) || 0;
-    const rate = parseFloat(liabInterestRate) || 0;
-    const minPay = parseFloat(liabMinPayment) || 0;
+    const rate = liabInterestRate ? parseFloat(liabInterestRate) : undefined;
+    const minPay = liabMinPayment ? parseFloat(liabMinPayment) : undefined;
 
     addLiability({
-      name: liabName,
-      category: selectedLiabType as LiabilityCategory,
+      name: liabName || selectedLiabType,
+      category: (selectedLiabType as LiabilityCategory) || 'Personal Loan',
+      institution: liabInstitution || 'Bank',
       balance: bal,
       interestRate: rate,
       minimumPayment: minPay,
-      institution: liabInstitution || 'Primary Bank',
-      currency: currency
+      currency: currency,
     });
 
-    setSubmittedMessage(`Saved ${liabName} to liabilities!`);
+    setSubmittedMessage(`Added liability "${liabName || selectedLiabType}"!`);
     setTimeout(() => {
       setSubmittedMessage(null);
       closeQuickAdd();
     }, 1200);
   };
 
-  // Submit income/expense transaction
+  // Submit transaction (Income / Expense)
   const handleSaveTransaction = (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(txAmount) || 0;
     if (amt <= 0) return;
 
+    const acc = accounts.find(a => a.id === txAccountId) || accounts[0];
+
     addTransaction({
       amount: amt,
-      currency: currency,
       type: activeTab === 'income' ? 'income' : 'expense',
-      category: txCategory as any,
-      description: txDescription || `${activeTab === 'income' ? 'Income' : 'Expense'} payment`,
+      category: txCategory,
+      description: txDescription || `${activeTab === 'income' ? 'Received' : 'Paid'} ${txCategory}`,
+      accountId: acc ? acc.id : 'acc-1',
+      accountName: acc ? acc.name : 'Primary Account',
       date: txDate,
-      accountId: txAccountId,
-      isRecurring: txIsRecurring
+      isRecurring: txIsRecurring,
+      currency: currency,
     });
 
-    setSubmittedMessage(`Logged ${activeTab === 'income' ? 'income' : 'expense'} transaction of ${currentSymbol}${amt}!`);
+    setSubmittedMessage(`Logged ${activeTab === 'income' ? 'income' : 'expense'} of ${currentSymbol}${amt.toFixed(2)}!`);
     setTimeout(() => {
       setSubmittedMessage(null);
       closeQuickAdd();
     }, 1200);
   };
 
-  const expenseCategories: ExpenseCategory[] = [
+  // Tags helper
+  const toggleManualTag = (tagName: string) => {
+    setManualTags(prev => 
+      prev.includes(tagName) ? prev.filter(t => t !== tagName) : [...prev, tagName]
+    );
+  };
+
+  const addManualCustomTag = () => {
+    const trimmed = manualCustomTag.trim();
+    if (trimmed && !manualTags.includes(trimmed)) {
+      setManualTags(prev => [...prev, trimmed]);
+      setManualCustomTag('');
+    }
+  };
+
+  const expenseCategories = [
     'Housing & Rent', 'Food & Groceries', 'Dining & Drinks', 'Transportation',
     'Utilities & Bills', 'Entertainment', 'Health & Wellness', 'Shopping & Tech',
     'Travel & Leisure', 'Education', 'Subscriptions', 'Investments', 'Other Expense'
   ];
 
-  const incomeCategories: IncomeCategory[] = [
+  const incomeCategories = [
     'Salary & Wages', 'Freelance & Business', 'Investments & Dividends',
     'Rental Income', 'Side Hustle', 'Gifts & Grants', 'Other Income'
   ];
@@ -383,10 +561,14 @@ export const QuickAddModal: React.FC = () => {
               </div>
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                  {activeTab === 'asset' ? 'Add Asset to Portfolio' : activeTab === 'liability' ? 'Add Liability / Loan' : activeTab === 'income' ? 'Log Income' : 'Log Expense'}
+                  {activeTab === 'asset' 
+                    ? (assetFlowMode === 'equity_menu' ? 'Equity Investments' : assetFlowMode === 'debt_menu' ? 'Debt & Fixed Income' : assetFlowMode === 'search' ? `Add ${selectedSubTypeInfo?.name || 'Asset'}` : assetFlowMode === 'manual_form' ? `Add ${selectedSubTypeInfo?.name || 'Asset'}` : 'Add Asset to Portfolio')
+                    : activeTab === 'liability' ? 'Add Liability / Loan' : activeTab === 'income' ? 'Log Income' : 'Log Expense'}
                 </h2>
                 <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                  {activeTab === 'asset' ? 'Search Indian stocks, mutual funds, ETFs or log custom holdings' : 'Track finances with real-time valuation updates'}
+                  {activeTab === 'asset' 
+                    ? 'Track equity, debt, real estate, gold & liquid assets with live pricing' 
+                    : 'Track your personal balance sheet and cash flows'}
                 </p>
               </div>
             </div>
@@ -408,7 +590,9 @@ export const QuickAddModal: React.FC = () => {
               id="tab-modal-asset"
               onClick={() => {
                 setActiveTab('asset');
-                setAssetFlowMode('search');
+                setAssetFlowMode('hub');
+                setSelectedMasterAsset(null);
+                setSelectedSubTypeInfo(null);
               }}
               className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl transition-all ${
                 activeTab === 'asset'
@@ -478,69 +662,433 @@ export const QuickAddModal: React.FC = () => {
                 {submittedMessage}
               </h3>
               <p className="text-xs text-slate-500 dark:text-zinc-400">
-                Synchronizing with master catalog and recalculating net worth...
+                Updating your portfolio and recalculating net worth...
               </p>
             </div>
           ) : (
             <>
               {/* =========================================================================
-                  1. ASSET FLOW (SEARCH STOCKS, MUTUAL FUNDS, ETFS)
+                  FLOW 1: STEP 1 - ASSET HUB COMPONENT (FIRST SHOW THIS COMPONENT)
+                  Features Equity (button 1) and Debt (button 2) prominently
                  ========================================================================= */}
-              {activeTab === 'asset' && assetFlowMode === 'search' && (
+              {activeTab === 'asset' && assetFlowMode === 'hub' && (
                 <div className="space-y-4 animate-in fade-in duration-150">
-                  {/* Top Switcher: Market Search vs Physical/Custom Asset */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-emerald-500 animate-pulse" />
-                      <span className="text-xs font-bold text-slate-900 dark:text-zinc-100">
-                        Live Market Search
-                      </span>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-1.5">
+                        <Layers className="w-4 h-4 text-emerald-500" />
+                        <span>Select Asset Class</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        Choose Equity or Debt to view all specialized categories
+                      </p>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => {
-                        setAssetFlowMode('category');
-                        setSelectedAssetCategory(null);
+                        setMarketFilter('all');
+                        setMarketSearchQuery('');
+                        setSelectedSubTypeInfo(null);
+                        setAssetFlowMode('search');
                       }}
+                      className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Search className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
+                      <span>Live Search All</span>
+                    </button>
+                  </div>
+
+                  {/* Primary Equity & Debt Selectors (Matches Focus Mode CSS Selectors) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {/* BUTTON 1: EQUITY */}
+                    <button
+                      type="button"
+                      id="btn-asset-class-equity"
+                      onClick={() => {
+                        setActiveAssetClass('Equity');
+                        setAssetFlowMode('equity_menu');
+                      }}
+                      className="group relative text-left p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent dark:from-blue-500/15 dark:via-indigo-500/10 dark:to-zinc-900 border border-blue-500/30 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 transition-all cursor-pointer flex flex-col justify-between"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-xs group-hover:scale-105 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                          <TrendingUp className="w-6 h-6 stroke-[2.2]" />
+                        </div>
+                        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/20">
+                          10 Types
+                        </span>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            Equity
+                          </h4>
+                          <ChevronRight className="w-4 h-4 text-blue-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-zinc-400 mt-1 line-clamp-2">
+                          Direct Stock, Equity Mutual Fund, Hybrid, Arbitrage, ETF, ESOP / RSU, Unlisted, NPS, ULIP, PMS / AIF
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* BUTTON 2: DEBT */}
+                    <button
+                      type="button"
+                      id="btn-asset-class-debt"
+                      onClick={() => {
+                        setActiveAssetClass('Debt');
+                        setAssetFlowMode('debt_menu');
+                      }}
+                      className="group relative text-left p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent dark:from-emerald-500/15 dark:via-teal-500/10 dark:to-zinc-900 border border-emerald-500/30 hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-500/10 transition-all cursor-pointer flex flex-col justify-between"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shadow-xs group-hover:scale-105 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                          <Landmark className="w-6 h-6 stroke-[2.2]" />
+                        </div>
+                        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20">
+                          7 Categories • 17 Types
+                        </span>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                            Debt & Fixed Income
+                          </h4>
+                          <ChevronRight className="w-4 h-4 text-emerald-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-zinc-400 mt-1 line-clamp-2">
+                          FD / RD, Bonds, Govt. Schemes (PPF/EPF/SSY), Mutual Funds / ETF, Insurance, Retirement, Loan Given
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Other Asset Classes */}
+                  <div className="pt-2">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block mb-2.5">
+                      Other Asset Classes
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                      {ASSET_TAXONOMY.filter(cat => cat.id !== 'Equity' && cat.id !== 'Debt').map(cat => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setActiveAssetClass(cat.id);
+                            setSelectedAssetCategory(cat);
+                            setAssetFlowMode('category_menu');
+                          }}
+                          className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-950/60 border border-slate-200 dark:border-zinc-800 hover:border-slate-400 dark:hover:border-zinc-600 hover:bg-slate-100 dark:hover:bg-zinc-800/60 transition-all text-left group cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <div 
+                              className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs"
+                              style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
+                            >
+                              <Coins className="w-4 h-4" />
+                            </div>
+                            <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 group-hover:text-emerald-500 transition-colors truncate">
+                              {cat.name}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">
+                            {cat.subTypes.length} sub-classes
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* =========================================================================
+                  FLOW 2: EQUITY SUB-TYPES (10 TYPES REQUESTED BY USER)
+                  Direct Stock, Equity Mutual Fund, Hybrid Mutual Fund, Arbitrage Fund,
+                  ETF, ESOP / RSU, Unlisted Equity, NPS, ULIP, PMS / AIF
+                 ========================================================================= */}
+              {activeTab === 'asset' && assetFlowMode === 'equity_menu' && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={() => setAssetFlowMode('hub')}
                       className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
                     >
-                      <span>Add Real Estate / Physical Asset</span>
-                      <ChevronLeft className="w-3.5 h-3.5 rotate-180" />
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Back to Asset Classes</span>
                     </button>
+                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
+                      Equity (10 Types)
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {EQUITY_SUBTYPES.map(sub => (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => {
+                          if (sub.searchType === 'stock') {
+                            openDedicatedSearch(sub, 'Equity', 'stock');
+                          } else if (sub.searchType === 'equity_mf') {
+                            openDedicatedSearch(sub, 'Equity', 'equity_mf');
+                          } else if (sub.searchType === 'hybrid_mf') {
+                            openDedicatedSearch(sub, 'Equity', 'hybrid_mf');
+                          } else if (sub.searchType === 'arbitrage_mf') {
+                            openDedicatedSearch(sub, 'Equity', 'arbitrage_mf');
+                          } else if (sub.searchType === 'etf') {
+                            openDedicatedSearch(sub, 'Equity', 'etf');
+                          } else {
+                            openManualFormForSubtype(sub, 'Equity');
+                          }
+                        }}
+                        className="p-3.5 rounded-2xl bg-white dark:bg-zinc-950/70 border border-slate-200 dark:border-zinc-800 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all text-left flex items-start justify-between group cursor-pointer"
+                      >
+                        <div className="min-w-0 pr-2">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              {sub.name}
+                            </span>
+                            {sub.badge && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                                {sub.badge}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-zinc-400 line-clamp-2">
+                            {sub.description}
+                          </p>
+                        </div>
+                        <div className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 group-hover:bg-blue-500 group-hover:text-white transition-all mt-0.5">
+                          <ChevronRight className="w-4 h-4" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* =========================================================================
+                  FLOW 3: DEBT CATEGORIES & TYPES (GROUPED AS REQUESTED BY USER)
+                  FD / RD, Bonds, Govt. Schemes, Mutual Funds / ETF, Insurance, Retirement, Other
+                 ========================================================================= */}
+              {activeTab === 'asset' && assetFlowMode === 'debt_menu' && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={() => setAssetFlowMode('hub')}
+                      className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Back to Asset Classes</span>
+                    </button>
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                      Debt (7 Categories • 17 Types)
+                    </span>
+                  </div>
+
+                  <div className="space-y-4">
+                    {DEBT_GROUPS.map(group => (
+                      <div key={group.groupName} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-950/60 border border-slate-200 dark:border-zinc-800 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200">
+                              {group.groupName}
+                            </h4>
+                          </div>
+                          <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">
+                            {group.items.length} {group.items.length === 1 ? 'type' : 'types'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {group.items.map(sub => (
+                            <button
+                              key={sub.id}
+                              type="button"
+                              onClick={() => {
+                                if (sub.searchType === 'debt_mf') {
+                                  openDedicatedSearch(sub, 'Debt', 'debt_mf');
+                                } else if (sub.searchType === 'liquid_mf') {
+                                  openDedicatedSearch(sub, 'Debt', 'liquid_mf');
+                                } else if (sub.searchType === 'etf') {
+                                  openDedicatedSearch(sub, 'Debt', 'etf');
+                                } else {
+                                  openManualFormForSubtype(sub, 'Debt');
+                                }
+                              }}
+                              className="p-3 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 hover:border-emerald-500 dark:hover:border-emerald-500 hover:shadow-xs transition-all text-left flex items-center justify-between group cursor-pointer"
+                            >
+                              <div className="min-w-0 pr-2">
+                                <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 block truncate">
+                                  {sub.name}
+                                </span>
+                                <span className="text-[10px] text-slate-500 dark:text-zinc-400 truncate block mt-0.5">
+                                  {sub.description}
+                                </span>
+                              </div>
+                              <div className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* =========================================================================
+                  FLOW 4: OTHER ASSET CATEGORY MENU (Real Estate, Commodities, Cash, etc.)
+                 ========================================================================= */}
+              {activeTab === 'asset' && assetFlowMode === 'category_menu' && selectedAssetCategory && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={() => setAssetFlowMode('hub')}
+                      className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Back to Asset Classes</span>
+                    </button>
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                      {selectedAssetCategory.name}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {selectedAssetCategory.subTypes.map(sub => (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => {
+                          if (sub.searchType === 'stock') {
+                            openDedicatedSearch(sub, selectedAssetCategory.name, 'stock');
+                          } else {
+                            openManualFormForSubtype(sub, selectedAssetCategory.name);
+                          }
+                        }}
+                        className="p-3.5 rounded-2xl bg-white dark:bg-zinc-950/70 border border-slate-200 dark:border-zinc-800 hover:border-emerald-500 transition-all text-left flex items-center justify-between group cursor-pointer"
+                      >
+                        <div>
+                          <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 block">
+                            {sub.name}
+                          </span>
+                          <span className="text-[10px] text-slate-400 dark:text-zinc-500">
+                            {selectedAssetCategory.name} holding
+                          </span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* =========================================================================
+                  FLOW 5: LIVE SEARCH (RESTRICTED SPECIFICALLY TO SELECTED SUBTYPE)
+                  "in that equity that only search relate only for explain in direct stock only"
+                 ========================================================================= */}
+              {activeTab === 'asset' && assetFlowMode === 'search' && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  {/* Top Navigation */}
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeAssetClass === 'Debt' || selectedSubTypeInfo?.group) {
+                          setAssetFlowMode('debt_menu');
+                        } else if (activeAssetClass === 'Equity') {
+                          setAssetFlowMode('equity_menu');
+                        } else {
+                          setAssetFlowMode('hub');
+                        }
+                      }}
+                      className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Back to {activeAssetClass}</span>
+                    </button>
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        {selectedSubTypeInfo ? `Focused: ${selectedSubTypeInfo.name}` : 'Live Search'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Search Title & Prompt explanation */}
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100">
+                      {selectedSubTypeInfo?.name ? `Search ${selectedSubTypeInfo.name}` : 'Search Market Assets'}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400">
+                      {marketFilter === 'stock' 
+                        ? 'Search direct listed equity stocks on NSE, BSE & US markets with real-time quotes'
+                        : marketFilter === 'equity_mf' 
+                          ? 'Search official AMFI Equity mutual funds with daily NAV updates'
+                          : marketFilter === 'hybrid_mf'
+                            ? 'Search Balanced Advantage & Multi-Asset Hybrid mutual funds'
+                            : marketFilter === 'arbitrage_mf'
+                              ? 'Search low-risk Arbitrage mutual fund schemes'
+                              : marketFilter === 'debt_mf'
+                                ? 'Search Debt, Gilt & Corporate Bond mutual funds'
+                                : marketFilter === 'liquid_mf'
+                                  ? 'Search Liquid & Overnight funds with T+1 liquidity'
+                                  : 'Search securities and Exchange Traded Funds'}
+                    </p>
                   </div>
 
                   {/* Primary Search Box */}
                   <div className="relative">
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
-                      <input
-                        id="input-asset-search"
-                        type="text"
-                        autoFocus
-                        value={marketSearchQuery}
-                        onChange={e => setMarketSearchQuery(e.target.value)}
-                        placeholder="Search stocks, mutual funds, ETFs, etc. (e.g. Reliance, TCS, HDFC Flexi Cap)"
-                        className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-2xl pl-10 pr-9 py-3 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 font-medium shadow-sm"
-                      />
-                      {marketSearchQuery && (
-                        <button
-                          type="button"
-                          onClick={() => setMarketSearchQuery('')}
-                          className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                    <input
+                      id="input-asset-search"
+                      type="text"
+                      autoFocus
+                      value={marketSearchQuery}
+                      onChange={e => setMarketSearchQuery(e.target.value)}
+                      placeholder={
+                        marketFilter === 'stock'
+                          ? 'Search direct stocks (e.g. Reliance, TCS, HDFC Bank, Apple, NVDA...)'
+                          : marketFilter === 'equity_mf'
+                            ? 'Search equity mutual funds (e.g. Parag Parikh Flexi Cap, Quant Small Cap...)'
+                            : marketFilter === 'hybrid_mf'
+                              ? 'Search hybrid funds (e.g. ICICI Multi-Asset, SBI Equity Hybrid...)'
+                              : marketFilter === 'arbitrage_mf'
+                                ? 'Search arbitrage funds (e.g. Kotak Equity Arbitrage...)'
+                                : marketFilter === 'debt_mf'
+                                  ? 'Search debt funds (e.g. HDFC Short Term, Aditya Birla Bond...)'
+                                  : marketFilter === 'liquid_mf'
+                                    ? 'Search liquid funds (e.g. Quantum Liquid, Nippon Liquid...)'
+                                    : 'Search securities, stocks, ETFs...'
+                      }
+                      className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-2xl pl-10 pr-9 py-3 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 font-medium shadow-xs"
+                    />
+                    {marketSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setMarketSearchQuery('')}
+                        className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
 
-                  {/* Example Search Chips */}
+                  {/* Quick Filter Chips */}
                   <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs">
                     <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-medium shrink-0">
-                      Examples:
+                      Popular:
                     </span>
-                    {QUICK_SEARCH_CHIPS.map(chip => (
+                    {getQuickSearchChips().map(chip => (
                       <button
                         key={chip.label}
                         type="button"
@@ -556,60 +1104,32 @@ export const QuickAddModal: React.FC = () => {
                     ))}
                   </div>
 
-                  {/* Filter Sub-Tabs: All vs Stocks vs Mutual Funds */}
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-zinc-800 text-xs">
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => setMarketFilter('all')}
-                        className={`px-3 py-1 rounded-lg font-semibold transition-all ${
-                          marketFilter === 'all'
-                            ? 'bg-slate-900 dark:bg-zinc-100 text-white dark:text-zinc-950 shadow-sm'
-                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
-                        }`}
-                      >
-                        All Market Assets
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setMarketFilter('stock')}
-                        className={`px-3 py-1 rounded-lg font-semibold transition-all ${
-                          marketFilter === 'stock'
-                            ? 'bg-slate-900 dark:bg-zinc-100 text-white dark:text-zinc-950 shadow-sm'
-                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
-                        }`}
-                      >
-                        Stocks & ETFs
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setMarketFilter('mutual_fund')}
-                        className={`px-3 py-1 rounded-lg font-semibold transition-all ${
-                          marketFilter === 'mutual_fund'
-                            ? 'bg-slate-900 dark:bg-zinc-100 text-white dark:text-zinc-950 shadow-sm'
-                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
-                        }`}
-                      >
-                        Mutual Funds (NAV)
-                      </button>
-                    </div>
-
-                    <span className="text-[11px] text-slate-400 dark:text-zinc-500">
-                      {isSearching ? 'Searching live...' : `${searchResults.length} results`}
-                    </span>
-                  </div>
-
-                  {/* Search Results Display List */}
-                  <div className="space-y-2.5 max-h-[52vh] overflow-y-auto pr-0.5">
+                  {/* Search Results Display */}
+                  <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-0.5">
                     {searchResults.length === 0 ? (
-                      <div className="p-8 rounded-2xl bg-slate-50 dark:bg-zinc-950 border border-dashed border-slate-200 dark:border-zinc-800 text-center space-y-2">
+                      <div className="p-8 rounded-2xl bg-slate-50 dark:bg-zinc-950 border border-dashed border-slate-200 dark:border-zinc-800 text-center space-y-3">
                         <Coins className="w-8 h-8 mx-auto text-slate-400" />
-                        <p className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
-                          No matching securities found for "{marketSearchQuery}"
-                        </p>
-                        <p className="text-[11px] text-slate-400 dark:text-zinc-500">
-                          Try searching for Reliance, TCS, HDFC Flexi Cap, or use custom physical asset entry.
-                        </p>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
+                            No matching securities found for "{marketSearchQuery}"
+                          </p>
+                          <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-0.5">
+                            Looking for an unlisted, foreign or private asset? You can add it manually.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (selectedSubTypeInfo) {
+                              openManualFormForSubtype(selectedSubTypeInfo, activeAssetClass);
+                            } else {
+                              openManualFormForSubtype({ id: 'custom', name: marketSearchQuery || 'Custom Asset' }, activeAssetClass);
+                            }
+                          }}
+                          className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-xs font-bold text-slate-800 dark:text-zinc-200 transition-colors"
+                        >
+                          + Enter Details Manually
+                        </button>
                       </div>
                     ) : (
                       searchResults.map(item => {
@@ -617,7 +1137,9 @@ export const QuickAddModal: React.FC = () => {
                         const changeAmount = item.price_change ?? item.nav_change ?? 0;
                         const changePercent = item.price_change_percent ?? item.nav_change_percent ?? 0;
                         const isPositive = changeAmount >= 0;
-                        const formattedPrice = item.currency === 'USD' ? `$${item.latest_price.toFixed(2)}` : `₹${item.latest_price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        const formattedPrice = item.currency === 'USD' 
+                          ? `$${item.latest_price.toFixed(2)}` 
+                          : `₹${item.latest_price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
                         return (
                           <div
@@ -625,7 +1147,6 @@ export const QuickAddModal: React.FC = () => {
                             className="p-3.5 rounded-2xl bg-white dark:bg-zinc-950/70 border border-slate-200 dark:border-zinc-800 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 hover:shadow-md transition-all flex flex-col justify-between group"
                           >
                             <div className="flex items-start justify-between gap-3">
-                              {/* Left details */}
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2 flex-wrap mb-1">
                                   <h4 className="text-sm font-bold text-slate-900 dark:text-zinc-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
@@ -640,79 +1161,29 @@ export const QuickAddModal: React.FC = () => {
                                   </span>
                                 </div>
 
-                                {/* Detailed Prompt-compliant Metadata */}
                                 {isMF ? (
-                                  /* Mutual Fund Metadata Structure */
                                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-[11px] text-slate-500 dark:text-zinc-400 mt-1.5 font-mono">
-                                    {item.amc && (
-                                      <div>
-                                        <span className="text-slate-400 dark:text-zinc-500">AMC:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.amc}</strong>
-                                      </div>
-                                    )}
-                                    {item.scheme_code && (
-                                      <div>
-                                        <span className="text-slate-400 dark:text-zinc-500">Scheme code:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.scheme_code}</strong>
-                                      </div>
-                                    )}
-                                    {item.isin && (
-                                      <div>
-                                        <span className="text-slate-400 dark:text-zinc-500">ISIN:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.isin}</strong>
-                                      </div>
-                                    )}
-                                    {item.plan && (
-                                      <div>
-                                        <span className="text-slate-400 dark:text-zinc-500">Plan:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.plan}</strong>
-                                      </div>
-                                    )}
-                                    {item.option && (
-                                      <div>
-                                        <span className="text-slate-400 dark:text-zinc-500">Option:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.option}</strong>
-                                      </div>
-                                    )}
-                                    {item.category && (
-                                      <div>
-                                        <span className="text-slate-400 dark:text-zinc-500">Category:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.category}</strong>
-                                      </div>
-                                    )}
-                                    {item.nav_date && (
-                                      <div>
-                                        <span className="text-slate-400 dark:text-zinc-500">NAV Date:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.nav_date}</strong>
-                                      </div>
-                                    )}
-                                    <div>
-                                      <span className="text-slate-400 dark:text-zinc-500">Data status:</span> <strong className="text-emerald-600 dark:text-emerald-400">{item.data_status || 'Daily NAV'}</strong>
-                                    </div>
+                                    {item.amc && <div><span>AMC:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.amc}</strong></div>}
+                                    {item.scheme_code && <div><span>Code:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.scheme_code}</strong></div>}
+                                    {item.plan && <div><span>Plan:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.plan}</strong></div>}
+                                    {item.option && <div><span>Option:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.option}</strong></div>}
+                                    {item.nav_date && <div><span>NAV Date:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.nav_date}</strong></div>}
+                                    <div><span>Status:</span> <strong className="text-emerald-600 dark:text-emerald-400">{item.data_status || 'Daily NAV'}</strong></div>
                                   </div>
                                 ) : (
-                                  /* Stock Metadata Structure */
                                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-[11px] text-slate-500 dark:text-zinc-400 mt-1.5 font-mono">
-                                    <div>
-                                      <span className="text-slate-400 dark:text-zinc-500">Symbol:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.symbol}</strong>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-400 dark:text-zinc-500">Exchange:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.exchange}</strong>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-400 dark:text-zinc-500">Type:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.asset_type === 'etf' ? 'ETF' : 'Stock'}</strong>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-400 dark:text-zinc-500">ISIN:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.isin || 'INE002A01018'}</strong>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-400 dark:text-zinc-500">Data status:</span> <strong className="text-emerald-600 dark:text-emerald-400">{item.data_status || 'Real-time'}</strong>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-400 dark:text-zinc-500">Last updated:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.last_updated}</strong>
-                                    </div>
+                                    <div><span>Symbol:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.symbol}</strong></div>
+                                    <div><span>Exchange:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.exchange}</strong></div>
+                                    <div><span>Type:</span> <strong className="text-slate-700 dark:text-zinc-200">{item.asset_type === 'etf' ? 'ETF' : 'Direct Stock'}</strong></div>
+                                    <div><span>Status:</span> <strong className="text-emerald-600 dark:text-emerald-400">{item.data_status || 'Real-time'}</strong></div>
                                   </div>
                                 )}
                               </div>
 
-                              {/* Right Pricing & [+ Add] Action Button */}
                               <div className="text-right shrink-0 flex flex-col items-end justify-between self-stretch">
                                 <div>
                                   <span className="text-xs text-slate-400 dark:text-zinc-500 block font-mono">
-                                    {isMF ? 'Latest NAV' : 'Latest Price'}
+                                    {isMF ? 'NAV' : 'Live Price'}
                                   </span>
                                   <span className="text-base font-bold font-mono text-slate-900 dark:text-zinc-100">
                                     {formattedPrice}
@@ -726,26 +1197,23 @@ export const QuickAddModal: React.FC = () => {
                                 </div>
 
                                 <div className="flex items-center gap-2 mt-3">
-                                  {/* View on Google Finance Link */}
                                   {!isMF && (
                                     <a
                                       href={getGoogleFinanceUrl(item.symbol, item.exchange)}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="text-[11px] text-slate-500 hover:text-blue-500 dark:text-zinc-400 dark:hover:text-blue-400 flex items-center gap-1 font-medium px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                                      title="View on Google Finance"
                                     >
-                                      <span>Google Finance</span>
+                                      <span>Finance</span>
                                       <ExternalLink className="w-3 h-3" />
                                     </a>
                                   )}
 
-                                  {/* [+ Add] Button */}
                                   <button
                                     id={`btn-add-security-${item.id}`}
                                     type="button"
                                     onClick={() => handleInitiateAdd(item)}
-                                    className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-zinc-950 font-bold text-xs shadow-md transition-all flex items-center gap-1 cursor-pointer"
+                                    className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-zinc-950 font-bold text-xs shadow-xs transition-all flex items-center gap-1 cursor-pointer"
                                   >
                                     <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                                     <span>+ Add</span>
@@ -758,15 +1226,32 @@ export const QuickAddModal: React.FC = () => {
                       })
                     )}
                   </div>
+
+                  {/* Can't find fallback button */}
+                  <div className="pt-2 text-center border-t border-slate-100 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedSubTypeInfo) {
+                          openManualFormForSubtype(selectedSubTypeInfo, activeAssetClass);
+                        } else {
+                          openManualFormForSubtype({ id: 'custom', name: 'Custom Holding' }, activeAssetClass);
+                        }
+                      }}
+                      className="text-xs font-semibold text-slate-600 dark:text-zinc-400 hover:text-emerald-500 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Can't find your instrument? Enter holding details manually</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               )}
 
               {/* =========================================================================
-                  2. CONFIGURE HOLDING DETAILS (After user clicks [+ Add])
+                  FLOW 6: CONFIGURE HOLDING DETAILS (After user clicks [+ Add] on search)
                  ========================================================================= */}
               {activeTab === 'asset' && assetFlowMode === 'configure' && selectedMasterAsset && (
                 <form onSubmit={handleConfirmAddHolding} className="space-y-4 animate-in fade-in duration-150">
-                  {/* Selected Security Banner */}
                   <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2">
@@ -778,7 +1263,6 @@ export const QuickAddModal: React.FC = () => {
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 font-mono">
-                        {selectedMasterAsset.isin ? `ISIN: ${selectedMasterAsset.isin} • ` : ''}
                         Latest {selectedMasterAsset.asset_type === 'mutual_fund' ? 'NAV' : 'Price'}: 
                         <strong className="text-slate-900 dark:text-white font-bold ml-1">
                           {selectedMasterAsset.currency === 'USD' ? '$' : '₹'}{selectedMasterAsset.latest_price.toFixed(2)}
@@ -795,7 +1279,6 @@ export const QuickAddModal: React.FC = () => {
                     </button>
                   </div>
 
-                  {/* Quantity & Buy Price Inputs */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
@@ -831,7 +1314,6 @@ export const QuickAddModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Institution & Purchase Date */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
@@ -841,7 +1323,7 @@ export const QuickAddModal: React.FC = () => {
                         type="text"
                         value={holdingInstitution}
                         onChange={e => setHoldingInstitution(e.target.value)}
-                        placeholder="e.g. Zerodha, Groww, AngelOne, Upstox"
+                        placeholder="e.g. Zerodha, Groww, AngelOne"
                         className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
                       />
                     </div>
@@ -859,91 +1341,11 @@ export const QuickAddModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Manual Tags & Purpose Categorization */}
-                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-950/80 border border-slate-200 dark:border-zinc-800 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-zinc-300">
-                        <Tag className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>Investment Tags & Purpose</span>
-                      </label>
-                      <span className="text-[10px] text-slate-500 dark:text-zinc-400">Categorize your goal</span>
-                    </div>
-
-                    {/* Popular Tag Chips */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {DEFAULT_ASSET_TAGS.map(t => {
-                        const isSelected = holdingTags.includes(t.name);
-                        return (
-                          <button
-                            key={t.name}
-                            type="button"
-                            onClick={() => toggleHoldingTag(t.name)}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1 border ${
-                              isSelected
-                                ? `${t.badgeClass} ring-1 ring-emerald-400/30 shadow-xs`
-                                : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700'
-                            }`}
-                          >
-                            {isSelected && <Check className="w-3 h-3" />}
-                            <span>{t.name}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Custom Tag Input */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <input
-                        type="text"
-                        value={holdingCustomTag}
-                        onChange={e => setHoldingCustomTag(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            addHoldingCustomTag();
-                          }
-                        }}
-                        placeholder="Add custom tag (e.g. House 2027, College)..."
-                        className="flex-1 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-emerald-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={addHoldingCustomTag}
-                        disabled={!holdingCustomTag.trim()}
-                        className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-200 text-xs font-medium cursor-pointer"
-                      >
-                        + Add
-                      </button>
-                    </div>
-
-                    {/* Active Selected Tags Preview */}
-                    {holdingTags.length > 0 && (
-                      <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[11px]">
-                        <span className="text-zinc-500 font-medium">Selected:</span>
-                        {holdingTags.map(tag => (
-                          <span
-                            key={tag}
-                            className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium flex items-center gap-1"
-                          >
-                            {tag}
-                            <button
-                              type="button"
-                              onClick={() => toggleHoldingTag(tag)}
-                              className="hover:text-rose-400 ml-0.5 cursor-pointer"
-                            >
-                              <X className="w-2.5 h-2.5" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Calculated Investment Card */}
-                  <div className="p-3.5 rounded-xl bg-slate-100 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 flex items-center justify-between text-xs font-mono">
+                  {/* Dynamic Valuation Summary */}
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-950/80 border border-slate-200 dark:border-zinc-800 flex items-center justify-between font-mono">
                     <div>
-                      <span className="text-slate-500 dark:text-zinc-400 block text-[11px]">Total Invested Cost Basis</span>
-                      <strong className="text-slate-900 dark:text-zinc-100 font-bold text-sm">
+                      <span className="text-slate-500 dark:text-zinc-400 block text-[11px]">Total Cost Basis</span>
+                      <strong className="text-slate-800 dark:text-zinc-200 font-bold text-sm">
                         {selectedMasterAsset.currency === 'USD' ? '$' : '₹'}
                         {((parseFloat(holdingShares) || 1) * (parseFloat(holdingBuyPrice) || selectedMasterAsset.latest_price)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </strong>
@@ -958,7 +1360,6 @@ export const QuickAddModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Submit Actions */}
                   <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-zinc-800">
                     <button
                       type="button"
@@ -972,7 +1373,7 @@ export const QuickAddModal: React.FC = () => {
                     <button
                       id="btn-confirm-add-holding"
                       type="submit"
-                      className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-zinc-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2 cursor-pointer"
+                      className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-zinc-950 font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
                     >
                       <Check className="w-4 h-4 stroke-[2.5]" />
                       <span>Add to My Portfolio</span>
@@ -982,248 +1383,355 @@ export const QuickAddModal: React.FC = () => {
               )}
 
               {/* =========================================================================
-                  3. PHYSICAL / MANUAL ASSETS (Real Estate, Cash, Debt, FD, Vehicles)
+                  FLOW 7: DEDICATED TAILORED FORM FOR CONTRACTUAL / PHYSICAL ASSETS
+                  Bank FD, PPF, EPF, Bonds, Insurance, ESOP, Loan Given, etc.
                  ========================================================================= */}
-              {activeTab === 'asset' && assetFlowMode === 'category' && (
-                <div className="space-y-4 animate-in fade-in duration-150">
-                  <div className="flex items-center justify-between">
+              {activeTab === 'asset' && assetFlowMode === 'manual_form' && selectedSubTypeInfo && (
+                <form onSubmit={handleSaveManualAsset} className="space-y-4 animate-in fade-in duration-150">
+                  {/* Top Header Card */}
+                  <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-900 dark:text-zinc-100">
+                          {selectedSubTypeInfo.name}
+                        </span>
+                        {selectedSubTypeInfo.group && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-md font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            {selectedSubTypeInfo.group}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                        {selectedSubTypeInfo.description || `${activeAssetClass} Asset Entry`}
+                      </p>
+                    </div>
+
                     <button
                       type="button"
-                      onClick={() => setAssetFlowMode('search')}
-                      className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                      onClick={() => {
+                        if (activeAssetClass === 'Debt' || selectedSubTypeInfo.group) {
+                          setAssetFlowMode('debt_menu');
+                        } else if (activeAssetClass === 'Equity') {
+                          setAssetFlowMode('equity_menu');
+                        } else {
+                          setAssetFlowMode('hub');
+                        }
+                      }}
+                      className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                     >
-                      <ChevronLeft className="w-4 h-4" />
-                      <span>Back to Live Market Search</span>
+                      Change Type
                     </button>
-                    <span className="text-xs text-slate-400 dark:text-zinc-500">
-                      Physical / Custom Assets
-                    </span>
                   </div>
 
-                  {!selectedAssetCategory ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      {ASSET_TAXONOMY.map(cat => (
-                        <button
-                          key={cat.id}
-                          type="button"
-                          onClick={() => setSelectedAssetCategory(cat)}
-                          className="p-4 rounded-2xl bg-white dark:bg-zinc-950/60 border border-slate-200 dark:border-zinc-800 hover:border-emerald-500 dark:hover:border-emerald-500 hover:shadow-md transition-all flex flex-col items-center justify-center text-center group cursor-pointer"
-                        >
-                          <div 
-                            className="w-10 h-10 rounded-xl flex items-center justify-center mb-2 font-bold text-sm"
-                            style={{ backgroundColor: `${cat.color}15`, color: cat.color }}
-                          >
-                            <Coins className="w-5 h-5" />
-                          </div>
-                          <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
-                            {cat.name}
-                          </span>
-                          <span className="text-[10px] text-slate-400 dark:text-zinc-500 mt-0.5">
-                            {cat.subTypes.length} sub-classes
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <form onSubmit={handleSaveManualAsset} className="space-y-4">
-                      <div className="p-3 rounded-2xl bg-slate-100 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 flex items-center justify-between">
-                        <div>
-                          <span className="text-xs font-bold text-slate-900 dark:text-zinc-100">
-                            {selectedAssetCategory.name}
-                          </span>
-                          <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                            {selectedAssetCategory.description}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedAssetCategory(null)}
-                          className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          Change Category
-                        </button>
-                      </div>
+                  {/* Name field */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                      {selectedSubTypeInfo.id === 'loan-given' 
+                        ? 'Loan Description / Beneficiary *' 
+                        : selectedSubTypeInfo.id === 'esop-rsu' 
+                          ? 'Company / Employer Name *'
+                          : 'Holding Name / Account Title *'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      value={manualAssetName}
+                      onChange={e => setManualAssetName(e.target.value)}
+                      placeholder={
+                        selectedSubTypeInfo.id === 'loan-given' 
+                          ? 'e.g. Loan given to Rahul - Personal' 
+                          : selectedSubTypeInfo.id === 'bank-fd' 
+                            ? 'e.g. HDFC Bank 3-Year Cumulative FD'
+                            : selectedSubTypeInfo.id === 'ppf'
+                              ? 'e.g. SBI Public Provident Fund'
+                              : selectedSubTypeInfo.id === 'esop-rsu'
+                                ? 'e.g. Swiggy ESOP Grant'
+                                : `e.g. ${selectedSubTypeInfo.name}`
+                      }
+                      className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                    />
+                  </div>
 
+                  {/* Specific: Loan Given Fields */}
+                  {selectedSubTypeInfo.id === 'loan-given' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
-                          Asset Name / Description *
+                          Borrower Name *
                         </label>
                         <input
                           type="text"
                           required
-                          autoFocus
-                          value={manualAssetName}
-                          onChange={e => setManualAssetName(e.target.value)}
-                          placeholder="e.g. 3BHK Apartment in Mumbai, HDFC 5-Year FD, Gold Bar 24K"
+                          value={manualBorrowerName}
+                          onChange={e => setManualBorrowerName(e.target.value)}
+                          placeholder="e.g. Rahul Sharma"
                           className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
                         />
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
-                            Estimated Value ({currentSymbol}) *
-                          </label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            required
-                            value={manualAssetValue}
-                            onChange={e => setManualAssetValue(e.target.value)}
-                            placeholder="0.00"
-                            className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
-                            Original Cost Basis ({currentSymbol})
-                          </label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={manualAssetCostBasis}
-                            onChange={e => setManualAssetCostBasis(e.target.value)}
-                            placeholder="Optional"
-                            className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-                          />
-                        </div>
                       </div>
 
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
-                          Bank / Location / Custodian
+                          Expected Repayment Date
                         </label>
                         <input
-                          type="text"
-                          value={manualAssetInstitution}
-                          onChange={e => setManualAssetInstitution(e.target.value)}
-                          placeholder="e.g. HDFC Bank, SBI, Home Safe, Registrar Office"
+                          type="date"
+                          value={manualMaturityDate}
+                          onChange={e => setManualMaturityDate(e.target.value)}
                           className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
                         />
                       </div>
-
-                      {/* Manual Tags & Purpose Categorization */}
-                      <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-950/80 border border-slate-200 dark:border-zinc-800 space-y-2.5">
-                        <div className="flex items-center justify-between">
-                          <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-zinc-300">
-                            <Tag className="w-3.5 h-3.5 text-emerald-500" />
-                            <span>Investment Tags & Purpose</span>
-                          </label>
-                          <span className="text-[10px] text-slate-500 dark:text-zinc-400">Categorize your goal</span>
-                        </div>
-
-                        {/* Popular Tag Chips */}
-                        <div className="flex flex-wrap gap-1.5">
-                          {DEFAULT_ASSET_TAGS.map(t => {
-                            const isSelected = manualTags.includes(t.name);
-                            return (
-                              <button
-                                key={t.name}
-                                type="button"
-                                onClick={() => toggleManualTag(t.name)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1 border ${
-                                  isSelected
-                                    ? `${t.badgeClass} ring-1 ring-emerald-400/30 shadow-xs`
-                                    : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700'
-                                }`}
-                              >
-                                {isSelected && <Check className="w-3 h-3" />}
-                                <span>{t.name}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {/* Custom Tag Input */}
-                        <div className="flex items-center gap-2 pt-1">
-                          <input
-                            type="text"
-                            value={manualCustomTag}
-                            onChange={e => setManualCustomTag(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                addManualCustomTag();
-                              }
-                            }}
-                            placeholder="Add custom tag (e.g. House 2027, College)..."
-                            className="flex-1 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-emerald-500"
-                          />
-                          <button
-                            type="button"
-                            onClick={addManualCustomTag}
-                            disabled={!manualCustomTag.trim()}
-                            className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-200 text-xs font-medium cursor-pointer"
-                          >
-                            + Add
-                          </button>
-                        </div>
-
-                        {/* Active Selected Tags Preview */}
-                        {manualTags.length > 0 && (
-                          <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[11px]">
-                            <span className="text-zinc-500 font-medium">Selected:</span>
-                            {manualTags.map(tag => (
-                              <span
-                                key={tag}
-                                className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium flex items-center gap-1"
-                              >
-                                {tag}
-                                <button
-                                  type="button"
-                                  onClick={() => toggleManualTag(tag)}
-                                  className="hover:text-rose-400 ml-0.5 cursor-pointer"
-                                >
-                                  <X className="w-2.5 h-2.5" />
-                                </button>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Liquidity toggle */}
-                      <label className="flex items-start gap-2.5 cursor-pointer p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800">
-                        <input
-                          type="checkbox"
-                          checked={manualAssetIsLiquid}
-                          onChange={e => setManualAssetIsLiquid(e.target.checked)}
-                          className="w-4 h-4 mt-0.5 rounded bg-white dark:bg-zinc-900 border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                        />
-                        <div>
-                          <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200 block">
-                            Liquid Asset
-                          </span>
-                          <span className="text-[11px] text-slate-500 dark:text-zinc-400">
-                            Can be easily converted to cash in under 7 days.
-                          </span>
-                        </div>
-                      </label>
-
-                      <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-zinc-800">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedAssetCategory(null)}
-                          className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-400"
-                        >
-                          Back
-                        </button>
-                        <button
-                          type="submit"
-                          className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-zinc-950 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Check className="w-4 h-4 stroke-[2.5]" />
-                          <span>Save Asset</span>
-                        </button>
-                      </div>
-                    </form>
+                    </div>
                   )}
-                </div>
+
+                  {/* Specific: ESOP / RSU Fields */}
+                  {selectedSubTypeInfo.id === 'esop-rsu' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                          Granted / Vested Shares *
+                        </label>
+                        <input
+                          type="number"
+                          step="1"
+                          required
+                          value={manualShares}
+                          onChange={e => setManualShares(e.target.value)}
+                          placeholder="e.g. 500"
+                          className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                          Fair Market Value ({currentSymbol}) *
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          value={manualFairMarketValue}
+                          onChange={e => setManualFairMarketValue(e.target.value)}
+                          placeholder="e.g. 1250"
+                          className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                          Strike Price ({currentSymbol})
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={manualStrikePrice}
+                          onChange={e => setManualStrikePrice(e.target.value)}
+                          placeholder="e.g. 10.00"
+                          className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Valuation / Amount & Cost Basis */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                        {selectedSubTypeInfo.id === 'loan-given' 
+                          ? `Principal Amount Lent (${currentSymbol}) *` 
+                          : selectedSubTypeInfo.group === 'FD / RD'
+                            ? `Deposit Amount (${currentSymbol}) *`
+                            : `Current Valuation (${currentSymbol}) *`}
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        required
+                        value={manualAssetValue}
+                        onChange={e => setManualAssetValue(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                        Original Cost / Invested Basis ({currentSymbol})
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={manualAssetCostBasis}
+                        onChange={e => setManualAssetCostBasis(e.target.value)}
+                        placeholder="Optional (defaults to valuation)"
+                        className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Institution / Bank & Interest Rate */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                        {selectedSubTypeInfo.group === 'Insurance' 
+                          ? 'Insurance Provider / Company' 
+                          : 'Bank / Depository / Custodian'}
+                      </label>
+                      <input
+                        type="text"
+                        value={manualAssetInstitution}
+                        onChange={e => setManualAssetInstitution(e.target.value)}
+                        placeholder="e.g. HDFC Bank, SBI, EPFO, LIC"
+                        className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                        Annual Interest / Yield (% p.a.)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={manualInterestRate}
+                        onChange={e => setManualInterestRate(e.target.value)}
+                        placeholder="e.g. 7.25"
+                        className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Term / Maturity / Payout calculation for FD / RD / Bond */}
+                  {(selectedSubTypeInfo.group === 'FD / RD' || selectedSubTypeInfo.id === 'bond-debenture') && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                          Tenure / Duration
+                        </label>
+                        <select
+                          value={manualTenure}
+                          onChange={e => setManualTenure(e.target.value)}
+                          className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                        >
+                          <option value="1 Year">1 Year</option>
+                          <option value="2 Years">2 Years</option>
+                          <option value="3 Years">3 Years</option>
+                          <option value="5 Years">5 Years</option>
+                          <option value="10 Years">10 Years</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                          Maturity Date
+                        </label>
+                        <input
+                          type="date"
+                          value={manualMaturityDate}
+                          onChange={e => setManualMaturityDate(e.target.value)}
+                          className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Insurance specific fields */}
+                  {selectedSubTypeInfo.group === 'Insurance' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                          Sum Assured / Life Cover ({currentSymbol})
+                        </label>
+                        <input
+                          type="number"
+                          value={manualSumAssured}
+                          onChange={e => setManualSumAssured(e.target.value)}
+                          placeholder="e.g. 5000000"
+                          className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                          Annual Premium ({currentSymbol})
+                        </label>
+                        <input
+                          type="number"
+                          value={manualAnnualPremium}
+                          onChange={e => setManualAnnualPremium(e.target.value)}
+                          placeholder="e.g. 100000"
+                          className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Govt schemes: Account / UAN / PRAN */}
+                  {selectedSubTypeInfo.group === 'Govt. Schemes' && (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                        Account Number / UAN / PRAN
+                      </label>
+                      <input
+                        type="text"
+                        value={manualAccountNumber}
+                        onChange={e => setManualAccountNumber(e.target.value)}
+                        placeholder="e.g. UAN 100982348291, PRAN 1100293847"
+                        className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                      />
+                    </div>
+                  )}
+
+                  {/* Liquidity toggle */}
+                  <label className="flex items-start gap-2.5 cursor-pointer p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800">
+                    <input
+                      type="checkbox"
+                      checked={manualAssetIsLiquid}
+                      onChange={e => setManualAssetIsLiquid(e.target.checked)}
+                      className="w-4 h-4 mt-0.5 rounded bg-white dark:bg-zinc-900 border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                      <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200 block">
+                        Liquid Asset
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-zinc-400">
+                        Can be liquidated or redeemed to cash within 7 days.
+                      </span>
+                    </div>
+                  </label>
+
+                  {/* Actions */}
+                  <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeAssetClass === 'Debt' || selectedSubTypeInfo.group) {
+                          setAssetFlowMode('debt_menu');
+                        } else if (activeAssetClass === 'Equity') {
+                          setAssetFlowMode('equity_menu');
+                        } else {
+                          setAssetFlowMode('hub');
+                        }
+                      }}
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Back</span>
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-zinc-950 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Check className="w-4 h-4 stroke-[2.5]" />
+                      <span>Save to Portfolio</span>
+                    </button>
+                  </div>
+                </form>
               )}
 
               {/* =========================================================================
-                  4. LIABILITY FLOW
+                  FLOW 8: LIABILITY FLOW
                  ========================================================================= */}
               {activeTab === 'liability' && liabStep === 1 && (
                 <div className="space-y-4 animate-in fade-in duration-150">
@@ -1387,7 +1895,7 @@ export const QuickAddModal: React.FC = () => {
               )}
 
               {/* =========================================================================
-                  5. INCOME & EXPENSE FLOW
+                  FLOW 9: INCOME & EXPENSE FLOW
                  ========================================================================= */}
               {(activeTab === 'income' || activeTab === 'expense') && (
                 <form onSubmit={handleSaveTransaction} className="space-y-4 animate-in fade-in duration-150">
@@ -1399,8 +1907,8 @@ export const QuickAddModal: React.FC = () => {
                     <div className={`w-2 h-2 rounded-full shrink-0 ${activeTab === 'income' ? 'bg-emerald-400' : 'bg-rose-400'}`} />
                     <span>
                       {activeTab === 'income'
-                        ? 'Logging income records incoming cash flow to your Monthly Income (Inflow) and updates your net savings.'
-                        : 'Logging expense records cash outflow to Monthly Expenses and updates your budget tracking.'}
+                        ? 'Logging income records incoming cash flow to your Monthly Inflow and updates net savings.'
+                        : 'Logging expense records cash outflow to Monthly Expenses and updates budget tracking.'}
                     </span>
                   </div>
 
@@ -1437,7 +1945,7 @@ export const QuickAddModal: React.FC = () => {
                       type="text"
                       value={txDescription}
                       onChange={e => setTxDescription(e.target.value)}
-                      placeholder={activeTab === 'income' ? 'e.g. Monthly Salary, Freelance Client' : 'e.g. Whole Foods Groceries, Electricity bill'}
+                      placeholder={activeTab === 'income' ? 'e.g. Monthly Salary, Consulting' : 'e.g. Groceries, Electricity bill'}
                       className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
                     />
                   </div>

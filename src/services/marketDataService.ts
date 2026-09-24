@@ -551,9 +551,21 @@ export class MockMarketDataProvider implements IMarketDataProvider {
     let list = MOCK_MASTER_ASSETS;
 
     if (filter === 'stock') {
-      list = list.filter(a => a.asset_type === 'stock' || a.asset_type === 'etf');
+      list = list.filter(a => a.asset_type === 'stock');
+    } else if (filter === 'etf') {
+      list = list.filter(a => a.asset_type === 'etf');
     } else if (filter === 'mutual_fund') {
       list = list.filter(a => a.asset_type === 'mutual_fund');
+    } else if (filter === 'equity_mf') {
+      list = list.filter(a => a.asset_type === 'mutual_fund' && (/equity|flexi|small|mid|large|bluechip|cap|elss|index|focused|value/i.test(a.name) || /equity|flexi|small|mid|large|cap|index/i.test(a.category || '')));
+    } else if (filter === 'hybrid_mf') {
+      list = list.filter(a => a.asset_type === 'mutual_fund' && (/hybrid|balanced|multi|dynamic|advantage/i.test(a.name) || /hybrid|balanced/i.test(a.category || '')));
+    } else if (filter === 'arbitrage_mf') {
+      list = list.filter(a => a.asset_type === 'mutual_fund' && /arbitrage/i.test(a.name));
+    } else if (filter === 'debt_mf') {
+      list = list.filter(a => a.asset_type === 'mutual_fund' && (/debt|bond|gilt|income|short|duration|corporate|banking/i.test(a.name) || /debt|bond|gilt/i.test(a.category || '')));
+    } else if (filter === 'liquid_mf') {
+      list = list.filter(a => a.asset_type === 'mutual_fund' && (/liquid|overnight|money|cash|treasury/i.test(a.name) || /liquid|overnight/i.test(a.category || '')));
     }
 
     if (!q) {
@@ -623,15 +635,19 @@ export class ProductionMarketDataProvider implements IMarketDataProvider {
     }
 
     try {
+      const isStockOnly = filter === 'stock';
+      const isEtfOnly = filter === 'etf';
+      const isMfOnly = filter === 'mutual_fund' || filter === 'equity_mf' || filter === 'hybrid_mf' || filter === 'arbitrage_mf' || filter === 'debt_mf' || filter === 'liquid_mf';
+
       // 1. Search Mutual Funds via backend /api/mf/search
-      const mfSearchPromise = (filter !== 'stock') 
+      const mfSearchPromise = (!isStockOnly && !isEtfOnly) 
         ? fetch(`/api/mf/search?q=${encodeURIComponent(q)}`)
             .then(r => r.ok ? r.json() : { results: [] })
             .catch(() => ({ results: [] }))
         : Promise.resolve({ results: [] });
 
-      // 2. Search Stocks via backend /api/market/search (Yahoo/NSE/BSE)
-      const stockSearchPromise = (filter !== 'mutual_fund')
+      // 2. Search Stocks & ETFs via backend /api/market/search (Yahoo/NSE/BSE)
+      const stockSearchPromise = (!isMfOnly)
         ? fetch(`/api/market/search?q=${encodeURIComponent(q)}`)
             .then(r => r.ok ? r.json() : { results: [] })
             .catch(() => ({ results: [] }))
@@ -643,7 +659,20 @@ export class ProductionMarketDataProvider implements IMarketDataProvider {
 
       // Process Mutual Fund search results
       if (mfData.status === 'fulfilled' && mfData.value?.results) {
-        mfData.value.results.slice(0, 15).forEach((m: any) => {
+        let mfList = mfData.value.results;
+        if (filter === 'equity_mf') {
+          mfList = mfList.filter((m: any) => /equity|flexi|small|mid|large|bluechip|cap|elss|index|focused|value/i.test(m.schemeName || m.name));
+        } else if (filter === 'hybrid_mf') {
+          mfList = mfList.filter((m: any) => /hybrid|balanced|multi|dynamic|advantage/i.test(m.schemeName || m.name));
+        } else if (filter === 'arbitrage_mf') {
+          mfList = mfList.filter((m: any) => /arbitrage/i.test(m.schemeName || m.name));
+        } else if (filter === 'debt_mf') {
+          mfList = mfList.filter((m: any) => /debt|bond|gilt|income|short|duration|corporate|banking/i.test(m.schemeName || m.name));
+        } else if (filter === 'liquid_mf') {
+          mfList = mfList.filter((m: any) => /liquid|overnight|money|cash|treasury/i.test(m.schemeName || m.name));
+        }
+
+        mfList.slice(0, 15).forEach((m: any) => {
           const isDirect = /direct/i.test(m.schemeName || m.name);
           const isGrowth = /growth/i.test(m.schemeName || m.name);
           liveResults.push({
@@ -669,7 +698,14 @@ export class ProductionMarketDataProvider implements IMarketDataProvider {
 
       // Process Stock search results
       if (stockData.status === 'fulfilled' && stockData.value?.results) {
-        stockData.value.results.slice(0, 15).forEach((s: any) => {
+        let stockList = stockData.value.results;
+        if (isStockOnly) {
+          stockList = stockList.filter((s: any) => s.type !== 'etf');
+        } else if (isEtfOnly) {
+          stockList = stockList.filter((s: any) => s.type === 'etf' || /etf|bees/i.test(s.symbol) || /etf|bees/i.test(s.name));
+        }
+
+        stockList.slice(0, 15).forEach((s: any) => {
           const isIndian = s.exchange === 'NSE' || s.exchange === 'BSE' || s.country === 'IN' || s.currency === 'INR';
           liveResults.push({
             id: `${s.exchange || 'NSE'}_${s.ticker}`,
