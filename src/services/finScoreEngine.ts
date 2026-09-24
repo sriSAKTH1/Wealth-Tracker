@@ -497,7 +497,7 @@ export function calculateFinScore(
       type: 'emergency',
       severity: 'critical',
       title: '🚨 Emergency Fund Alert',
-      message: `Your emergency savings are below the target ${targetMonths}-month buffer by approximately ₹${emergencyShortfall.toLocaleString()}.`,
+      message: `Your emergency savings are below the target ${targetMonths}-month buffer by approximately ₹${(Math.round(emergencyShortfall) || 0).toLocaleString()}.`,
       actionRecommendation: 'Channel at least 50% of your monthly surplus into a high-yield liquid emergency account.',
     });
   } else {
@@ -577,7 +577,7 @@ export function calculateFinScore(
       type: 'goal',
       severity: 'info',
       title: '🔵 Goal Contribution Gap',
-      message: `Your planned goals require ₹${totalGoalRequiredMonthlySavings.toLocaleString()}/mo, exceeding your current surplus of ₹${availableSurplus.toLocaleString()}/mo.`,
+      message: `Your planned goals require ₹${(Math.round(totalGoalRequiredMonthlySavings) || 0).toLocaleString()}/mo, exceeding your current surplus of ₹${(Math.round(availableSurplus) || 0).toLocaleString()}/mo.`,
       actionRecommendation: 'Adjust target dates or prioritize high-impact milestones such as Car or House downpayment.',
     });
   }
@@ -589,8 +589,8 @@ export function calculateFinScore(
       monthName: 'Month 1: Foundation & Defense',
       focus: 'Plug budget leaks & bootstrap emergency security',
       tasks: [
-        `Reduce discretionary dining and entertainment expenses by ₹${Math.min(2500, Math.round(discretionaryExpenses * 0.3)).toLocaleString()}`,
-        `Direct ₹${Math.min(10000, Math.max(2000, Math.round(monthlySavings * 0.6))).toLocaleString()} specifically into your emergency fund liquid account`,
+        `Reduce discretionary dining and entertainment expenses by ₹${(Math.min(2500, Math.round((discretionaryExpenses || 0) * 0.3))).toLocaleString()}`,
+        `Direct ₹${(Math.min(10000, Math.max(2000, Math.round((monthlySavings || 0) * 0.6)))).toLocaleString()} specifically into your emergency fund liquid account`,
         hasHighInterestLoan ? 'List all outstanding loan interest rates and identify the highest APR for prepayment' : 'Verify auto-debit dates for EMIs to prevent late penalties',
       ],
     },

@@ -27,7 +27,17 @@ import {
   Percent,
   FileText,
   PiggyBank,
-  Wallet
+  Wallet,
+  Home,
+  Car,
+  CreditCard,
+  GraduationCap,
+  ShoppingBag,
+  Calculator,
+  User,
+  ShieldCheck,
+  Gem,
+  Building
 } from 'lucide-react';
 import { useFinance, CURRENCY_CONFIGS } from '../context/FinanceContext';
 import { 
@@ -43,7 +53,13 @@ import {
   EQUITY_SUBTYPES,
   DEBT_GROUPS,
   DEBT_SUBTYPES,
-  AssetSubType
+  AssetSubType,
+  LIABILITY_GROUPS,
+  SECURED_LIABILITY_SUBTYPES,
+  UNSECURED_LIABILITY_SUBTYPES,
+  ALL_LIABILITY_SUBTYPES,
+  LiabilitySubType,
+  LiabilityGroup
 } from '../data/assetTaxonomy';
 import { 
   MasterAsset, 
@@ -119,14 +135,27 @@ export const QuickAddModal: React.FC = () => {
   const [manualTags, setManualTags] = useState<string[]>(['Long-term Savings']);
   const [manualCustomTag, setManualCustomTag] = useState('');
 
-  // Liability state
-  const [liabStep, setLiabStep] = useState<1 | 2>(1);
+  // Liability state & Flow Modes (Hub first, then Secured/Unsecured menus, Group menus, or Form)
+  const [liabilityFlowMode, setLiabilityFlowMode] = useState<
+    'hub' | 'secured_menu' | 'unsecured_menu' | 'group_menu' | 'form'
+  >('hub');
+  const [selectedLiabilitySubType, setSelectedLiabilitySubType] = useState<LiabilitySubType | null>(null);
+  const [selectedLiabilityGroup, setSelectedLiabilityGroup] = useState<LiabilityGroup | null>(null);
+  const [liabilitySearchQuery, setLiabilitySearchQuery] = useState('');
+
   const [selectedLiabType, setSelectedLiabType] = useState<string>('Home Loan');
   const [liabName, setLiabName] = useState('');
   const [liabBalance, setLiabBalance] = useState('');
+  const [liabOriginalAmount, setLiabOriginalAmount] = useState('');
   const [liabInterestRate, setLiabInterestRate] = useState('');
+  const [liabMonthlyPayment, setLiabMonthlyPayment] = useState('');
   const [liabMinPayment, setLiabMinPayment] = useState('');
+  const [liabTenureMonths, setLiabTenureMonths] = useState('');
+  const [liabDueDate, setLiabDueDate] = useState('5');
   const [liabInstitution, setLiabInstitution] = useState('');
+  const [liabCollateral, setLiabCollateral] = useState('');
+  const [liabCreditLimit, setLiabCreditLimit] = useState('');
+  const [liabNotes, setLiabNotes] = useState('');
 
   // Transaction state (Income / Expense)
   const [txAmount, setTxAmount] = useState('');
@@ -137,6 +166,36 @@ export const QuickAddModal: React.FC = () => {
   const [txIsRecurring, setTxIsRecurring] = useState(false);
 
   const [submittedMessage, setSubmittedMessage] = useState<string | null>(null);
+
+  // Quick EMI calculation helper: P * r * (1+r)^n / ((1+r)^n - 1)
+  const calculateEMI = (p: number, rAnnual: number, nMonths: number) => {
+    if (p <= 0 || rAnnual <= 0 || nMonths <= 0) return 0;
+    const r = rAnnual / 12 / 100;
+    const emi = (p * r * Math.pow(1 + r, nMonths)) / (Math.pow(1 + r, nMonths) - 1);
+    return Math.round(emi);
+  };
+
+  const selectLiabilitySubType = (subType: LiabilitySubType) => {
+    setSelectedLiabilitySubType(subType);
+    setSelectedLiabType(subType.name);
+    setLiabName(`${subType.suggestedCreditors?.[0] || ''} ${subType.name}`.trim());
+    setLiabInterestRate(subType.defaultInterestRate ? subType.defaultInterestRate.toString() : '');
+    setLiabInstitution(subType.suggestedCreditors?.[0] || 'HDFC Bank');
+    if (subType.isSecured) {
+      setLiabCollateral(
+        subType.group === 'Home & Property' 
+          ? 'Primary Residential Property' 
+          : subType.group === 'Vehicle Loans' 
+          ? 'Vehicle Hypothecation' 
+          : subType.id === 'gold-loan' 
+          ? 'Pledged Gold Ornaments' 
+          : 'Pledged Assets / Securities'
+      );
+    } else {
+      setLiabCollateral('');
+    }
+    setLiabilityFlowMode('form');
+  };
 
   // Initialize or Reset Modal when opened
   useEffect(() => {
@@ -149,7 +208,11 @@ export const QuickAddModal: React.FC = () => {
         setSelectedSubTypeInfo(null);
         setSelectedAssetCategory(null);
       } else if (quickAddType === 'liability') {
-        setLiabStep(1);
+        // First show the Liability Category Hub component!
+        setLiabilityFlowMode('hub');
+        setSelectedLiabilitySubType(null);
+        setSelectedLiabilityGroup(null);
+        setLiabilitySearchQuery('');
       }
     }
   }, [quickAddType, isQuickAddOpen]);
@@ -466,20 +529,36 @@ export const QuickAddModal: React.FC = () => {
   const handleSaveLiability = (e: React.FormEvent) => {
     e.preventDefault();
     const bal = parseFloat(liabBalance) || 0;
+    const origAmt = liabOriginalAmount ? parseFloat(liabOriginalAmount) : undefined;
     const rate = liabInterestRate ? parseFloat(liabInterestRate) : undefined;
     const minPay = liabMinPayment ? parseFloat(liabMinPayment) : undefined;
+    const monthlyPay = liabMonthlyPayment ? parseFloat(liabMonthlyPayment) : undefined;
+    const tenureM = liabTenureMonths ? parseInt(liabTenureMonths) : undefined;
+    const dueD = liabDueDate ? parseInt(liabDueDate) : undefined;
+    const credLim = liabCreditLimit ? parseFloat(liabCreditLimit) : undefined;
+
+    const cat = selectedLiabilitySubType?.category || (selectedLiabType as LiabilityCategory) || 'Personal Loan';
 
     addLiability({
-      name: liabName || selectedLiabType,
-      category: (selectedLiabType as LiabilityCategory) || 'Personal Loan',
+      name: liabName || selectedLiabilitySubType?.name || selectedLiabType,
+      category: cat,
+      subType: selectedLiabilitySubType?.name || selectedLiabType,
       institution: liabInstitution || 'Bank',
       balance: bal,
+      originalAmount: origAmt && origAmt >= bal ? origAmt : bal,
       interestRate: rate,
       minimumPayment: minPay,
+      monthlyPayment: monthlyPay,
+      tenureMonths: tenureM,
+      dueDate: dueD,
+      isSecured: selectedLiabilitySubType?.isSecured ?? false,
+      collateral: liabCollateral || undefined,
+      creditLimit: credLim,
+      notes: liabNotes || undefined,
       currency: currency,
     });
 
-    setSubmittedMessage(`Added liability "${liabName || selectedLiabType}"!`);
+    setSubmittedMessage(`Added liability "${liabName || selectedLiabilitySubType?.name || selectedLiabType}"!`);
     setTimeout(() => {
       setSubmittedMessage(null);
       closeQuickAdd();
@@ -563,11 +642,15 @@ export const QuickAddModal: React.FC = () => {
                 <h2 className="text-base font-bold text-slate-900 dark:text-zinc-100">
                   {activeTab === 'asset' 
                     ? (assetFlowMode === 'equity_menu' ? 'Equity Investments' : assetFlowMode === 'debt_menu' ? 'Debt & Fixed Income' : assetFlowMode === 'search' ? `Add ${selectedSubTypeInfo?.name || 'Asset'}` : assetFlowMode === 'manual_form' ? `Add ${selectedSubTypeInfo?.name || 'Asset'}` : 'Add Asset to Portfolio')
-                    : activeTab === 'liability' ? 'Add Liability / Loan' : activeTab === 'income' ? 'Log Income' : 'Log Expense'}
+                    : activeTab === 'liability'
+                    ? (liabilityFlowMode === 'secured_menu' ? 'Secured Loans & Mortgages' : liabilityFlowMode === 'unsecured_menu' ? 'Unsecured & Consumer Debt' : liabilityFlowMode === 'group_menu' ? selectedLiabilityGroup?.groupName || 'Liability Categories' : liabilityFlowMode === 'form' ? `Add ${selectedLiabilitySubType?.name || 'Liability'}` : 'Add Liability to Balance Sheet')
+                    : activeTab === 'income' ? 'Log Income' : 'Log Expense'}
                 </h2>
                 <p className="text-[11px] text-slate-500 dark:text-zinc-400">
                   {activeTab === 'asset' 
                     ? 'Track equity, debt, real estate, gold & liquid assets with live pricing' 
+                    : activeTab === 'liability'
+                    ? 'Track mortgages, vehicle loans, credit cards, BNPL & personal borrowings'
                     : 'Track your personal balance sheet and cash flows'}
                 </p>
               </div>
@@ -609,7 +692,10 @@ export const QuickAddModal: React.FC = () => {
               id="tab-modal-liability"
               onClick={() => {
                 setActiveTab('liability');
-                setLiabStep(1);
+                setLiabilityFlowMode('hub');
+                setSelectedLiabilitySubType(null);
+                setSelectedLiabilityGroup(null);
+                setLiabilitySearchQuery('');
               }}
               className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl transition-all ${
                 activeTab === 'liability'
@@ -1138,8 +1224,8 @@ export const QuickAddModal: React.FC = () => {
                         const changePercent = item.price_change_percent ?? item.nav_change_percent ?? 0;
                         const isPositive = changeAmount >= 0;
                         const formattedPrice = item.currency === 'USD' 
-                          ? `$${item.latest_price.toFixed(2)}` 
-                          : `₹${item.latest_price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                          ? `$${(Number(item.latest_price) || 0).toFixed(2)}` 
+                          : `₹${(Number(item.latest_price) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
                         return (
                           <div
@@ -1347,7 +1433,7 @@ export const QuickAddModal: React.FC = () => {
                       <span className="text-slate-500 dark:text-zinc-400 block text-[11px]">Total Cost Basis</span>
                       <strong className="text-slate-800 dark:text-zinc-200 font-bold text-sm">
                         {selectedMasterAsset.currency === 'USD' ? '$' : '₹'}
-                        {((parseFloat(holdingShares) || 1) * (parseFloat(holdingBuyPrice) || selectedMasterAsset.latest_price)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        {((parseFloat(holdingShares) || 1) * (parseFloat(holdingBuyPrice) || Number(selectedMasterAsset.latest_price) || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </strong>
                     </div>
 
@@ -1355,7 +1441,7 @@ export const QuickAddModal: React.FC = () => {
                       <span className="text-slate-500 dark:text-zinc-400 block text-[11px]">Current Market Valuation</span>
                       <strong className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">
                         {selectedMasterAsset.currency === 'USD' ? '$' : '₹'}
-                        {((parseFloat(holdingShares) || 1) * selectedMasterAsset.latest_price).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        {((parseFloat(holdingShares) || 1) * (Number(selectedMasterAsset.latest_price) || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </strong>
                     </div>
                   </div>
@@ -1731,40 +1817,267 @@ export const QuickAddModal: React.FC = () => {
               )}
 
               {/* =========================================================================
-                  FLOW 8: LIABILITY FLOW
+                  FLOW 8: LIABILITY FLOW (HUB -> SECURED/UNSECURED/GROUPS -> FORM)
                  ========================================================================= */}
-              {activeTab === 'liability' && liabStep === 1 && (
+              
+              {/* 8.1 LIABILITY HUB: FIRST SHOW THIS COMPONENT */}
+              {activeTab === 'liability' && liabilityFlowMode === 'hub' && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-1.5">
+                        <ShieldAlert className="w-4 h-4 text-rose-500" />
+                        <span>Select Liability Class</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        Choose Secured Loans or Unsecured Debt to view all specialized categories
+                      </p>
+                    </div>
+
+                    {/* Quick Search across all liabilities */}
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={liabilitySearchQuery}
+                        onChange={e => setLiabilitySearchQuery(e.target.value)}
+                        placeholder="Search all 17 debt types..."
+                        className="w-full sm:w-48 bg-slate-100 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 rounded-xl pl-8 pr-7 py-1.5 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-rose-500"
+                      />
+                      {liabilitySearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setLiabilitySearchQuery('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Filtered Search Results View if typing */}
+                  {liabilitySearchQuery.trim() !== '' ? (
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400">
+                        <span>Matching Liability Types:</span>
+                        <button
+                          type="button"
+                          onClick={() => setLiabilitySearchQuery('')}
+                          className="text-rose-500 hover:underline"
+                        >
+                          Clear Search
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+                        {ALL_LIABILITY_SUBTYPES.filter(item => 
+                          item.name.toLowerCase().includes(liabilitySearchQuery.toLowerCase()) ||
+                          item.description.toLowerCase().includes(liabilitySearchQuery.toLowerCase()) ||
+                          item.group.toLowerCase().includes(liabilitySearchQuery.toLowerCase())
+                        ).map(item => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => selectLiabilitySubType(item)}
+                            className="p-3.5 rounded-2xl bg-white dark:bg-zinc-950/70 border border-slate-200 dark:border-zinc-800 hover:border-rose-500 dark:hover:border-rose-500/80 hover:bg-rose-50/20 dark:hover:bg-rose-500/5 transition-all text-left flex flex-col justify-between group cursor-pointer"
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300">
+                                {item.group}
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                                {item.badge}
+                              </span>
+                            </div>
+
+                            <div>
+                              <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                                {item.name}
+                              </h4>
+                              <p className="text-[11px] text-slate-500 dark:text-zinc-400 line-clamp-2 mt-0.5">
+                                {item.description}
+                              </p>
+                            </div>
+
+                            <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px] text-slate-400">
+                              <span>Typical APR: ~{item.defaultInterestRate}%</span>
+                              <span className="text-rose-500 font-semibold flex items-center gap-0.5">
+                                Add Debt <ChevronRight className="w-3 h-3" />
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Primary Secured & Unsecured Selectors (Matches Equity & Debt Hero Layout) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        {/* BUTTON 1: SECURED LOANS & MORTGAGES */}
+                        <button
+                          type="button"
+                          id="btn-liability-class-secured"
+                          onClick={() => setLiabilityFlowMode('secured_menu')}
+                          className="group relative text-left p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 via-teal-500/5 to-transparent dark:from-blue-500/15 dark:via-teal-500/10 dark:to-zinc-900 border border-blue-500/30 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 transition-all cursor-pointer flex flex-col justify-between"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-xs group-hover:scale-105 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                              <Home className="w-6 h-6 stroke-[2.2]" />
+                            </div>
+                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/20">
+                              8 Types
+                            </span>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                Secured Loans & Mortgages
+                              </h4>
+                              <ChevronRight className="w-4 h-4 text-blue-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                            </div>
+                            <p className="text-xs text-slate-600 dark:text-zinc-400 mt-1 line-clamp-2">
+                              Home Loan, Loan Against Property (LAP), Car Loan, Two-Wheeler, Gold Loan, Loan Against Securities (LAS), Land Loan
+                            </p>
+                          </div>
+                        </button>
+
+                        {/* BUTTON 2: UNSECURED CREDIT & CONSUMER DEBT */}
+                        <button
+                          type="button"
+                          id="btn-liability-class-unsecured"
+                          onClick={() => setLiabilityFlowMode('unsecured_menu')}
+                          className="group relative text-left p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-rose-500/10 via-red-500/5 to-transparent dark:from-rose-500/15 dark:via-red-500/10 dark:to-zinc-900 border border-rose-500/30 hover:border-rose-500 hover:shadow-xl hover:shadow-rose-500/10 transition-all cursor-pointer flex flex-col justify-between"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold shadow-xs group-hover:scale-105 group-hover:bg-rose-500 group-hover:text-white transition-all">
+                              <CreditCard className="w-6 h-6 stroke-[2.2]" />
+                            </div>
+                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/20">
+                              9 Types
+                            </span>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                                Unsecured & Consumer Debt
+                              </h4>
+                              <ChevronRight className="w-4 h-4 text-rose-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                            </div>
+                            <p className="text-xs text-slate-600 dark:text-zinc-400 mt-1 line-clamp-2">
+                              Credit Cards, Personal Loans, BNPL (Affirm/Klarna/Simpl), Student Loans, Overdraft, Salary Advance, Business Loans, Family Loans
+                            </p>
+                          </div>
+                        </button>
+                      </div>
+
+                      {/* All Categorized Debt Groups (Mirroring Other Asset Classes) */}
+                      <div className="pt-2">
+                        <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block mb-2.5">
+                          All Liability Categories (9 Groups • 17 Types)
+                        </span>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                          {LIABILITY_GROUPS.map(group => (
+                            <button
+                              key={group.groupName}
+                              type="button"
+                              onClick={() => {
+                                setSelectedLiabilityGroup(group);
+                                setLiabilityFlowMode('group_menu');
+                              }}
+                              className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-950/60 border border-slate-200 dark:border-zinc-800 hover:border-rose-400 dark:hover:border-rose-500/50 hover:bg-slate-100 dark:hover:bg-zinc-800/60 transition-all text-left group cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <div 
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs"
+                                  style={{ backgroundColor: `${group.color}20`, color: group.color }}
+                                >
+                                  {group.iconName === 'home' && <Home className="w-3.5 h-3.5" />}
+                                  {group.iconName === 'car' && <Car className="w-3.5 h-3.5" />}
+                                  {group.iconName === 'credit-card' && <CreditCard className="w-3.5 h-3.5" />}
+                                  {group.iconName === 'user' && <User className="w-3.5 h-3.5" />}
+                                  {group.iconName === 'shopping-bag' && <ShoppingBag className="w-3.5 h-3.5" />}
+                                  {group.iconName === 'graduation-cap' && <GraduationCap className="w-3.5 h-3.5" />}
+                                  {group.iconName === 'gem' && <Gem className="w-3.5 h-3.5" />}
+                                  {group.iconName === 'building' && <Building className="w-3.5 h-3.5" />}
+                                  {group.iconName === 'file-text' && <FileText className="w-3.5 h-3.5" />}
+                                </div>
+                                <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 group-hover:text-rose-500 transition-colors truncate">
+                                  {group.groupName}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">
+                                {group.items.length} sub-types • {group.countLabel}
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* 8.2 SECURED LOANS MENU */}
+              {activeTab === 'liability' && liabilityFlowMode === 'secured_menu' && (
                 <div className="space-y-4 animate-in fade-in duration-150">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                      Select Liability Type
-                    </h3>
-                    <span className="text-xs text-slate-500 dark:text-zinc-400">
-                      {LIABILITY_TAXONOMY.length} types
+                    <button
+                      type="button"
+                      onClick={() => setLiabilityFlowMode('hub')}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Back to Liability Hub</span>
+                    </button>
+                    <span className="text-xs font-bold text-blue-500">
+                      8 Secured Debt Types
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {LIABILITY_TAXONOMY.map(liab => (
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
+                      Secured Loans & Mortgages
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400">
+                      Collateralized credit secured by residential property, commercial estate, vehicles, gold, or investment securities
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1">
+                    {SECURED_LIABILITY_SUBTYPES.map(item => (
                       <button
-                        key={liab.id}
+                        key={item.id}
                         type="button"
-                        onClick={() => {
-                          setSelectedLiabType(liab.name);
-                          setLiabInstitution(liab.suggestedCreditors?.[0] || 'HDFC Bank');
-                          setLiabStep(2);
-                        }}
-                        className="p-3.5 rounded-xl bg-white dark:bg-zinc-950/60 border border-slate-200 dark:border-zinc-800 hover:border-rose-500 dark:hover:border-rose-500 hover:bg-rose-50/30 dark:hover:bg-rose-500/10 text-left transition-all group flex flex-col justify-between cursor-pointer"
+                        onClick={() => selectLiabilitySubType(item)}
+                        className="p-4 rounded-2xl bg-white dark:bg-zinc-950/70 border border-slate-200 dark:border-zinc-800 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50/20 dark:hover:bg-blue-500/5 transition-all text-left flex flex-col justify-between group cursor-pointer"
                       >
-                        <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
-                          <ShieldAlert className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 group-hover:text-rose-600 dark:group-hover:text-rose-400 block">
-                            {liab.name}
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                            <Home className="w-4 h-4" />
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                            {item.badge}
                           </span>
-                          <span className="text-[10px] text-slate-400 dark:text-zinc-500 truncate block mt-0.5">
-                            {liab.description}
+                        </div>
+
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {item.name}
+                          </h4>
+                          <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1 line-clamp-2">
+                            {item.description}
+                          </p>
+                        </div>
+
+                        <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-500 dark:text-zinc-400 font-mono">
+                            Typical APR: {item.defaultInterestRate}%
+                          </span>
+                          <span className="text-blue-500 font-bold flex items-center gap-0.5">
+                            Select <ChevronRight className="w-3.5 h-3.5" />
                           </span>
                         </div>
                       </button>
@@ -1773,32 +2086,178 @@ export const QuickAddModal: React.FC = () => {
                 </div>
               )}
 
-              {activeTab === 'liability' && liabStep === 2 && (
+              {/* 8.3 UNSECURED CREDIT MENU */}
+              {activeTab === 'liability' && liabilityFlowMode === 'unsecured_menu' && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setLiabilityFlowMode('hub')}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Back to Liability Hub</span>
+                    </button>
+                    <span className="text-xs font-bold text-rose-500">
+                      9 Unsecured Debt Types
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
+                      Unsecured & Consumer Debt
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400">
+                      Revolving credit cards, personal bank loans, BNPL lines, student education debt, and informal borrowings
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1">
+                    {UNSECURED_LIABILITY_SUBTYPES.map(item => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => selectLiabilitySubType(item)}
+                        className="p-4 rounded-2xl bg-white dark:bg-zinc-950/70 border border-slate-200 dark:border-zinc-800 hover:border-rose-500 dark:hover:border-rose-500 hover:bg-rose-50/20 dark:hover:bg-rose-500/5 transition-all text-left flex flex-col justify-between group cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="w-8 h-8 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">
+                            <CreditCard className="w-4 h-4" />
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                            {item.badge}
+                          </span>
+                        </div>
+
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                            {item.name}
+                          </h4>
+                          <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1 line-clamp-2">
+                            {item.description}
+                          </p>
+                        </div>
+
+                        <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-500 dark:text-zinc-400 font-mono">
+                            Typical APR: {item.defaultInterestRate}%
+                          </span>
+                          <span className="text-rose-500 font-bold flex items-center gap-0.5">
+                            Select <ChevronRight className="w-3.5 h-3.5" />
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 8.4 GROUP MENU (FOR ANY CATEGORY) */}
+              {activeTab === 'liability' && liabilityFlowMode === 'group_menu' && selectedLiabilityGroup && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setLiabilityFlowMode('hub')}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Back to Liability Hub</span>
+                    </button>
+                    <span 
+                      className="text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: `${selectedLiabilityGroup.color}20`, color: selectedLiabilityGroup.color }}
+                    >
+                      {selectedLiabilityGroup.items.length} Types
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
+                      {selectedLiabilityGroup.groupName}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400">
+                      {selectedLiabilityGroup.description}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1">
+                    {selectedLiabilityGroup.items.map(item => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => selectLiabilitySubType(item)}
+                        className="p-4 rounded-2xl bg-white dark:bg-zinc-950/70 border border-slate-200 dark:border-zinc-800 hover:border-rose-500 dark:hover:border-rose-500 transition-all text-left flex flex-col justify-between group cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <span 
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                            style={{ backgroundColor: `${selectedLiabilityGroup.color}15`, color: selectedLiabilityGroup.color }}
+                          >
+                            {item.isSecured ? 'Secured' : 'Unsecured'}
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                            {item.badge}
+                          </span>
+                        </div>
+
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-rose-500 transition-colors">
+                            {item.name}
+                          </h4>
+                          <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1 line-clamp-2">
+                            {item.description}
+                          </p>
+                        </div>
+
+                        <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-500 dark:text-zinc-400 font-mono">
+                            Typical APR: {item.defaultInterestRate}%
+                          </span>
+                          <span className="text-rose-500 font-bold flex items-center gap-0.5">
+                            Select <ChevronRight className="w-3.5 h-3.5" />
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 8.5 TAILORED LIABILITY CONFIGURATION FORM */}
+              {activeTab === 'liability' && liabilityFlowMode === 'form' && (
                 <form onSubmit={handleSaveLiability} className="space-y-4 animate-in fade-in duration-150">
-                  <div className="p-3 rounded-2xl bg-rose-50/70 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 flex items-center justify-between">
+                  {/* Category Summary Badge */}
+                  <div className="p-3.5 rounded-2xl bg-rose-50/70 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-500 flex items-center justify-center">
-                        <ShieldAlert className="w-4 h-4" />
+                      <div className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-500 flex items-center justify-center font-bold">
+                        {selectedLiabilitySubType?.isSecured ? <Home className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />}
                       </div>
                       <div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-zinc-100">
-                          {selectedLiabType}
-                        </span>
-                        <span className="block text-[11px] text-slate-500 dark:text-zinc-400">
-                          Liability Category
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-slate-900 dark:text-zinc-100">
+                            {selectedLiabilitySubType?.name || selectedLiabType}
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-600 dark:text-rose-300">
+                            {selectedLiabilitySubType?.badge || (selectedLiabilitySubType?.isSecured ? 'Secured' : 'Unsecured')}
+                          </span>
+                        </div>
+                        <span className="block text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                          {selectedLiabilitySubType?.group || 'Personal Debt'} • Typical APR: ~{selectedLiabilitySubType?.defaultInterestRate || 10}%
                         </span>
                       </div>
                     </div>
 
                     <button
                       type="button"
-                      onClick={() => setLiabStep(1)}
-                      className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:underline px-2 py-1 rounded"
+                      onClick={() => setLiabilityFlowMode('hub')}
+                      className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:underline px-2.5 py-1 rounded-lg hover:bg-rose-500/10 transition-colors"
                     >
-                      Change
+                      Change Type
                     </button>
                   </div>
 
+                  {/* Loan / Liability Title */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
                       Liability / Loan Title *
@@ -1809,15 +2268,16 @@ export const QuickAddModal: React.FC = () => {
                       autoFocus
                       value={liabName}
                       onChange={e => setLiabName(e.target.value)}
-                      placeholder="e.g. Primary Residence Home Loan, Car Loan"
+                      placeholder={selectedLiabilitySubType ? `e.g. ${selectedLiabilitySubType.suggestedCreditors[0] || 'Bank'} ${selectedLiabilitySubType.name}` : 'e.g. Primary Residence Home Loan'}
                       className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
                     />
                   </div>
 
+                  {/* Principal Balance & Original Loan Amount */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
-                        Outstanding Principal ({currentSymbol}) *
+                        Current Outstanding Balance ({currentSymbol}) *
                       </label>
                       <input
                         type="number"
@@ -1831,23 +2291,64 @@ export const QuickAddModal: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
-                        Creditor / Bank
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5 flex items-center justify-between">
+                        <span>Original Sanctioned Amount ({currentSymbol})</span>
+                        <span className="text-[10px] text-slate-400">Optional</span>
                       </label>
                       <input
-                        type="text"
-                        value={liabInstitution}
-                        onChange={e => setLiabInstitution(e.target.value)}
-                        placeholder="e.g. HDFC, SBI, ICICI, Axis"
-                        className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
+                        type="number"
+                        step="0.01"
+                        value={liabOriginalAmount}
+                        onChange={e => setLiabOriginalAmount(e.target.value)}
+                        placeholder={liabBalance ? `e.g. ${parseFloat(liabBalance) * 1.25}` : '0.00'}
+                        className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
                       />
                     </div>
                   </div>
 
+                  {/* Creditor / Lender with Suggestion Chips */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                      Creditor / Bank / Financial Institution
+                    </label>
+                    <input
+                      type="text"
+                      value={liabInstitution}
+                      onChange={e => setLiabInstitution(e.target.value)}
+                      placeholder="e.g. HDFC Bank, SBI, ICICI, Chase, Muthoot"
+                      className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
+                    />
+
+                    {/* Quick Suggestion Chips */}
+                    {selectedLiabilitySubType?.suggestedCreditors && selectedLiabilitySubType.suggestedCreditors.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        <span className="text-[11px] text-slate-400">Popular:</span>
+                        {selectedLiabilitySubType.suggestedCreditors.map(cred => (
+                          <button
+                            key={cred}
+                            type="button"
+                            onClick={() => setLiabInstitution(cred)}
+                            className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${
+                              liabInstitution === cred
+                                ? 'bg-rose-500/15 text-rose-500 border-rose-500/30 font-bold'
+                                : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:border-slate-400'
+                            }`}
+                          >
+                            {cred}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Interest Rate & Monthly EMI with Auto-Calc helper */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
-                        Interest Rate (APR %)
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5 flex items-center justify-between">
+                        <span>Interest Rate (% APR)</span>
+                        {selectedLiabilitySubType?.defaultInterestRate && (
+                          <span className="text-[10px] text-slate-400">Typ: ~{selectedLiabilitySubType.defaultInterestRate}%</span>
+                        )}
                       </label>
                       <input
                         type="number"
@@ -1860,27 +2361,123 @@ export const QuickAddModal: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
-                        Monthly EMI / Minimum Due ({currentSymbol})
-                      </label>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
+                          Monthly Payment (EMI) ({currentSymbol})
+                        </label>
+                        {liabBalance && liabInterestRate && liabTenureMonths && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const emi = calculateEMI(parseFloat(liabBalance), parseFloat(liabInterestRate), parseInt(liabTenureMonths));
+                              if (emi > 0) setLiabMonthlyPayment(emi.toString());
+                            }}
+                            className="text-[10px] text-rose-500 font-bold hover:underline flex items-center gap-0.5"
+                          >
+                            <Calculator className="w-3 h-3" />
+                            Auto Calc EMI
+                          </button>
+                        )}
+                      </div>
                       <input
                         type="number"
                         step="0.01"
-                        value={liabMinPayment}
-                        onChange={e => setLiabMinPayment(e.target.value)}
+                        value={liabMonthlyPayment}
+                        onChange={e => {
+                          setLiabMonthlyPayment(e.target.value);
+                          if (!liabMinPayment) setLiabMinPayment(e.target.value);
+                        }}
                         placeholder="e.g. 25000"
                         className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
                       />
                     </div>
                   </div>
 
+                  {/* Loan Tenure & Due Date */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                        Remaining Tenure (Months)
+                      </label>
+                      <input
+                        type="number"
+                        value={liabTenureMonths}
+                        onChange={e => setLiabTenureMonths(e.target.value)}
+                        placeholder="e.g. 240 (20 Years) or 36 (3 Years)"
+                        className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                        Monthly EMI Due Day (Day of Month)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={liabDueDate}
+                        onChange={e => setLiabDueDate(e.target.value)}
+                        placeholder="e.g. 5"
+                        className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Collateral / Credit Limit if relevant */}
+                  {selectedLiabilitySubType?.isSecured ? (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                        Pledged Collateral / Property Description
+                      </label>
+                      <input
+                        type="text"
+                        value={liabCollateral}
+                        onChange={e => setLiabCollateral(e.target.value)}
+                        placeholder="e.g. Apartment #402, Green Valley or Honda City 2023 or 50g 22K Gold"
+                        className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
+                      />
+                    </div>
+                  ) : (selectedLiabilitySubType?.category === 'Credit Card' || selectedLiabilitySubType?.category === 'Line of Credit') ? (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
+                        Total Credit Limit ({currentSymbol})
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={liabCreditLimit}
+                        onChange={e => setLiabCreditLimit(e.target.value)}
+                        placeholder="e.g. 500000"
+                        className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
+                      />
+                    </div>
+                  ) : null}
+
+                  {/* Notes / Loan Account Number */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5 flex items-center justify-between">
+                      <span>Loan Account Number & Notes</span>
+                      <span className="text-[10px] text-slate-400">Optional</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={liabNotes}
+                      onChange={e => setLiabNotes(e.target.value)}
+                      placeholder="e.g. Loan A/C #8472910384, Fixed interest for first 3 years"
+                      className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
+                    />
+                  </div>
+
+                  {/* Actions */}
                   <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-zinc-800">
                     <button
                       type="button"
-                      onClick={() => setLiabStep(1)}
-                      className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                      onClick={() => setLiabilityFlowMode('hub')}
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5"
                     >
-                      Back
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Back</span>
                     </button>
 
                     <button
@@ -1888,7 +2485,7 @@ export const QuickAddModal: React.FC = () => {
                       className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold text-xs shadow-lg shadow-rose-600/30 transition-all flex items-center gap-2 cursor-pointer"
                     >
                       <Check className="w-4 h-4 stroke-[2.5]" />
-                      <span>Save Liability</span>
+                      <span>Save Liability to Balance Sheet</span>
                     </button>
                   </div>
                 </form>

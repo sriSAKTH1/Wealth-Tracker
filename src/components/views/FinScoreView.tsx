@@ -456,8 +456,8 @@ export const FinScoreView: React.FC = () => {
       strengths.push({
         id: 's-savings-pos',
         title: 'Positive Net Monthly Cash Flow',
-        description: `Generating ${currSym}${metrics.monthlySavings.toLocaleString()}/month in unallocated surplus to fund future priorities and buffer against surprises.`,
-        metric: `+${currSym}${metrics.monthlySavings.toLocaleString()}/mo`,
+        description: `Generating ${currSym}${(metrics.monthlySavings ?? 0).toLocaleString()}/month in unallocated surplus to fund future priorities and buffer against surprises.`,
+        metric: `+${currSym}${(metrics.monthlySavings ?? 0).toLocaleString()}/mo`,
         tag: 'Liquidity',
         impact: 'Medium',
       });
@@ -511,8 +511,8 @@ export const FinScoreView: React.FC = () => {
       strengths.push({
         id: 's-life-ins',
         title: 'Active Life Protection',
-        description: `Secured ${currSym}${insurance.lifeCoverage.toLocaleString()} in coverage to protect dependent family members.`,
-        metric: `${currSym}${insurance.lifeCoverage.toLocaleString()}`,
+        description: `Secured ${currSym}${(insurance.lifeCoverage ?? 0).toLocaleString()} in coverage to protect dependent family members.`,
+        metric: `${currSym}${(insurance.lifeCoverage ?? 0).toLocaleString()}`,
         tag: 'Family Security',
         impact: 'Medium',
       });
@@ -533,8 +533,8 @@ export const FinScoreView: React.FC = () => {
       strengths.push({
         id: 's-base',
         title: 'Steady Recurring Income Foundation',
-        description: `Consistent monthly inflow of ${currSym}${profile.monthlyIncome.toLocaleString()} gives you the structural leverage to optimize allocations.`,
-        metric: `${currSym}${profile.monthlyIncome.toLocaleString()}/mo`,
+        description: `Consistent monthly inflow of ${currSym}${(profile.monthlyIncome ?? 0).toLocaleString()} gives you the structural leverage to optimize allocations.`,
+        metric: `${currSym}${(profile.monthlyIncome ?? 0).toLocaleString()}/mo`,
         tag: 'Earning Power',
         impact: 'Medium',
       });
@@ -579,7 +579,7 @@ export const FinScoreView: React.FC = () => {
       weaknesses.push({
         id: 'w-life-ins',
         title: 'Term Life Underinsurance Gap',
-        description: `Coverage stands at ${Math.round(lifeInsuranceCoverageRatio)}% of ideal income protection standard (${currSym}${metrics.recommendedLifeCoverage.toLocaleString()}) for dependents.`,
+        description: `Coverage stands at ${Math.round(lifeInsuranceCoverageRatio)}% of ideal income protection standard (${currSym}${(metrics.recommendedLifeCoverage ?? 0).toLocaleString()}) for dependents.`,
         metric: `${Math.round(lifeInsuranceCoverageRatio)}% Coverage`,
         tag: 'Protection Gap',
         impact: 'High',
@@ -615,7 +615,7 @@ export const FinScoreView: React.FC = () => {
         id: 'o-debt-avalanche',
         title: 'High-Interest Debt Prepayment',
         description: `Directing prepayments to top-rate debt can save significant interest charges and instantly boost your FinScore by 8-12 points.`,
-        metric: `Save on ${currSym}${metrics.totalDebt.toLocaleString()}`,
+        metric: `Save on ${currSym}${(metrics.totalDebt ?? 0).toLocaleString()}`,
         tag: 'Cost Reduction',
         impact: 'High',
       });
@@ -625,8 +625,8 @@ export const FinScoreView: React.FC = () => {
       opportunities.push({
         id: 'o-compounding',
         title: 'Automated Systematic Wealth SIPs',
-        description: `Investing monthly surplus (${currSym}${metrics.monthlySavings.toLocaleString()}/mo) systematically into diversified low-cost index funds unlocks long-term compounding.`,
-        metric: `${currSym}${metrics.monthlySavings.toLocaleString()}/mo Surplus`,
+        description: `Investing monthly surplus (${currSym}${(metrics.monthlySavings ?? 0).toLocaleString()}/mo) systematically into diversified low-cost index funds unlocks long-term compounding.`,
+        metric: `${currSym}${(metrics.monthlySavings ?? 0).toLocaleString()}/mo Surplus`,
         tag: 'Wealth Growth',
         impact: 'High',
       });
@@ -800,7 +800,7 @@ export const FinScoreView: React.FC = () => {
     }
     const text = `📊 FINSCORE PERSONAL FINANCIAL SWOT ANALYSIS
 Overall Score: ${result.overallScore}/100 (${result.grade})
-Monthly Income: ${currSym}${profile.monthlyIncome.toLocaleString()} | Monthly Savings: ${currSym}${result.metrics.monthlySavings.toLocaleString()}
+Monthly Income: ${currSym}${(profile.monthlyIncome ?? 0).toLocaleString()} | Monthly Savings: ${currSym}${(result.metrics.monthlySavings ?? 0).toLocaleString()}
 
 💪 1. STRENGTHS (${swotData.strengths.length}):
 ${swotData.strengths.map(s => `• [${s.tag}] ${s.title}: ${s.description} (${s.metric})`).join('\n')}
@@ -829,7 +829,7 @@ Strategic Focus: ${result.biggestPriority}`;
       return;
     }
     const query = topic 
-      ? `Based on my SWOT Financial Analysis, please provide a tailored action strategy for: "${topic}". My FinScore is ${result.overallScore}/100 and my monthly savings is ${currSym}${result.metrics.monthlySavings.toLocaleString()}.`
+      ? `Based on my SWOT Financial Analysis, please provide a tailored action strategy for: "${topic}". My FinScore is ${result.overallScore}/100 and my monthly savings is ${currSym}${(result.metrics.monthlySavings ?? 0).toLocaleString()}.`
       : `Based on my FinScore SWOT Strategic Analysis (Strengths: ${swotData.strengths.length}, Weaknesses: ${swotData.weaknesses.length}, Opportunities: ${swotData.opportunities.length}, Threats: ${swotData.threats.length}), what are my top 3 immediate action items for the next 30 days?`;
     handleSendAiMessage(query);
     setActiveTab('ai_assistant');
@@ -1085,7 +1085,7 @@ Strategic Focus: ${result.biggestPriority}`;
         ...prev,
         {
           sender: 'ai',
-          text: `Here is your priority assessment: Build your emergency fund of ₹${result.metrics.emergencyShortfall.toLocaleString()} before taking on further obligations. Your current savings rate is ${result.metrics.savingsRatio}%.`,
+          text: `Here is your priority assessment: Build your emergency fund of ₹${(result.metrics.emergencyShortfall ?? 0).toLocaleString()} before taking on further obligations. Your current savings rate is ${result.metrics.savingsRatio}%.`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           modelUsed: selectedAiModel,
         },
@@ -1307,9 +1307,9 @@ Strategic Focus: ${result.biggestPriority}`;
                   {result.summaryDiagnosis}
                 </p>
                 <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 pt-0.5">
-                  <span>Monthly Surplus: <strong className="font-mono text-emerald-400">{currSym}{result.metrics.monthlySavings.toLocaleString()}</strong></span>
+                  <span>Monthly Surplus: <strong className="font-mono text-emerald-400">{currSym}{(result.metrics.monthlySavings ?? 0).toLocaleString()}</strong></span>
                   <span>•</span>
-                  <span>Goal Target SIP: <strong className="font-mono text-blue-400">{currSym}{result.metrics.totalGoalRequiredMonthlySavings.toLocaleString()}/mo</strong></span>
+                  <span>Goal Target SIP: <strong className="font-mono text-blue-400">{currSym}{(result.metrics.totalGoalRequiredMonthlySavings ?? 0).toLocaleString()}/mo</strong></span>
                 </div>
               </div>
 
@@ -1593,10 +1593,10 @@ Strategic Focus: ${result.biggestPriority}`;
                 </span>
               </div>
               <div className="text-2xl font-extrabold font-mono">
-                {currSym}{(emergency.currentEmergencySavings).toLocaleString()}
+                {currSym}{(Number(emergency.currentEmergencySavings) || 0).toLocaleString()}
               </div>
               <div className="text-xs text-slate-400 mt-0.5">
-                Target: {currSym}{result.metrics.requiredEmergencyFund.toLocaleString()} ({emergency.targetMonths} mo)
+                Target: {currSym}{(result.metrics.requiredEmergencyFund ?? 0).toLocaleString()} ({emergency.targetMonths} mo)
               </div>
               {/* Visual progress bar */}
               <div className="w-full bg-slate-800 rounded-full h-2 mt-3 overflow-hidden">
@@ -1607,7 +1607,7 @@ Strategic Focus: ${result.biggestPriority}`;
               </div>
               <div className="text-[11px] text-slate-400 mt-2 font-medium">
                 {result.metrics.emergencyShortfall > 0 
-                  ? `Shortfall: ${currSym}${result.metrics.emergencyShortfall.toLocaleString()} needed`
+                  ? `Shortfall: ${currSym}${(result.metrics.emergencyShortfall ?? 0).toLocaleString()} needed`
                   : 'Fully funded!'}
               </div>
             </div>
@@ -1665,7 +1665,7 @@ Strategic Focus: ${result.biggestPriority}`;
                 {result.metrics.savingsRatio}%
               </div>
               <div className="text-xs text-slate-400 mt-0.5">
-                Monthly surplus: {currSym}{result.metrics.monthlySavings.toLocaleString()}
+                Monthly surplus: {currSym}{(result.metrics.monthlySavings ?? 0).toLocaleString()}
               </div>
               <div className="w-full bg-slate-800 rounded-full h-2 mt-3 overflow-hidden">
                 <div 
@@ -1698,7 +1698,7 @@ Strategic Focus: ${result.biggestPriority}`;
                 {result.metrics.emiToIncomeRatio}% EMI
               </div>
               <div className="text-xs text-slate-400 mt-0.5">
-                EMI: {currSym}{result.metrics.totalMonthlyEmi.toLocaleString()} / mo
+                EMI: {currSym}{(result.metrics.totalMonthlyEmi ?? 0).toLocaleString()} / mo
               </div>
               <div className="w-full bg-slate-800 rounded-full h-2 mt-3 overflow-hidden">
                 <div 
@@ -1723,7 +1723,7 @@ Strategic Focus: ${result.biggestPriority}`;
                   Future Goals Readiness ({result.scores.futureGoals}/100)
                 </h3>
                 <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                  Required monthly saving across {goals.length} milestones: <strong>{currSym}{result.metrics.totalGoalRequiredMonthlySavings.toLocaleString()}/mo</strong>
+                  Required monthly saving across {goals.length} milestones: <strong>{currSym}{(result.metrics.totalGoalRequiredMonthlySavings ?? 0).toLocaleString()}/mo</strong>
                 </p>
               </div>
               <button
@@ -1747,14 +1747,14 @@ Strategic Focus: ${result.biggestPriority}`;
                       </span>
                     </div>
                     <div className="text-base font-extrabold font-mono mt-2">
-                      {currSym}{g.currentSavings.toLocaleString()} <span className="text-xs font-normal text-slate-400">/ {currSym}{g.targetAmount.toLocaleString()}</span>
+                      {currSym}{(g.currentSavings ?? 0).toLocaleString()} <span className="text-xs font-normal text-slate-400">/ {currSym}{(g.targetAmount ?? 0).toLocaleString()}</span>
                     </div>
                     <div className="w-full bg-slate-800 rounded-full h-2 mt-2.5 overflow-hidden">
                       <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${pct}%` }} />
                     </div>
                     <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2">
                       <span>{pct}% funded</span>
-                      <span className="text-emerald-400 font-semibold">{currSym}{req.toLocaleString()}/mo</span>
+                      <span className="text-emerald-400 font-semibold">{currSym}{(req ?? 0).toLocaleString()}/mo</span>
                     </div>
                   </div>
                 );
@@ -1986,7 +1986,7 @@ Strategic Focus: ${result.biggestPriority}`;
                         <span className="text-[11px] font-bold text-slate-400">{item.name}</span>
                       </div>
                       <div className="text-base font-extrabold font-mono">
-                        {currSym}{item.amount.toLocaleString()}
+                        {currSym}{(item.amount ?? 0).toLocaleString()}
                       </div>
                       <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
                         <span>{item.category}</span>
@@ -2171,7 +2171,7 @@ Strategic Focus: ${result.biggestPriority}`;
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-1">
                   <span>Add to Emergency Savings:</span>
-                  <span className="font-mono font-bold text-blue-500">+{currSym}{simEmergencyAdd.toLocaleString()}</span>
+                  <span className="font-mono font-bold text-blue-500">+{currSym}{(simEmergencyAdd ?? 0).toLocaleString()}</span>
                 </div>
                 <input
                   type="range"
@@ -2187,7 +2187,7 @@ Strategic Focus: ${result.biggestPriority}`;
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-1">
                   <span>Prepay Outstanding Debt:</span>
-                  <span className="font-mono font-bold text-purple-500">+{currSym}{simPrepayDebt.toLocaleString()}</span>
+                  <span className="font-mono font-bold text-purple-500">+{currSym}{(simPrepayDebt ?? 0).toLocaleString()}</span>
                 </div>
                 <input
                   type="range"
@@ -2784,14 +2784,14 @@ Strategic Focus: ${result.biggestPriority}`;
                   <ArrowUpRight className="w-4 h-4 text-emerald-500" />
                 </div>
                 <div className={`text-2xl font-extrabold font-mono tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                  {currSym}{finScoreBalanceSheet.totalTangibleAssets.toLocaleString()}
+                  {currSym}{(finScoreBalanceSheet.totalTangibleAssets ?? 0).toLocaleString()}
                 </div>
                 <div className={`mt-2 flex items-center justify-between text-xs pt-2 border-t ${
                   isLight ? 'border-emerald-100 text-slate-500' : 'border-emerald-500/20 text-slate-400'
                 }`}>
                   <span>Liquid Emergency Cash:</span>
                   <span className={`font-mono font-semibold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
-                    {currSym}{finScoreBalanceSheet.liquidEmergency.toLocaleString()}
+                    {currSym}{(finScoreBalanceSheet.liquidEmergency ?? 0).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -2810,14 +2810,14 @@ Strategic Focus: ${result.biggestPriority}`;
                   <ArrowDownLeft className="w-4 h-4 text-rose-500" />
                 </div>
                 <div className="text-2xl font-extrabold font-mono tracking-tight text-rose-500">
-                  {currSym}{finScoreBalanceSheet.totalDebt.toLocaleString()}
+                  {currSym}{(finScoreBalanceSheet.totalDebt ?? 0).toLocaleString()}
                 </div>
                 <div className={`mt-2 flex items-center justify-between text-xs pt-2 border-t ${
                   isLight ? 'border-rose-100 text-slate-500' : 'border-rose-500/20 text-slate-400'
                 }`}>
                   <span>Monthly Debt Outlay:</span>
                   <span className="font-mono font-semibold text-rose-500">
-                    {currSym}{finScoreBalanceSheet.totalMonthlyEmi.toLocaleString()}/mo
+                    {currSym}{(finScoreBalanceSheet.totalMonthlyEmi ?? 0).toLocaleString()}/mo
                   </span>
                 </div>
               </div>
@@ -2840,7 +2840,7 @@ Strategic Focus: ${result.biggestPriority}`;
                     ? isLight ? 'text-blue-700' : 'text-blue-400'
                     : 'text-rose-500'
                 }`}>
-                  {currSym}{finScoreBalanceSheet.netWorth.toLocaleString()}
+                  {currSym}{(finScoreBalanceSheet.netWorth ?? 0).toLocaleString()}
                 </div>
                 <div className={`mt-2 flex items-center justify-between text-xs pt-2 border-t ${
                   isLight ? 'border-blue-100 text-slate-500' : 'border-blue-500/20 text-slate-400'
@@ -2862,7 +2862,7 @@ Strategic Focus: ${result.biggestPriority}`;
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                 <div>
                   <h3 className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
-                    Accounting Equation: Assets ({currSym}{finScoreBalanceSheet.totalTangibleAssets.toLocaleString()}) = Liabilities ({currSym}{finScoreBalanceSheet.totalDebt.toLocaleString()}) + Net Equity ({currSym}{finScoreBalanceSheet.netWorth.toLocaleString()})
+                    Accounting Equation: Assets ({currSym}{(finScoreBalanceSheet.totalTangibleAssets ?? 0).toLocaleString()}) = Liabilities ({currSym}{(finScoreBalanceSheet.totalDebt ?? 0).toLocaleString()}) + Net Equity ({currSym}{(finScoreBalanceSheet.netWorth ?? 0).toLocaleString()})
                   </h3>
                   <p className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                     Visual capital structure of assets versus loan leverage recorded in FinScore™
@@ -2913,7 +2913,7 @@ Strategic Focus: ${result.biggestPriority}`;
                     </h3>
                   </div>
                   <span className="font-mono font-bold text-xs text-emerald-500">
-                    {currSym}{finScoreBalanceSheet.totalTangibleAssets.toLocaleString()}
+                    {currSym}{(finScoreBalanceSheet.totalTangibleAssets ?? 0).toLocaleString()}
                   </span>
                 </div>
 
@@ -2933,10 +2933,10 @@ Strategic Focus: ${result.biggestPriority}`;
                     </div>
                     <div className="text-right">
                       <div className="font-mono font-bold text-sm text-emerald-500">
-                        {currSym}{finScoreBalanceSheet.liquidEmergency.toLocaleString()}
+                        {currSym}{(finScoreBalanceSheet.liquidEmergency ?? 0).toLocaleString()}
                       </div>
                       <div className="text-[10px] text-slate-400 font-mono">
-                        Target: {currSym}{result.metrics.requiredEmergencyFund.toLocaleString()}
+                        Target: {currSym}{(result.metrics.requiredEmergencyFund ?? 0).toLocaleString()}
                       </div>
                     </div>
                   </div>
@@ -2965,10 +2965,10 @@ Strategic Focus: ${result.biggestPriority}`;
                         </div>
                         <div className="text-right">
                           <div className="font-mono font-bold text-sm text-blue-500">
-                            {currSym}{item.value.toLocaleString()}
+                            {currSym}{(item.value ?? 0).toLocaleString()}
                           </div>
                           <div className="text-[10px] text-slate-400 font-mono">
-                            Goal Target: {currSym}{item.target.toLocaleString()}
+                            Goal Target: {currSym}{(item.target ?? 0).toLocaleString()}
                           </div>
                         </div>
                       </div>
@@ -2986,7 +2986,7 @@ Strategic Focus: ${result.biggestPriority}`;
                 <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between font-bold text-xs">
                   <span className={isLight ? 'text-slate-700' : 'text-slate-300'}>TOTAL TANGIBLE ASSETS</span>
                   <span className="font-mono text-emerald-500 text-sm">
-                    {currSym}{finScoreBalanceSheet.totalTangibleAssets.toLocaleString()}
+                    {currSym}{(finScoreBalanceSheet.totalTangibleAssets ?? 0).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -3005,7 +3005,7 @@ Strategic Focus: ${result.biggestPriority}`;
                       </h3>
                     </div>
                     <span className="font-mono font-bold text-xs text-rose-500">
-                      {currSym}{finScoreBalanceSheet.totalDebt.toLocaleString()}
+                      {currSym}{(finScoreBalanceSheet.totalDebt ?? 0).toLocaleString()}
                     </span>
                   </div>
 
@@ -3023,12 +3023,12 @@ Strategic Focus: ${result.biggestPriority}`;
                             <span>{loan.type}</span>
                           </div>
                           <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                            Interest Rate: {loan.interestRate}% p.a. • EMI: {currSym}{loan.monthlyEmi.toLocaleString()}/mo
+                            Interest Rate: {loan.interestRate}% p.a. • EMI: {currSym}{(loan.monthlyEmi ?? 0).toLocaleString()}/mo
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="font-mono font-bold text-sm text-rose-500">
-                            {currSym}{loan.outstanding.toLocaleString()}
+                            {currSym}{(loan.outstanding ?? 0).toLocaleString()}
                           </div>
                           <div className="text-[10px] text-slate-400">
                             Outstanding Balance
@@ -3050,7 +3050,7 @@ Strategic Focus: ${result.biggestPriority}`;
                   <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between font-bold text-xs">
                     <span className={isLight ? 'text-slate-700' : 'text-slate-300'}>TOTAL LIABILITIES</span>
                     <span className="font-mono text-rose-500 text-sm">
-                      {currSym}{finScoreBalanceSheet.totalDebt.toLocaleString()}
+                      {currSym}{(finScoreBalanceSheet.totalDebt ?? 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -3066,7 +3066,7 @@ Strategic Focus: ${result.biggestPriority}`;
                     <div className={`text-xl font-mono font-extrabold ${
                       finScoreBalanceSheet.netWorth >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-rose-500'
                     }`}>
-                      {currSym}{finScoreBalanceSheet.netWorth.toLocaleString()}
+                      {currSym}{(finScoreBalanceSheet.netWorth ?? 0).toLocaleString()}
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                       Liquidity Runway: <span className="font-bold text-slate-700 dark:text-slate-200">{finScoreBalanceSheet.liquidityRatio} months</span> of fixed living outlays
@@ -3098,11 +3098,11 @@ Strategic Focus: ${result.biggestPriority}`;
                   </span>
                 </div>
                 <span className="font-mono font-bold text-xs text-indigo-400">
-                  {currSym}{finScoreBalanceSheet.totalProtectionCoverage.toLocaleString()} Total Cover
+                  {currSym}{(finScoreBalanceSheet.totalProtectionCoverage ?? 0).toLocaleString()} Total Cover
                 </span>
               </div>
               <p className={`text-[11px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Actuarial risk shield safeguarding your balance sheet against catastrophic medical shocks or loss of earning capacity. Term life coverage: <strong>{currSym}{finScoreBalanceSheet.termCover.toLocaleString()}</strong> • Health coverage: <strong>{currSym}{finScoreBalanceSheet.healthCover.toLocaleString()}</strong>.
+                Actuarial risk shield safeguarding your balance sheet against catastrophic medical shocks or loss of earning capacity. Term life coverage: <strong>{currSym}{(finScoreBalanceSheet.termCover ?? 0).toLocaleString()}</strong> • Health coverage: <strong>{currSym}{(finScoreBalanceSheet.healthCover ?? 0).toLocaleString()}</strong>.
               </p>
             </div>
 
@@ -3282,19 +3282,19 @@ Strategic Focus: ${result.biggestPriority}`;
             <div className={`p-4 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
               <span className="text-[11px] font-bold text-slate-400 uppercase">Monthly Income</span>
               <div className="text-xl font-extrabold font-mono mt-1 text-blue-400">
-                {currSym}{profile.monthlyIncome.toLocaleString()}
+                {currSym}{(profile.monthlyIncome ?? 0).toLocaleString()}
               </div>
             </div>
             <div className={`p-4 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
               <span className="text-[11px] font-bold text-slate-400 uppercase">Total Expenses</span>
               <div className="text-xl font-extrabold font-mono mt-1 text-rose-400">
-                {currSym}{result.metrics.totalExpenses.toLocaleString()}
+                {currSym}{(result.metrics.totalExpenses ?? 0).toLocaleString()}
               </div>
             </div>
             <div className={`p-4 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
               <span className="text-[11px] font-bold text-slate-400 uppercase">Monthly Surplus / Savings</span>
               <div className="text-xl font-extrabold font-mono mt-1 text-emerald-400">
-                {currSym}{result.metrics.monthlySavings.toLocaleString()}
+                {currSym}{(result.metrics.monthlySavings ?? 0).toLocaleString()}
               </div>
             </div>
           </div>
@@ -3403,13 +3403,13 @@ Strategic Focus: ${result.biggestPriority}`;
                     <div>
                       <div className="font-bold text-xs">{loan.type}</div>
                       <div className="text-[11px] text-slate-400 mt-0.5">
-                        Outstanding: {currSym}{loan.outstandingAmount.toLocaleString()} • APR: {loan.interestRate}% • {loan.remainingTenureMonths} mo left
+                        Outstanding: {currSym}{(loan.outstandingAmount ?? 0).toLocaleString()} • APR: {loan.interestRate}% • {loan.remainingTenureMonths} mo left
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <div className="text-xs font-mono font-bold text-rose-400">
-                          {currSym}{loan.monthlyEmi.toLocaleString()}/mo
+                          {currSym}{(loan.monthlyEmi ?? 0).toLocaleString()}/mo
                         </div>
                         <div className="text-[10px] text-slate-500">EMI</div>
                       </div>
@@ -3544,7 +3544,7 @@ Strategic Focus: ${result.biggestPriority}`;
               </p>
             </div>
             <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
-              Recommended Life Cover: {currSym}{result.metrics.recommendedLifeCoverage.toLocaleString()}
+              Recommended Life Cover: {currSym}{(result.metrics.recommendedLifeCoverage ?? 0).toLocaleString()}
             </span>
           </div>
 
@@ -3600,13 +3600,13 @@ Strategic Focus: ${result.biggestPriority}`;
                 <div className="p-3 rounded-xl bg-black/20 text-[11px] space-y-1">
                   <div className="flex justify-between">
                     <span className="text-slate-400">Recommended Cover:</span>
-                    <span className="font-mono font-bold">{currSym}{result.metrics.recommendedLifeCoverage.toLocaleString()}</span>
+                    <span className="font-mono font-bold">{currSym}{(result.metrics.recommendedLifeCoverage ?? 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Life Cover Gap:</span>
                     <span className={`font-mono font-bold ${result.metrics.lifeCoverageShortfall > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
                       {result.metrics.lifeCoverageShortfall > 0 
-                        ? `${currSym}${result.metrics.lifeCoverageShortfall.toLocaleString()} Shortfall`
+                        ? `${currSym}${(result.metrics.lifeCoverageShortfall ?? 0).toLocaleString()} Shortfall`
                         : 'Fully Protected'}
                     </span>
                   </div>
@@ -3707,7 +3707,7 @@ Strategic Focus: ${result.biggestPriority}`;
               </p>
             </div>
             <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
-              Essential Outflow: {currSym}{result.metrics.essentialExpenses.toLocaleString()}/mo
+              Essential Outflow: {currSym}{(result.metrics.essentialExpenses ?? 0).toLocaleString()}/mo
             </span>
           </div>
 
@@ -3756,15 +3756,15 @@ Strategic Focus: ${result.biggestPriority}`;
               <div className="p-4 rounded-xl bg-black/20 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-slate-400">Essential Expenses:</span>
-                  <span className="font-mono">{currSym}{result.metrics.essentialExpenses.toLocaleString()}/mo</span>
+                  <span className="font-mono">{currSym}{(result.metrics.essentialExpenses ?? 0).toLocaleString()}/mo</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Required Buffer ({emergency.targetMonths} mo):</span>
-                  <span className="font-mono font-bold text-amber-400">{currSym}{result.metrics.requiredEmergencyFund.toLocaleString()}</span>
+                  <span className="font-mono font-bold text-amber-400">{currSym}{(result.metrics.requiredEmergencyFund ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between pt-1 border-t border-slate-800">
                   <span className="text-slate-400">Funding Shortfall:</span>
-                  <span className="font-mono font-bold text-rose-400">{currSym}{result.metrics.emergencyShortfall.toLocaleString()}</span>
+                  <span className="font-mono font-bold text-rose-400">{currSym}{(result.metrics.emergencyShortfall ?? 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -3777,7 +3777,7 @@ Strategic Focus: ${result.biggestPriority}`;
                 Emergency Readiness Progress
               </span>
               <div className="text-2xl font-extrabold font-mono">
-                {currSym}{emergency.currentEmergencySavings.toLocaleString()} / {currSym}{result.metrics.requiredEmergencyFund.toLocaleString()}
+                {currSym}{(emergency.currentEmergencySavings ?? 0).toLocaleString()} / {currSym}{(result.metrics.requiredEmergencyFund ?? 0).toLocaleString()}
               </div>
 
               <div className="w-full bg-slate-800 rounded-full h-3.5 overflow-hidden">
@@ -3790,7 +3790,7 @@ Strategic Focus: ${result.biggestPriority}`;
               <div className="text-xs font-semibold text-slate-300">
                 {result.metrics.emergencyShortfall > 0 ? (
                   <p className="text-amber-400">
-                    ⚠️ You need approximately <strong>{currSym}{result.metrics.emergencyShortfall.toLocaleString()}</strong> more to reach your {emergency.targetMonths}-month target.
+                    ⚠️ You need approximately <strong>{currSym}{(result.metrics.emergencyShortfall ?? 0).toLocaleString()}</strong> more to reach your {emergency.targetMonths}-month target.
                   </p>
                 ) : (
                   <p className="text-emerald-400 font-bold">
@@ -3850,7 +3850,7 @@ Strategic Focus: ${result.biggestPriority}`;
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Total Monthly Add</span>
                 <span className="font-mono font-black text-sm text-emerald-500 dark:text-emerald-400 block">
-                  {currSym}{totalRequiredMonthlySip.toLocaleString()}/mo
+                  {currSym}{(totalRequiredMonthlySip ?? 0).toLocaleString()}/mo
                 </span>
               </div>
             </div>
@@ -3878,7 +3878,7 @@ Strategic Focus: ${result.biggestPriority}`;
                     </span>
                     <div className="flex items-baseline gap-2 mt-0.5">
                       <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
-                        {currSym}{totalRequiredMonthlySip.toLocaleString()}
+                        {currSym}{(totalRequiredMonthlySip ?? 0).toLocaleString()}
                       </span>
                       <span className="text-sm font-bold text-slate-400 font-mono">/ month</span>
                     </div>
@@ -3896,13 +3896,13 @@ Strategic Focus: ${result.biggestPriority}`;
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-400">Available Monthly Surplus:</span>
                   <span className={`font-mono font-bold ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
-                    {currSym}{result.metrics.monthlySavings.toLocaleString()}/mo
+                    {currSym}{(result.metrics.monthlySavings ?? 0).toLocaleString()}/mo
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs mt-2">
                   <span className="text-slate-400">All Goals Required SIP:</span>
                   <span className="font-mono font-bold text-emerald-400">
-                    {currSym}{totalRequiredMonthlySip.toLocaleString()}/mo
+                    {currSym}{(totalRequiredMonthlySip ?? 0).toLocaleString()}/mo
                   </span>
                 </div>
                 <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px]">
@@ -3910,12 +3910,12 @@ Strategic Focus: ${result.biggestPriority}`;
                   {result.metrics.monthlySavings >= totalRequiredMonthlySip ? (
                     <span className="px-2 py-0.5 rounded-md font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                       <span>✓ Fully Funded</span>
-                      <span className="font-mono text-[10px]">(+{currSym}{(result.metrics.monthlySavings - totalRequiredMonthlySip).toLocaleString()})</span>
+                      <span className="font-mono text-[10px]">(+{currSym}{(Number(result.metrics.monthlySavings - totalRequiredMonthlySip) || 0).toLocaleString()})</span>
                     </span>
                   ) : (
                     <span className="px-2 py-0.5 rounded-md font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
                       <span>⚠️ Shortfall of</span>
-                      <span className="font-mono text-[10px]">{currSym}{(totalRequiredMonthlySip - result.metrics.monthlySavings).toLocaleString()}/mo</span>
+                      <span className="font-mono text-[10px]">{currSym}{(Number(totalRequiredMonthlySip - result.metrics.monthlySavings) || 0).toLocaleString()}/mo</span>
                     </span>
                   )}
                 </div>
@@ -3930,7 +3930,7 @@ Strategic Focus: ${result.biggestPriority}`;
                   <Target className="w-3.5 h-3.5 text-blue-400" />
                 </div>
                 <div className={`text-xl font-bold font-mono mt-1 ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
-                  {currSym}{totalGoalsTargetAmount.toLocaleString()}
+                  {currSym}{(totalGoalsTargetAmount ?? 0).toLocaleString()}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">Across {goals.length} target goals</div>
               </div>
@@ -3941,7 +3941,7 @@ Strategic Focus: ${result.biggestPriority}`;
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 </div>
                 <div className="text-xl font-bold font-mono text-emerald-500 dark:text-emerald-400 mt-1">
-                  {currSym}{totalGoalsSavedSoFar.toLocaleString()}
+                  {currSym}{(totalGoalsSavedSoFar ?? 0).toLocaleString()}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">
                   {overallGoalsProgressPct}% overall progress completed
@@ -3954,7 +3954,7 @@ Strategic Focus: ${result.biggestPriority}`;
                   <Clock className="w-3.5 h-3.5 text-amber-400" />
                 </div>
                 <div className="text-xl font-bold font-mono text-amber-500 dark:text-amber-400 mt-1">
-                  {currSym}{totalGoalsFundingGap.toLocaleString()}
+                  {currSym}{(totalGoalsFundingGap ?? 0).toLocaleString()}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">Covered via monthly additions</div>
               </div>
@@ -3975,7 +3975,7 @@ Strategic Focus: ${result.biggestPriority}`;
                 <h3 className="text-xs font-bold uppercase tracking-wider">All Goals Required Monthly Addition Schedule</h3>
               </div>
               <span className="text-[11px] font-mono text-slate-400">
-                Sum: <strong className="text-emerald-400">{currSym}{totalRequiredMonthlySip.toLocaleString()}/mo</strong>
+                Sum: <strong className="text-emerald-400">{currSym}{(totalRequiredMonthlySip ?? 0).toLocaleString()}/mo</strong>
               </span>
             </div>
 
@@ -4014,10 +4014,10 @@ Strategic Focus: ${result.biggestPriority}`;
                           {g.tenureYears}y (Target {g.targetYear})
                         </td>
                         <td className="py-3 px-4 text-right font-mono font-bold">
-                          {currSym}{g.targetAmount.toLocaleString()}
+                          {currSym}{(g.targetAmount ?? 0).toLocaleString()}
                         </td>
                         <td className="py-3 px-4 text-right font-mono text-slate-400">
-                          {currSym}{g.currentSavings.toLocaleString()}
+                          {currSym}{(g.currentSavings ?? 0).toLocaleString()}
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2 max-w-[120px] mx-auto">
@@ -4028,7 +4028,7 @@ Strategic Focus: ${result.biggestPriority}`;
                           </div>
                         </td>
                         <td className="py-3 px-4 text-right font-mono font-bold text-emerald-500 dark:text-emerald-400 text-sm">
-                          {currSym}{g.reqSip.toLocaleString()}/mo
+                          {currSym}{(g.reqSip ?? 0).toLocaleString()}/mo
                         </td>
                         <td className="py-3 px-4 text-right font-mono text-slate-400 text-[11px]">
                           {sharePct}%
@@ -4045,16 +4045,16 @@ Strategic Focus: ${result.biggestPriority}`;
                       All Goals Total Combined
                     </td>
                     <td className="py-3 px-4 text-right font-mono text-sm">
-                      {currSym}{totalGoalsTargetAmount.toLocaleString()}
+                      {currSym}{(totalGoalsTargetAmount ?? 0).toLocaleString()}
                     </td>
                     <td className="py-3 px-4 text-right font-mono text-sm text-slate-400">
-                      {currSym}{totalGoalsSavedSoFar.toLocaleString()}
+                      {currSym}{(totalGoalsSavedSoFar ?? 0).toLocaleString()}
                     </td>
                     <td className="py-3 px-4 text-center font-mono text-xs">
                       {overallGoalsProgressPct}%
                     </td>
                     <td className="py-3 px-4 text-right font-mono font-black text-emerald-500 dark:text-emerald-400 text-base">
-                      {currSym}{totalRequiredMonthlySip.toLocaleString()}/mo
+                      {currSym}{(totalRequiredMonthlySip ?? 0).toLocaleString()}/mo
                     </td>
                     <td className="py-3 px-4 text-right font-mono text-xs text-emerald-400">
                       100%
@@ -4105,11 +4105,11 @@ Strategic Focus: ${result.biggestPriority}`;
                     <div className="space-y-1.5 text-xs">
                       <div className="flex justify-between text-slate-400">
                         <span>Target Amount:</span>
-                        <span className={`font-mono font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{currSym}{g.targetAmount.toLocaleString()}</span>
+                        <span className={`font-mono font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{currSym}{(g.targetAmount ?? 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between text-slate-400">
                         <span>Saved so far:</span>
-                        <span className={`font-mono ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>{currSym}{g.currentSavings.toLocaleString()}</span>
+                        <span className={`font-mono ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>{currSym}{(g.currentSavings ?? 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between text-slate-400">
                         <span className="flex items-center gap-1">
@@ -4134,7 +4134,7 @@ Strategic Focus: ${result.biggestPriority}`;
                       <div>
                         <span className="text-[10px] text-slate-400 uppercase font-bold block">Required Monthly Add:</span>
                         <span className="font-mono font-extrabold text-sm text-emerald-500 dark:text-emerald-400">
-                          {currSym}{g.reqSip.toLocaleString()}/mo
+                          {currSym}{(g.reqSip ?? 0).toLocaleString()}/mo
                         </span>
                       </div>
                       <span className="text-[10px] font-mono text-slate-400 bg-slate-800/40 px-2 py-0.5 rounded border border-slate-700/50">
@@ -4339,7 +4339,7 @@ Strategic Focus: ${result.biggestPriority}`;
                       <span>This Goal's Required Monthly Add ({newGoalTenureYears}y tenure):</span>
                     </span>
                     <span className="font-mono font-black text-sm text-emerald-500 dark:text-emerald-400">
-                      +{currSym}{previewSip.toLocaleString()}/mo
+                      +{currSym}{(previewSip ?? 0).toLocaleString()}/mo
                     </span>
                   </div>
 
@@ -4348,7 +4348,7 @@ Strategic Focus: ${result.biggestPriority}`;
                       Updated Total Required Monthly Add (All Goals Combined):
                     </span>
                     <span className="font-mono font-bold text-xs text-blue-400">
-                      {currSym}{combinedTotalSip.toLocaleString()}/month
+                      {currSym}{(combinedTotalSip ?? 0).toLocaleString()}/month
                     </span>
                   </div>
                 </div>
@@ -4573,11 +4573,11 @@ Strategic Focus: ${result.biggestPriority}`;
               </div>
               <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800/80'}`}>
                 <span className="text-[10px] text-slate-400">Monthly Income</span>
-                <p className="font-extrabold font-mono text-sm">{currSym}{profile.monthlyIncome.toLocaleString()}</p>
+                <p className="font-extrabold font-mono text-sm">{currSym}{(profile.monthlyIncome ?? 0).toLocaleString()}</p>
               </div>
               <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800/80'}`}>
                 <span className="text-[10px] text-slate-400">Monthly Savings</span>
-                <p className="font-extrabold font-mono text-sm text-emerald-400">{currSym}{result.metrics.monthlySavings.toLocaleString()} ({result.metrics.savingsRatio}%)</p>
+                <p className="font-extrabold font-mono text-sm text-emerald-400">{currSym}{(result.metrics.monthlySavings ?? 0).toLocaleString()} ({result.metrics.savingsRatio}%)</p>
               </div>
               <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800/80'}`}>
                 <span className="text-[10px] text-slate-400">EMI Burden</span>
@@ -4990,7 +4990,7 @@ Strategic Focus: ${result.biggestPriority}`;
                     <tr key={u.id} className={isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-900/50'}>
                       <td className="p-3 font-bold">{u.name} (Age {u.age})</td>
                       <td className="p-3 text-slate-400">{u.occupation}</td>
-                      <td className="p-3 font-mono">{currSym}{u.income.toLocaleString()}</td>
+                      <td className="p-3 font-mono">{currSym}{(u.income ?? 0).toLocaleString()}</td>
                       <td className="p-3 font-mono font-bold text-blue-400">{u.score}/100</td>
                       <td className="p-3 font-mono">{u.emergencyFundMonths} mo</td>
                       <td className="p-3 font-mono">{u.debtRatio}%</td>
@@ -5007,7 +5007,7 @@ Strategic Focus: ${result.biggestPriority}`;
                   <tr className={isLight ? 'bg-blue-50/60 font-bold' : 'bg-blue-600/15 font-bold'}>
                     <td className="p-3 text-blue-400">⭐ {profile.name} (You)</td>
                     <td className="p-3 text-slate-300">{profile.occupation}</td>
-                    <td className="p-3 font-mono">{currSym}{profile.monthlyIncome.toLocaleString()}</td>
+                    <td className="p-3 font-mono">{currSym}{(profile.monthlyIncome ?? 0).toLocaleString()}</td>
                     <td className="p-3 font-mono font-bold text-emerald-400">{result.overallScore}/100</td>
                     <td className="p-3 font-mono">{(((emergency?.currentEmergencySavings ?? 0) / (result?.metrics?.essentialExpenses || 1)) || 0).toFixed(1)} mo</td>
                     <td className="p-3 font-mono">{result.metrics.emiToIncomeRatio}%</td>

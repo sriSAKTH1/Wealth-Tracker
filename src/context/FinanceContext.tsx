@@ -384,8 +384,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (isPrivateMode) {
       return '••••••';
     }
-    const isNegative = amount < 0;
-    const absVal = Math.abs(amount);
+    const safeAmount = Number(amount) || 0;
+    const isNegative = safeAmount < 0;
+    const absVal = Math.abs(safeAmount);
     const formattedNum = absVal.toLocaleString('en-US', {
       minimumFractionDigits: options?.showCents ? 2 : (absVal < 100 && absVal % 1 !== 0 ? 2 : 0),
       maximumFractionDigits: 2,
@@ -567,7 +568,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           label: 'Emergency Runway',
           score: runwayScore,
           status: liquidRunwayMonths >= 6 ? 'good' : (liquidRunwayMonths >= 3 ? 'warning' : 'needs_work') as any,
-          desc: `${liquidRunwayMonths} months liquid cash runway ($${liquidCash.toLocaleString()})`,
+          desc: `${liquidRunwayMonths} months liquid cash runway ($${(Number(liquidCash) || 0).toLocaleString()})`,
         },
         {
           label: 'Savings Velocity',

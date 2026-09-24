@@ -105,7 +105,7 @@ export const EmergencyGoalModal: React.FC<EmergencyGoalModalProps> = ({
   onDelete,
   goalToEdit,
   monthlyExpenses = 0,
-  formatMoney = (amt: number) => `$${Math.round(amt).toLocaleString()}`,
+  formatMoney = (amt: number) => `$${Math.round(Number(amt) || 0).toLocaleString()}`,
 }) => {
   const isEditing = !!goalToEdit;
 

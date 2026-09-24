@@ -163,7 +163,7 @@ export const OverviewView: React.FC = () => {
                         <div className="bg-slate-900 border border-slate-800 p-2.5 rounded-2xl shadow-2xl text-xs font-mono">
                           <p className="text-slate-400 mb-1">{data.rawDate}</p>
                           <p className="text-blue-400 font-bold">
-                            Net Worth: {isPrivateMode ? '••••••' : `$${data.netWorth.toLocaleString()}`}
+                            Net Worth: {isPrivateMode ? '••••••' : `$${(Number(data.netWorth) || 0).toLocaleString()}`}
                           </p>
                         </div>
                       );

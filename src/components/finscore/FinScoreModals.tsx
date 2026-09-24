@@ -40,12 +40,12 @@ export const FinScoreHealthPlanModal: React.FC<HealthPlanModalProps> = ({
     {
       step: 1,
       title: 'Build Liquid Safety Cushion',
-      subtitle: `Target: ${currSym}${result.metrics.requiredEmergencyFund.toLocaleString()} (6 months essential expenses)`,
+      subtitle: `Target: ${currSym}${(Number(result.metrics.requiredEmergencyFund) || 0).toLocaleString()} (6 months essential expenses)`,
       status: result.metrics.emergencyShortfall <= 0 ? 'Completed' : 'Priority #1',
       statusColor: result.metrics.emergencyShortfall <= 0 ? 'text-emerald-400 bg-emerald-500/15' : 'text-amber-400 bg-amber-500/15',
       action: result.metrics.emergencyShortfall <= 0
         ? 'Your emergency buffer is fully funded. Maintain in high-yield liquid instruments.'
-        : `Allocate ${currSym}${Math.round(result.metrics.monthlySavings * 0.5).toLocaleString()}/mo to fill the ${currSym}${result.metrics.emergencyShortfall.toLocaleString()} shortfall.`,
+        : `Allocate ${currSym}${Math.round((Number(result.metrics.monthlySavings) || 0) * 0.5).toLocaleString()}/mo to fill the ${currSym}${(Number(result.metrics.emergencyShortfall) || 0).toLocaleString()} shortfall.`,
       tab: 'emergency',
       btnLabel: 'Manage Emergency Fund',
     },
@@ -69,14 +69,14 @@ export const FinScoreHealthPlanModal: React.FC<HealthPlanModalProps> = ({
       statusColor: result.metrics.emiToIncomeRatio <= 30 ? 'text-emerald-400 bg-emerald-500/15' : 'text-rose-400 bg-rose-500/15',
       action: result.metrics.emiToIncomeRatio <= 30
         ? 'Debt levels are safe and manageable.'
-        : `Prioritize prepaying high-interest debt to bring total monthly EMI below ${currSym}${Math.round(profile.monthlyIncome * 0.35).toLocaleString()}.`,
+        : `Prioritize prepaying high-interest debt to bring total monthly EMI below ${currSym}${Math.round((Number(profile.monthlyIncome) || 0) * 0.35).toLocaleString()}.`,
       tab: 'debt',
       btnLabel: 'Debt Optimizer',
     },
     {
       step: 4,
       title: 'Systematic Wealth & Goal SIPs',
-      subtitle: `Target Monthly Goal Savings: ${currSym}${result.metrics.totalGoalRequiredMonthlySavings.toLocaleString()}/mo`,
+      subtitle: `Target Monthly Goal Savings: ${currSym}${(Number(result.metrics.totalGoalRequiredMonthlySavings) || 0).toLocaleString()}/mo`,
       status: result.scores.futureGoals >= 70 ? 'On Track' : 'Needs Setup',
       statusColor: result.scores.futureGoals >= 70 ? 'text-emerald-400 bg-emerald-500/15' : 'text-purple-400 bg-purple-500/15',
       action: 'Automate SIPs across diversified equity index funds aligned to milestone dates.',

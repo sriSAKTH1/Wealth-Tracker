@@ -33,6 +33,8 @@ export type LiabilityCategory =
   | 'Mortgage'
   | 'Loan Against Property'
   | 'Buy Now Pay Later'
+  | 'Business Loan'
+  | 'Line of Credit'
   | 'Other Debt';
 
 export type TransactionType = 'income' | 'expense' | 'transfer';
@@ -124,11 +126,20 @@ export interface Liability {
   subType?: string;
   institution?: string;
   balance: number;
+  originalAmount?: number;
   interestRate?: number; // annual %
   minimumPayment?: number;
-  dueDate?: number; // day of month
+  monthlyPayment?: number; // EMI
+  tenureMonths?: number;
+  remainingMonths?: number;
+  dueDate?: number; // day of month (1-31)
+  startDate?: string;
+  isSecured?: boolean;
+  collateral?: string;
+  creditLimit?: number;
   currency: CurrencyCode;
   notes?: string;
+  tags?: string[];
   lastUpdated: string;
 }
 
@@ -373,4 +384,15 @@ export const DEFAULT_ASSET_TAGS: AssetTagMeta[] = [
   { name: 'Tax Saving (80C / ELSS)', color: '#06b6d4', badgeClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' },
   { name: 'House Downpayment', color: '#f97316', badgeClass: 'bg-orange-500/15 text-orange-300 border-orange-500/30' },
   { name: 'Children Education', color: '#8b5cf6', badgeClass: 'bg-violet-500/15 text-violet-300 border-violet-500/30' },
+];
+
+export const DEFAULT_LIABILITY_TAGS: AssetTagMeta[] = [
+  { name: 'High Priority Payoff', color: '#ef4444', badgeClass: 'bg-rose-500/15 text-rose-300 border-rose-500/30' },
+  { name: 'Tax Deductible', color: '#10b981', badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+  { name: 'Low Interest / Strategic', color: '#3b82f6', badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30' },
+  { name: 'Home Mortgage', color: '#8b5cf6', badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30' },
+  { name: 'Vehicle Loan', color: '#06b6d4', badgeClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' },
+  { name: 'Education Loan', color: '#f59e0b', badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
+  { name: 'Revolving Credit', color: '#ec4899', badgeClass: 'bg-pink-500/15 text-pink-300 border-pink-500/30' },
+  { name: 'Refinance Target', color: '#eab308', badgeClass: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30' },
 ];
