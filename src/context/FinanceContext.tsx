@@ -86,6 +86,9 @@ interface FinanceContextType {
   setMoreSubTab: (tab: MoreSubTab) => void;
 
   // Modals & UI Controls
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  toggleSidebar: () => void;
   isPrivateMode: boolean;
   togglePrivateMode: () => void;
   currency: CurrencyCode;
@@ -219,6 +222,22 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [moreSubTab, setMoreSubTab] = useState<MoreSubTab>('import');
 
   // UI state
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      return false;
+    }
+    const saved = localStorage.getItem('fix_sidebar_open');
+    return saved === null ? true : saved === 'true';
+  });
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(prev => {
+      const next = !prev;
+      localStorage.setItem('fix_sidebar_open', String(next));
+      return next;
+    });
+  };
+
   const [isPrivateMode, setIsPrivateMode] = useState<boolean>(() => {
     return localStorage.getItem('aura_private_mode') === 'true';
   });
@@ -1038,6 +1057,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setAccountSubTab,
         moreSubTab,
         setMoreSubTab,
+        isSidebarOpen,
+        setIsSidebarOpen,
+        toggleSidebar,
         isPrivateMode,
         togglePrivateMode,
         currency,

@@ -28,6 +28,8 @@ export const SHORTCUT_DEFINITIONS: ShortcutItem[] = [
   { key: 's', displayKey: 'S', label: 'Settings', category: 'Navigation', description: 'Preferences, currency, backups & shortcuts toggle' },
 
   // General
+  { key: 'Cmd+B', displayKey: '⌘ + B', label: 'Toggle Sidebar', category: 'General', description: 'Open or close the left navigation sidebar' },
+  { key: '[', displayKey: '[', label: 'Toggle Sidebar', category: 'Navigation', description: 'Quick key to collapse or expand the navigation sidebar' },
   { key: '?', displayKey: '?', label: 'Shortcuts Reference', category: 'General', description: 'Show keyboard shortcuts cheat sheet modal' },
   { key: 'Escape', displayKey: 'Esc', label: 'Close Dialogs', category: 'General', description: 'Close any active modal, search, or dialog' },
 ];
@@ -44,6 +46,9 @@ export const GlobalKeyboardShortcuts: React.FC = () => {
     setSearchOpen,
     isShortcutsHelpOpen,
     setIsShortcutsHelpOpen,
+    isSidebarOpen,
+    setIsSidebarOpen,
+    toggleSidebar,
     theme
   } = useFinance();
 
@@ -89,6 +94,11 @@ export const GlobalKeyboardShortcuts: React.FC = () => {
           closeQuickAdd();
           return;
         }
+        if (typeof window !== 'undefined' && window.innerWidth < 1024 && isSidebarOpen) {
+          e.preventDefault();
+          setIsSidebarOpen(false);
+          return;
+        }
         if (targetIsInput) {
           (e.target as HTMLElement).blur();
           return;
@@ -100,7 +110,17 @@ export const GlobalKeyboardShortcuts: React.FC = () => {
         return;
       }
 
-      // 2. Cmd+K / Ctrl+K search shortcut (standard system shortcut)
+      // 2. Cmd+B / Ctrl+B: Toggle Sidebar
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        if (keyboardShortcutsEnabled) {
+          toggleSidebar();
+          showToast(isSidebarOpen ? 'Sidebar Closed' : 'Sidebar Opened', '⌘B');
+        }
+        return;
+      }
+
+      // 3. Cmd+K / Ctrl+K search shortcut (standard system shortcut)
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         if (keyboardShortcutsEnabled) {

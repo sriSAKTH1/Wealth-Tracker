@@ -15,7 +15,9 @@ import {
   Layers,
   ChevronDown,
   ShieldCheck,
-  Keyboard
+  Keyboard,
+  PanelLeftClose,
+  PanelLeft
 } from 'lucide-react';
 import { useFinance, CURRENCY_CONFIGS } from '../context/FinanceContext';
 import { CurrencyCode } from '../types';
@@ -39,7 +41,9 @@ export const Navbar: React.FC = () => {
     setActiveTab,
     theme,
     keyboardShortcutsEnabled,
-    setIsShortcutsHelpOpen
+    setIsShortcutsHelpOpen,
+    isSidebarOpen,
+    toggleSidebar
   } = useFinance();
 
   const isLight = theme === 'light';
@@ -89,8 +93,30 @@ export const Navbar: React.FC = () => {
         : 'border-slate-800/60 bg-slate-950/80 backdrop-blur-md text-white'
     } px-4 sm:px-6 py-3`}>
       <div className="w-full flex items-center justify-between gap-3">
-        {/* Brand / Logo */}
-        <div className="flex items-center gap-3">
+        {/* Brand / Logo & Sidebar Toggle */}
+        <div className="flex items-center gap-2.5">
+          <button
+            id="btn-sidebar-toggle"
+            onClick={toggleSidebar}
+            aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+            title={isSidebarOpen ? "Close sidebar (⌘B / [ )" : "Open sidebar (⌘B / [ )"}
+            className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+              isLight
+                ? isSidebarOpen 
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200' 
+                  : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200 ring-2 ring-blue-500/20'
+                : isSidebarOpen 
+                  ? 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800' 
+                  : 'bg-blue-950/60 hover:bg-blue-900/60 text-blue-400 border-blue-500/30 ring-2 ring-blue-500/20'
+            }`}
+          >
+            {isSidebarOpen ? (
+              <PanelLeftClose className="w-4 h-4" />
+            ) : (
+              <PanelLeft className="w-4 h-4" />
+            )}
+          </button>
+
           <div 
             onClick={() => setActiveTab('overview')}
             className="flex items-center gap-2.5 cursor-pointer group"
