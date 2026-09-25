@@ -44,7 +44,6 @@ export const Navbar: React.FC = () => {
 
   const isLight = theme === 'light';
 
-  const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
 
   // Dynamic 30-day net worth growth rate (supports positive, negative, and 0)
@@ -213,55 +212,6 @@ export const Navbar: React.FC = () => {
               <Eye className="w-4 h-4 text-slate-500 hover:text-blue-500" />
             )}
           </button>
-
-          {/* Currency Switcher */}
-          <div className="relative">
-            <button
-              id="btn-currency-select"
-              onClick={() => setIsCurrencyDropdownOpen(prev => !prev)}
-              aria-label="Change currency"
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-full border text-xs font-semibold ${
-                isLight 
-                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 hover:text-slate-900 border-slate-200' 
-                  : 'bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white border-slate-800'
-              }`}
-            >
-              <span>{currency}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
-
-            {isCurrencyDropdownOpen && (
-              <div 
-                className={`absolute right-0 mt-2 w-48 rounded-2xl border shadow-2xl p-1.5 z-50 text-xs animate-in fade-in zoom-in-95 duration-100 ${
-                  isLight ? 'bg-white border-slate-200 text-slate-800 shadow-slate-300/40' : 'bg-slate-900 border-slate-800 text-slate-200'
-                }`}
-                onMouseLeave={() => setIsCurrencyDropdownOpen(false)}
-              >
-                <div className={`px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider ${
-                  isLight ? 'text-slate-500' : 'text-slate-400'
-                }`}>
-                  Base Currency
-                </div>
-                {Object.values(CURRENCY_CONFIGS).map(c => (
-                  <button
-                    key={c.code}
-                    onClick={() => {
-                      setCurrency(c.code as CurrencyCode);
-                      setIsCurrencyDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-left transition-colors ${
-                      currency === c.code 
-                        ? 'bg-blue-600/20 text-blue-500 font-semibold border border-blue-500/30' 
-                        : isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-slate-800'
-                    }`}
-                  >
-                    <span>{c.code} ({c.symbol})</span>
-                    <span className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>{c.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* FinScore Financial Health Launcher */}
           <button

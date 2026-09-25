@@ -48,6 +48,11 @@ export const AssetEditModal: React.FC<AssetEditModalProps> = ({
   const [shares, setShares] = useState('');
   const [buyPrice, setBuyPrice] = useState('');
   const [buyDate, setBuyDate] = useState('');
+  const [ticker, setTicker] = useState('');
+  const [exchange, setExchange] = useState('');
+  const [isin, setIsin] = useState('');
+  const [geography, setGeography] = useState('');
+  const [currentPrice, setCurrentPrice] = useState('');
 
   useEffect(() => {
     if (asset) {
@@ -64,6 +69,11 @@ export const AssetEditModal: React.FC<AssetEditModalProps> = ({
       setShares(asset.shares !== undefined ? asset.shares.toString() : '');
       setBuyPrice(asset.buyPrice !== undefined ? asset.buyPrice.toString() : '');
       setBuyDate(asset.buyDate || '');
+      setTicker(asset.ticker || (asset.schemeCode ? String(asset.schemeCode) : ''));
+      setExchange(asset.exchange || '');
+      setIsin(asset.isin || '');
+      setGeography(asset.geography || (asset.currency === 'INR' ? 'INDIA' : 'USA'));
+      setCurrentPrice(asset.currentPrice !== undefined ? asset.currentPrice.toString() : '');
       setCustomTagInput('');
     }
   }, [asset, isOpen]);
@@ -129,6 +139,12 @@ export const AssetEditModal: React.FC<AssetEditModalProps> = ({
       shares: sharesNum,
       buyPrice: buyPriceNum,
       buyDate: buyDate || undefined,
+      ticker: ticker.trim() || undefined,
+      schemeCode: ticker.trim() || undefined,
+      exchange: exchange.trim() || undefined,
+      isin: isin.trim() || undefined,
+      geography: geography.trim() || undefined,
+      currentPrice: currentPrice ? parseFloat(currentPrice) : undefined,
     };
 
     onSave(asset.id, updates);
@@ -373,6 +389,75 @@ export const AssetEditModal: React.FC<AssetEditModalProps> = ({
                     value={buyDate}
                     onChange={e => setBuyDate(e.target.value)}
                     className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Ticker, Exchange, ISIN, Geography & Current NAV */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-zinc-850">
+                <div>
+                  <label className="block text-[11px] text-zinc-400 mb-1">Ticker / Scheme Code</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 118668, RELIANCE, AAPL"
+                    value={ticker}
+                    onChange={e => setTicker(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 font-mono text-zinc-100 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-zinc-400 mb-1">Exchange / Market</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. MF, NSE, BSE, NASDAQ"
+                    value={exchange}
+                    onChange={e => setExchange(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 font-mono text-zinc-100 text-xs uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-zinc-400 mb-1">Geography</label>
+                  <select
+                    value={geography}
+                    onChange={e => setGeography(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 text-xs"
+                  >
+                    <option value="INDIA">INDIA</option>
+                    <option value="USA">USA</option>
+                    <option value="GLOBAL">GLOBAL</option>
+                    <option value="EUROPE">EUROPE</option>
+                    <option value="UK">UK</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div>
+                  <label className="block text-[11px] text-zinc-400 mb-1">ISIN Identifier</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. INF204K01UX7, INE002A01018"
+                    value={isin}
+                    onChange={e => setIsin(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 font-mono text-zinc-100 text-xs uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-zinc-400 mb-1">Current NAV / Market Price ({currentSymbol})</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 7302.38"
+                    value={currentPrice}
+                    onChange={e => {
+                      setCurrentPrice(e.target.value);
+                      const cp = parseFloat(e.target.value);
+                      const s = parseFloat(shares);
+                      if (!isNaN(cp) && !isNaN(s) && cp > 0 && s > 0) {
+                        setValue((s * cp).toFixed(2));
+                      }
+                    }}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 font-mono text-zinc-100 text-xs"
                   />
                 </div>
               </div>

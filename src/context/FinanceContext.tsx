@@ -275,9 +275,15 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Primary Data State
-  const [assets, setAssets] = useState<Asset[]>(() => 
-    loadStoredArray(`${LOCAL_STORAGE_KEY}_assets`, INITIAL_ASSETS)
-  );
+  const [assets, setAssets] = useState<Asset[]>(() => {
+    const loaded = loadStoredArray<Asset>(`${LOCAL_STORAGE_KEY}_assets`, INITIAL_ASSETS);
+    const hasNippon = loaded.some(a => a.id === 'ast-12' || a.name.includes('Nippon India Growth Mid Cap'));
+    if (!hasNippon) {
+      const nippon = INITIAL_ASSETS.find(a => a.id === 'ast-12');
+      if (nippon) return [nippon, ...loaded];
+    }
+    return loaded;
+  });
 
   const [liabilities, setLiabilities] = useState<Liability[]>(() => 
     loadStoredArray(`${LOCAL_STORAGE_KEY}_liabilities`, INITIAL_LIABILITIES)

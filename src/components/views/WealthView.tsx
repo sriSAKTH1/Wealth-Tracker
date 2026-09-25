@@ -25,6 +25,7 @@ import {
   Folder,
   Search,
   Layers,
+  History as HistoryIcon,
   ChevronDown,
   ChevronUp,
   Bookmark,
@@ -56,6 +57,8 @@ import { WealthSubTab, AssetCategory, LiabilityCategory, Asset, Liability, DEFAU
 import { getGoogleFinanceUrl } from '../../services/marketDataService';
 import { AssetEditModal } from '../AssetEditModal';
 import { ConfirmationModal } from '../ConfirmationModal';
+import { AssetDetailView } from '../wealth/AssetDetailView';
+import { LiabilityDetailView } from '../wealth/LiabilityDetailView';
 
 const DEFAULT_TARGET_ALLOCATIONS: Record<string, number> = {
   'Stocks & ETFs': 45,
@@ -136,9 +139,19 @@ export const WealthView: React.FC = () => {
   const [assetToEdit, setAssetToEdit] = useState<Asset | null>(null);
   const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
   const [liabilityToDelete, setLiabilityToDelete] = useState<Liability | null>(null);
+  const [activeDetailAssetId, setActiveDetailAssetId] = useState<string | null>(null);
+  const [activeDetailLiabilityId, setActiveDetailLiabilityId] = useState<string | null>(null);
   const [quickTagAssetId, setQuickTagAssetId] = useState<string | null>(null);
   const [quickCustomTag, setQuickCustomTag] = useState<string>('');
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+  const activeDetailAsset = React.useMemo(() => {
+    return assets.find(a => a.id === activeDetailAssetId) || null;
+  }, [assets, activeDetailAssetId]);
+
+  const activeDetailLiability = React.useMemo(() => {
+    return liabilities.find(l => l.id === activeDetailLiabilityId) || null;
+  }, [liabilities, activeDetailLiabilityId]);
 
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [editAssetVal, setEditAssetVal] = useState<string>('');
@@ -903,12 +916,20 @@ export const WealthView: React.FC = () => {
           {/* Card Header: Icon Avatar + Title + Badges + Action Buttons */}
           <div className="flex items-start justify-between gap-2 mb-2.5">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center shrink-0 shadow-inner">
+              <div 
+                onClick={() => setActiveDetailLiabilityId(liab.id)}
+                className="w-10 h-10 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center shrink-0 shadow-inner cursor-pointer hover:ring-2 hover:ring-rose-400/50 transition-all"
+                title="Click to view repayment history and loan details"
+              >
                 {getLiabilityCategoryIcon(liab.category)}
               </div>
               <div>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <h4 className="text-sm font-bold text-zinc-100 leading-snug">
+                  <h4 
+                    onClick={() => setActiveDetailLiabilityId(liab.id)}
+                    className="text-sm font-bold text-zinc-100 hover:text-rose-400 cursor-pointer transition-colors leading-snug"
+                    title="Click to view repayment history and loan details"
+                  >
                     {liab.name}
                   </h4>
                   {liab.subType && (
@@ -1161,6 +1182,21 @@ export const WealthView: React.FC = () => {
             </span>
           </div>
         </div>
+
+        {/* Repayment History & Details CTA Button */}
+        <button
+          type="button"
+          onClick={() => setActiveDetailLiabilityId(liab.id)}
+          className="w-full mt-3 py-1.5 px-3 rounded-xl bg-zinc-950/80 hover:bg-zinc-800 text-zinc-300 hover:text-rose-400 border border-zinc-800 hover:border-rose-500/40 text-xs font-semibold flex items-center justify-between transition-all cursor-pointer group/history"
+        >
+          <span className="flex items-center gap-1.5">
+            <HistoryIcon className="w-3.5 h-3.5 text-rose-400" />
+            <span>Repayment History</span>
+          </span>
+          <span className="text-[11px] text-zinc-500 group-hover/history:text-rose-400 font-mono transition-colors">
+            {liab.records && liab.records.length > 0 ? `${liab.records.length} records` : 'Details & Record'} &rarr;
+          </span>
+        </button>
       </div>
     );
   };
@@ -1224,7 +1260,17 @@ export const WealthView: React.FC = () => {
 
       {/* 1. ASSETS TAB */}
       {wealthSubTab === 'assets' && (
-        <div className="space-y-5 animate-in fade-in duration-150">
+        activeDetailAsset ? (
+          <AssetDetailView
+            asset={activeDetailAsset}
+            onBack={() => setActiveDetailAssetId(null)}
+            onEdit={() => setAssetToEdit(activeDetailAsset)}
+            onDelete={() => setAssetToDelete(activeDetailAsset)}
+            onUpdateAsset={(id, updates) => updateAsset(id, updates)}
+            isPrivateMode={isPrivateMode}
+          />
+        ) : (
+          <div className="space-y-5 animate-in fade-in duration-150">
           {/* Top Asset KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800">
@@ -1654,14 +1700,20 @@ export const WealthView: React.FC = () => {
                                   <div className="flex items-start justify-between gap-2 mb-2">
                                     <div className="flex items-center gap-3">
                                       <div
-                                        className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-zinc-950 shadow-md shrink-0"
+                                        onClick={() => setActiveDetailAssetId(asset.id)}
+                                        className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-zinc-950 shadow-md shrink-0 cursor-pointer hover:ring-2 hover:ring-emerald-400/50 transition-all"
                                         style={{ backgroundColor: asset.color || '#10b981' }}
+                                        title="Click to view details, lots & history"
                                       >
                                         {asset.ticker ? asset.ticker.slice(0, 2) : asset.name.charAt(0)}
                                       </div>
                                       <div>
                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                          <h4 className="text-sm font-bold text-zinc-100 leading-snug">
+                                          <h4 
+                                            onClick={() => setActiveDetailAssetId(asset.id)}
+                                            className="text-sm font-bold text-zinc-100 hover:text-emerald-400 cursor-pointer transition-colors leading-snug"
+                                            title="Click to open equity details page"
+                                          >
                                             {asset.name}
                                           </h4>
                                           {asset.ticker ? (
@@ -1757,6 +1809,21 @@ export const WealthView: React.FC = () => {
                                     </div>
                                   )}
                                 </div>
+
+                                {/* Lots & History CTA Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveDetailAssetId(asset.id)}
+                                  className="w-full mt-2.5 py-1.5 px-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-emerald-400 border border-zinc-800 hover:border-emerald-500/40 text-xs font-semibold flex items-center justify-between transition-all cursor-pointer group/lots"
+                                >
+                                  <span className="flex items-center gap-1.5">
+                                    <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span>Lots & History</span>
+                                  </span>
+                                  <span className="text-[11px] text-zinc-500 group-hover/lots:text-emerald-400 font-mono transition-colors">
+                                    {asset.lots && asset.lots.length > 0 ? `${asset.lots.length} lots` : 'Details & Record'} &rarr;
+                                  </span>
+                                </button>
                               </div>
                             );
                           })}
@@ -1822,14 +1889,20 @@ export const WealthView: React.FC = () => {
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div className="flex items-center gap-3">
                               <div 
-                                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-zinc-950 shadow-md shrink-0"
+                                onClick={() => setActiveDetailAssetId(asset.id)}
+                                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-zinc-950 shadow-md shrink-0 cursor-pointer hover:ring-2 hover:ring-emerald-400/50 transition-all"
                                 style={{ backgroundColor: asset.color || '#10b981' }}
+                                title="Click to view details, lots & history"
                               >
                                 {asset.ticker ? asset.ticker.slice(0, 2) : asset.name.charAt(0)}
                               </div>
                               <div>
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <h3 className="text-sm font-bold text-zinc-100 leading-snug">
+                                  <h3 
+                                    onClick={() => setActiveDetailAssetId(asset.id)}
+                                    className="text-sm font-bold text-zinc-100 hover:text-emerald-400 cursor-pointer transition-colors leading-snug"
+                                    title="Click to open equity details page"
+                                  >
                                     {asset.name}
                                   </h3>
                                   {asset.assetType === 'mutual_fund' || asset.exchange === 'MF' ? (
@@ -2101,6 +2174,21 @@ export const WealthView: React.FC = () => {
                             </div>
                           )}
                         </div>
+
+                        {/* Lots & History CTA Button */}
+                        <button
+                          type="button"
+                          onClick={() => setActiveDetailAssetId(asset.id)}
+                          className="w-full mt-3 py-1.5 px-3 rounded-xl bg-zinc-950/80 hover:bg-zinc-800 text-zinc-300 hover:text-emerald-400 border border-zinc-800 hover:border-emerald-500/40 text-xs font-semibold flex items-center justify-between transition-all cursor-pointer group/lots"
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Lots & History</span>
+                          </span>
+                          <span className="text-[11px] text-zinc-500 group-hover/lots:text-emerald-400 font-mono transition-colors">
+                            {asset.lots && asset.lots.length > 0 ? `${asset.lots.length} lots` : 'Details & Record'} &rarr;
+                          </span>
+                        </button>
                       </div>
                     );
                   })}
@@ -2109,11 +2197,26 @@ export const WealthView: React.FC = () => {
             </div>
           )}
         </div>
+        )
       )}
 
       {/* 2. LIABILITIES TAB (Mirroring Assets Tab Format) */}
       {wealthSubTab === 'liabilities' && (
-        <div className="space-y-5 animate-in fade-in duration-150">
+        activeDetailLiability ? (
+          <LiabilityDetailView
+            liability={activeDetailLiability}
+            onBack={() => setActiveDetailLiabilityId(null)}
+            onEdit={() => {}}
+            onDelete={() => {
+              if (activeDetailLiabilityId === activeDetailLiability.id) {
+                setActiveDetailLiabilityId(null);
+              }
+            }}
+            onUpdateLiability={(id, updates) => updateLiability(id, updates)}
+            isPrivateMode={isPrivateMode}
+          />
+        ) : (
+          <div className="space-y-5 animate-in fade-in duration-150">
           {/* Top Liability KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800">
@@ -2449,7 +2552,13 @@ export const WealthView: React.FC = () => {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="text-sm font-bold text-zinc-100">{liab.name}</h4>
+                              <h4 
+                                onClick={() => setActiveDetailLiabilityId(liab.id)}
+                                className="text-sm font-bold text-zinc-100 hover:text-rose-400 cursor-pointer transition-colors"
+                                title="Click to view repayment history and loan details"
+                              >
+                                {liab.name}
+                              </h4>
                               <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-zinc-800 text-zinc-300">
                                 {liab.category}
                               </span>
@@ -2541,6 +2650,7 @@ export const WealthView: React.FC = () => {
             </div>
           )}
         </div>
+        )
       )}
 
       {/* 3. NET WORTH TREND TAB */}
@@ -3006,11 +3116,18 @@ export const WealthView: React.FC = () => {
           asset={assetToEdit}
           isOpen={!!assetToEdit}
           onClose={() => setAssetToEdit(null)}
-          onSave={updatedData => {
-            updateAsset(assetToEdit.id, updatedData);
+          onSave={(assetIdOrUpdates, maybeUpdates) => {
+            if (typeof assetIdOrUpdates === 'string' && maybeUpdates) {
+              updateAsset(assetIdOrUpdates, maybeUpdates);
+            } else if (typeof assetIdOrUpdates === 'object') {
+              updateAsset(assetToEdit.id, assetIdOrUpdates);
+            }
             setAssetToEdit(null);
           }}
           onDelete={id => {
+            if (activeDetailAssetId === id) {
+              setActiveDetailAssetId(null);
+            }
             deleteAsset(id);
             setAssetToEdit(null);
           }}
@@ -3023,6 +3140,9 @@ export const WealthView: React.FC = () => {
         onClose={() => setAssetToDelete(null)}
         onConfirm={() => {
           if (assetToDelete) {
+            if (activeDetailAssetId === assetToDelete.id) {
+              setActiveDetailAssetId(null);
+            }
             deleteAsset(assetToDelete.id);
             setAssetToDelete(null);
           }
@@ -3034,7 +3154,7 @@ export const WealthView: React.FC = () => {
         details={assetToDelete ? [
           { label: 'Category', value: assetToDelete.category },
           { label: 'Valuation', value: formatMoney(assetToDelete.value) },
-          { label: 'Asset Class', value: assetToDelete.assetClass.toUpperCase() },
+          { label: 'Product Type', value: assetToDelete.subType || (assetToDelete.assetType === 'mutual_fund' ? 'Equity Mutual Fund' : assetToDelete.category) },
           ...(assetToDelete.institution ? [{ label: 'Holding Institution', value: assetToDelete.institution }] : [])
         ] : []}
         confirmButtonText="Delete Asset"

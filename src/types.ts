@@ -104,6 +104,11 @@ export interface Asset {
   priceChange24hAmount?: number;// 24h absolute change (e.g. 4.30)
   lastPriceSyncedAt?: string;  // Timestamp of latest price sync
   autoSyncMarketPrice?: boolean; // Automatically refresh price on load
+  geography?: string;          // 'INDIA' | 'USA' | 'GLOBAL' | string
+
+  // Lots & Transaction Records (Buy / Add, Sell, Dividend)
+  lots?: AssetLot[];
+  records?: AssetRecord[];
 
   // Fixed Income, Schemes & Contractual Holding Details
   interestRate?: number;       // Annual % p.a. for FD, RD, Bonds, PPF, EPF, SSY, Loan Given
@@ -117,6 +122,50 @@ export interface Asset {
   vestingDate?: string;        // Vesting date
   accountNumberMasked?: string;// e.g. UAN, PRAN, Account No.
   borrowerName?: string;       // For Loan Given
+}
+
+export interface AssetLot {
+  id: string;
+  name?: string;
+  date: string;
+  shares: number;
+  buyPrice: number;
+  costBasis: number;
+  currentPrice?: number;
+  currentValue?: number;
+  unrealizedGain?: number;
+  unrealizedGainPercent?: number;
+  notes?: string;
+}
+
+export type AssetRecordType = 'BUY' | 'SELL' | 'DIVIDEND';
+
+export interface AssetRecord {
+  id: string;
+  assetId: string;
+  type: AssetRecordType;
+  date: string;
+  shares?: number;             // For BUY & SELL
+  price?: number;              // Unit price or NAV
+  amount: number;              // Total transaction value (Cost, Proceeds, or Dividend amount)
+  fees?: number;               // Brokerage / Taxes
+  realizedGain?: number;       // Realized P&L for SELL
+  reinvested?: boolean;        // Reinvested for DIVIDEND
+  notes?: string;
+}
+
+export type LiabilityRecordType = 'EMI' | 'PREPAYMENT' | 'INTEREST_FEE' | 'CHARGE';
+
+export interface LiabilityRecord {
+  id: string;
+  liabilityId: string;
+  type: LiabilityRecordType;
+  date: string;
+  amount: number;
+  principalPaid?: number;
+  interestPaid?: number;
+  balanceAfter?: number;
+  notes?: string;
 }
 
 export interface Liability {
@@ -141,6 +190,7 @@ export interface Liability {
   notes?: string;
   tags?: string[];
   lastUpdated: string;
+  records?: LiabilityRecord[];
 }
 
 export interface AccountItem {
