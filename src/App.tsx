@@ -69,47 +69,51 @@ const MainLayout: React.FC = () => {
   return (
     <div
       data-accent={accentColor}
-      className={`min-h-screen w-full flex flex-col font-['Plus_Jakarta_Sans',sans-serif] ${themeClasses[theme] || 'bg-zinc-950 text-zinc-100'}`}
+      className={`h-screen w-full flex overflow-hidden font-['Plus_Jakarta_Sans',sans-serif] ${themeClasses[theme] || 'bg-zinc-950 text-zinc-100'}`}
     >
-      {/* Top Navbar */}
-      <Navbar />
+      {/* Desktop & Mobile Sidebar: Spans TOP TO END (Full-height h-screen) */}
+      <Sidebar />
 
-      {/* Main Content Area */}
-      {isMobileFrameSimulated ? (
-        /* Mobile Simulator Mode for Desktop */
-        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 bg-zinc-950/80">
-          <div className="w-full max-w-sm h-[780px] bg-zinc-950 border-[6px] border-zinc-800 rounded-[40px] shadow-2xl overflow-hidden flex flex-col relative ring-1 ring-zinc-700/50">
-            {/* Phone Speaker Notch */}
-            <div className="w-28 h-4 bg-zinc-900 rounded-b-xl mx-auto flex items-center justify-center shrink-0 z-40">
-              <div className="w-10 h-1 bg-zinc-700 rounded-full" />
+      {/* Main Right Column: Top Navbar + Scrollable Content */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        {/* Top Navbar */}
+        <Navbar />
+
+        {/* Content Area */}
+        {isMobileFrameSimulated ? (
+          /* Mobile Simulator Mode for Desktop */
+          <div className="flex-1 flex items-center justify-center p-4 sm:p-6 bg-zinc-950/80 overflow-y-auto">
+            <div className="w-full max-w-sm h-[780px] bg-zinc-950 border-[6px] border-zinc-800 rounded-[40px] shadow-2xl overflow-hidden flex flex-col relative ring-1 ring-zinc-700/50">
+              {/* Phone Speaker Notch */}
+              <div className="w-28 h-4 bg-zinc-900 rounded-b-xl mx-auto flex items-center justify-center shrink-0 z-40">
+                <div className="w-10 h-1 bg-zinc-700 rounded-full" />
+              </div>
+
+              {/* Scrollable View inside phone */}
+              <main className="flex-1 overflow-y-auto p-4 relative no-scrollbar">
+                {renderView()}
+              </main>
+
+              {/* Bottom Nav inside phone */}
+              <BottomNav />
             </div>
-
-            {/* Scrollable View inside phone */}
-            <main className="flex-1 overflow-y-auto p-4 relative no-scrollbar">
-              {renderView()}
-            </main>
-
-            {/* Bottom Nav inside phone */}
-            <BottomNav />
           </div>
-        </div>
-      ) : (
-        /* Standard Responsive System & Mobile Layout */
-        <div className="flex-1 flex w-full">
-          {/* Desktop Left Fixed Sidebar */}
-          <Sidebar />
-
-          {/* Main Scrollable View */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 min-w-0 overflow-x-hidden">
-            <div className="max-w-7xl mx-auto">
+        ) : (
+          /* Standard Scrollable View */
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-w-0">
+            <div className="max-w-7xl mx-auto pb-16">
               {renderView()}
             </div>
           </main>
+        )}
+      </div>
+
+      {/* Mobile Bottom Footer Navigation (shown on native mobile screens < 1024px) */}
+      {!isMobileFrameSimulated && (
+        <div className="lg:hidden">
+          <BottomNav />
         </div>
       )}
-
-      {/* Mobile Bottom Footer Navigation (shown on native mobile & screens < 1024px) */}
-      {!isMobileFrameSimulated && <BottomNav />}
 
       {/* Floating Action (+) Button in the Bottom Right Corner */}
       <div className="fixed bottom-20 sm:bottom-6 right-5 sm:right-6 z-40 flex items-center gap-2.5">

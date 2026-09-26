@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   User, 
   ChevronUp, 
@@ -10,11 +11,16 @@ import {
   Moon, 
   X,
   MessageSquarePlus,
-  Star
+  Star,
+  MoreHorizontal
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 
-export const SidebarProfile: React.FC = () => {
+interface SidebarProfileProps {
+  isCollapsed?: boolean;
+}
+
+export const SidebarProfile: React.FC<SidebarProfileProps> = ({ isCollapsed = false }) => {
   const { 
     theme, 
     setTheme, 
@@ -107,11 +113,15 @@ export const SidebarProfile: React.FC = () => {
 
   return (
     <div ref={containerRef} className="relative shrink-0 pt-3 border-t border-slate-200 dark:border-slate-800/80">
-      {/* Profile Popover Menu (opens upward) */}
+      {/* Profile Popover Menu */}
       {isMenuOpen && (
         <div 
           id="sidebar-profile-menu"
-          className={`absolute bottom-full left-0 right-0 mb-2 p-2 rounded-2xl border shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 ${
+          className={`absolute z-50 p-2 rounded-2xl border shadow-2xl animate-in fade-in zoom-in-95 duration-150 ${
+            isCollapsed 
+              ? 'left-full ml-3 bottom-0 w-64' 
+              : 'bottom-full left-0 right-0 mb-2'
+          } ${
             isLight 
               ? 'bg-white border-slate-200 text-slate-800 shadow-slate-300/60' 
               : 'bg-slate-900 border-slate-800 text-slate-100 shadow-black/80'
@@ -157,7 +167,7 @@ export const SidebarProfile: React.FC = () => {
                 setIsMenuOpen(false);
                 setIsFeedbackModalOpen(true);
               }}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-colors ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-colors cursor-pointer ${
                 isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-slate-800 text-slate-200'
               }`}
             >
@@ -171,7 +181,7 @@ export const SidebarProfile: React.FC = () => {
             <button
               id="sidebar-profile-btn-privacy"
               onClick={() => togglePrivateMode()}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors cursor-pointer ${
                 isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-slate-800 text-slate-200'
               }`}
             >
@@ -190,7 +200,7 @@ export const SidebarProfile: React.FC = () => {
             <button
               id="sidebar-profile-btn-theme"
               onClick={() => setTheme(isLight ? 'dark' : 'light')}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors cursor-pointer ${
                 isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-slate-800 text-slate-200'
               }`}
             >
@@ -207,62 +217,98 @@ export const SidebarProfile: React.FC = () => {
       )}
 
       {/* Main Bottom Profile Trigger Button */}
-      <button
-        id="sidebar-user-profile-button"
-        onClick={() => setIsMenuOpen(prev => !prev)}
-        className={`w-full flex items-center justify-between p-2 rounded-2xl transition-all border ${
-          isMenuOpen
-            ? isLight
-              ? 'bg-blue-50/80 border-blue-200 shadow-sm text-slate-900'
-              : 'bg-slate-900 border-blue-500/30 text-white shadow-sm'
-            : isLight
-              ? 'bg-slate-50/70 border-slate-200/80 hover:bg-slate-100 text-slate-800 hover:border-slate-300'
-              : 'bg-slate-900/40 border-slate-800/80 hover:bg-slate-900 text-slate-200 hover:border-slate-700'
-        }`}
-        aria-label="User Profile and Settings"
-      >
-        <div className="flex items-center gap-2.5 min-w-0">
-          {/* Avatar with Status Indicator */}
-          <div className="relative shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-extrabold flex items-center justify-center text-xs shadow-sm ring-1 ring-white/20">
+      {isCollapsed ? (
+        /* Collapsed Compact Avatar Button */
+        <div className="w-full flex justify-center">
+          <button
+            id="sidebar-user-profile-button"
+            onClick={() => setIsMenuOpen(prev => !prev)}
+            title={`${userName} (Wealth Architect)`}
+            aria-label="User Profile and Settings"
+            className={`relative w-10 h-10 rounded-2xl flex items-center justify-center transition-all cursor-pointer border ${
+              isMenuOpen
+                ? isLight
+                  ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-500/20'
+                  : 'bg-slate-900 border-blue-500/40 ring-2 ring-blue-500/20'
+                : isLight
+                  ? 'bg-slate-50 border-slate-200/90 hover:bg-slate-100 hover:border-slate-300'
+                  : 'bg-slate-900/60 border-slate-800/80 hover:bg-slate-800 hover:border-slate-700'
+            }`}
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-extrabold flex items-center justify-center text-xs shadow-sm ring-1 ring-white/20">
               {initials}
             </div>
             <span 
               className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-slate-950" 
-              title="Online / Pro Active"
+              title="Online"
             />
-          </div>
-
-          {/* User Details */}
-          <div className="text-left min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold truncate block">{userName}</span>
-              <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
-            </div>
-            <span className={`text-[10px] block truncate ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-              {userEmail}
-            </span>
-          </div>
+          </button>
         </div>
+      ) : (
+        /* Expanded Full User Card (matches reference UI card) */
+        <button
+          id="sidebar-user-profile-button"
+          onClick={() => setIsMenuOpen(prev => !prev)}
+          className={`w-full flex items-center justify-between p-2 rounded-2xl transition-all border cursor-pointer ${
+            isMenuOpen
+              ? isLight
+                ? 'bg-blue-50/80 border-blue-200 shadow-sm text-slate-900'
+                : 'bg-slate-900 border-blue-500/30 text-white shadow-sm'
+              : isLight
+                ? 'bg-slate-50/70 border-slate-200/80 hover:bg-slate-100 text-slate-800 hover:border-slate-300'
+                : 'bg-slate-900/40 border-slate-800/80 hover:bg-slate-900 text-slate-200 hover:border-slate-700'
+          }`}
+          aria-label="User Profile and Settings"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            {/* Avatar with Status Indicator */}
+            <div className="relative shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-extrabold flex items-center justify-center text-xs shadow-sm ring-1 ring-white/20">
+                {initials}
+              </div>
+              <span 
+                className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-slate-950" 
+                title="Online / Pro Active"
+              />
+            </div>
 
-        {/* Upward chevron indicator */}
-        <ChevronUp className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ml-1 ${
-          isMenuOpen ? 'rotate-180 text-blue-500' : ''
-        }`} />
-      </button>
+            {/* User Details */}
+            <div className="text-left min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold truncate block">{userName}</span>
+                <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
+              </div>
+              <span className={`text-[10px] block truncate ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                Wealth Architect
+              </span>
+            </div>
+          </div>
 
-      {/* Feedback Modal */}
-      {isFeedbackModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+          {/* More options button (...) */}
+          <MoreHorizontal className={`w-4 h-4 text-slate-400 shrink-0 ml-1 transition-colors ${
+            isMenuOpen ? 'text-blue-500' : 'hover:text-slate-200'
+          }`} />
+        </button>
+      )}
+
+      {/* Feedback Modal Portal (pops in the center of the entire page) */}
+      {isFeedbackModalOpen && typeof document !== 'undefined' && createPortal(
+        <div 
+          onClick={() => setIsFeedbackModalOpen(false)}
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in duration-200"
+          aria-modal="true"
+          role="dialog"
+        >
           <div 
             id="modal-user-feedback"
-            className={`w-full max-w-md p-6 rounded-3xl border shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 ${
-              isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
+            onClick={(e) => e.stopPropagation()}
+            className={`w-full max-w-lg p-6 sm:p-7 rounded-3xl border shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 my-auto ${
+              isLight ? 'bg-white border-slate-200 text-slate-900 shadow-slate-400/40' : 'bg-slate-900 border-slate-800 text-white shadow-black/80'
             }`}
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-blue-500/15 text-blue-500">
+                <div className="p-2.5 rounded-2xl bg-blue-500/15 text-blue-500 ring-1 ring-blue-500/20">
                   <MessageSquarePlus className="w-5 h-5" />
                 </div>
                 <div>
@@ -272,9 +318,10 @@ export const SidebarProfile: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsFeedbackModalOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                aria-label="Close dialog"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -289,7 +336,7 @@ export const SidebarProfile: React.FC = () => {
                       key={star}
                       type="button"
                       onClick={() => setFeedbackRating(star)}
-                      className={`p-1.5 rounded-lg transition-transform hover:scale-110 ${
+                      className={`p-1.5 rounded-lg transition-transform hover:scale-110 cursor-pointer ${
                         star <= feedbackRating ? 'text-amber-400' : 'text-slate-300 dark:text-slate-700'
                       }`}
                     >
@@ -309,7 +356,7 @@ export const SidebarProfile: React.FC = () => {
                 <select
                   value={feedbackCategory}
                   onChange={(e) => setFeedbackCategory(e.target.value)}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer ${
                     isLight 
                       ? 'bg-slate-50 border-slate-200 text-slate-900' 
                       : 'bg-slate-950 border-slate-800 text-white'
@@ -351,7 +398,7 @@ export const SidebarProfile: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsFeedbackModalOpen(false)}
-                  className={`px-4 py-2 rounded-xl font-medium border transition-colors ${
+                  className={`px-4 py-2 rounded-xl font-medium border transition-colors cursor-pointer ${
                     isLight 
                       ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200' 
                       : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
@@ -362,14 +409,15 @@ export const SidebarProfile: React.FC = () => {
                 <button
                   id="btn-submit-profile-feedback"
                   type="submit"
-                  className="px-5 py-2 rounded-xl font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/25 transition-colors"
+                  className="px-5 py-2 rounded-xl font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/25 transition-colors cursor-pointer"
                 >
                   Send Feedback
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

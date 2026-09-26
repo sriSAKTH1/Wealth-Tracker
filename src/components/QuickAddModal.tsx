@@ -1368,7 +1368,7 @@ export const QuickAddModal: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
-                        Quantity / {selectedMasterAsset.asset_type === 'mutual_fund' ? 'Units' : 'Shares'} *
+                        {selectedMasterAsset.asset_type === 'mutual_fund' ? 'Mutual Fund Units Held *' : 'Quantity / Shares *'}
                       </label>
                       <input
                         id="input-holding-shares"
@@ -1385,7 +1385,9 @@ export const QuickAddModal: React.FC = () => {
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
-                        Average Buy Price ({selectedMasterAsset.currency === 'USD' ? '$' : '₹'}) *
+                        {selectedMasterAsset.asset_type === 'mutual_fund' 
+                          ? `Purchase NAV / Buy Price (${selectedMasterAsset.currency === 'USD' ? '$' : '₹'}) *` 
+                          : `Average Buy Price (${selectedMasterAsset.currency === 'USD' ? '$' : '₹'}) *`}
                       </label>
                       <input
                         id="input-holding-buyprice"
@@ -1397,6 +1399,15 @@ export const QuickAddModal: React.FC = () => {
                         placeholder={selectedMasterAsset.latest_price.toFixed(2)}
                         className="w-full bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2.5 font-mono text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
                       />
+                      {selectedMasterAsset.asset_type === 'mutual_fund' && (
+                        <div className="mt-1 flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                          <span>Latest Scheme NAV:</span>
+                          <strong className="font-mono">{selectedMasterAsset.currency === 'USD' ? '$' : '₹'}{selectedMasterAsset.latest_price.toFixed(2)}</strong>
+                          {selectedMasterAsset.nav_date && (
+                            <span className="text-slate-400">({selectedMasterAsset.nav_date})</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 

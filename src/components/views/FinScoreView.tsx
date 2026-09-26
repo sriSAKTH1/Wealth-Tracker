@@ -119,6 +119,7 @@ type FinScoreTab =
   | 'debt' 
   | 'insurance' 
   | 'emergency' 
+  | 'investments_assets'
   | 'goals' 
   | 'ai_assistant' 
   | 'admin';
@@ -164,6 +165,73 @@ export const FinScoreView: React.FC = () => {
   const [newLoanEmi, setNewLoanEmi] = useState('');
   const [newLoanRate, setNewLoanRate] = useState('11');
   const [newLoanTenure, setNewLoanTenure] = useState('36');
+
+  // Loan Tenure & Closure Calculator Helper
+  const getLoanClosureInfo = (remainingMonths: number) => {
+    const safeMonths = Math.max(1, remainingMonths || 1);
+    const now = new Date();
+    const closure = new Date(now.getFullYear(), now.getMonth() + safeMonths, 1);
+    const closureDate = closure.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const years = (safeMonths / 12).toFixed(1);
+    return {
+      closureDate,
+      closureYear: closure.getFullYear(),
+      yearsLeft: years,
+      monthsLeft: safeMonths
+    };
+  };
+
+  // Benchmark default investments & assets (Step 6 before Future Goals)
+  const INITIAL_FINSCORE_INVESTMENTS: Array<{
+    id: string;
+    name: string;
+    category: 'Equity / Stocks' | 'Mutual Funds & SIP' | 'Fixed Deposit / Bonds' | 'Real Estate' | 'Gold & Precious Metals' | 'Retirement (PF/NPS)' | 'Cash & Liquid';
+    currentValue: number;
+    monthlyContribution: number;
+    expectedReturnRate: number;
+    nav?: number;
+    units?: number;
+    purchaseNav?: number;
+  }> = [
+    { 
+      id: 'inv-1', 
+      name: 'Nifty 50 Index Fund Direct-Growth', 
+      category: 'Mutual Funds & SIP', 
+      currentValue: 450000, 
+      monthlyContribution: 15000, 
+      expectedReturnRate: 12.5,
+      nav: 142.50,
+      units: 3157.89,
+      purchaseNav: 118.20
+    },
+    { 
+      id: 'inv-2', 
+      name: 'Parag Parikh Flexi Cap Fund Direct-Growth', 
+      category: 'Mutual Funds & SIP', 
+      currentValue: 240000, 
+      monthlyContribution: 8000, 
+      expectedReturnRate: 14.5,
+      nav: 82.45,
+      units: 2910.85,
+      purchaseNav: 64.10
+    },
+    { id: 'inv-3', name: 'Direct Bluechip Stocks', category: 'Equity / Stocks', currentValue: 280000, monthlyContribution: 5000, expectedReturnRate: 13 },
+    { id: 'inv-4', name: 'Corporate & Bank Fixed Deposits', category: 'Fixed Deposit / Bonds', currentValue: 200000, monthlyContribution: 0, expectedReturnRate: 7.2 },
+    { id: 'inv-5', name: 'Employee Provident Fund (EPF/PPF)', category: 'Retirement (PF/NPS)', currentValue: 520000, monthlyContribution: 7500, expectedReturnRate: 8.1 },
+    { id: 'inv-6', name: 'Digital Gold / Sovereign Gold Bonds', category: 'Gold & Precious Metals', currentValue: 120000, monthlyContribution: 2500, expectedReturnRate: 9 },
+  ];
+
+  // Investments & Assets state (Step 6 before Future Goals)
+  const [finScoreInvestments, setFinScoreInvestments] = useState(INITIAL_FINSCORE_INVESTMENTS);
+
+  const [newInvName, setNewInvName] = useState('');
+  const [newInvCategory, setNewInvCategory] = useState<'Equity / Stocks' | 'Mutual Funds & SIP' | 'Fixed Deposit / Bonds' | 'Real Estate' | 'Gold & Precious Metals' | 'Retirement (PF/NPS)' | 'Cash & Liquid'>('Mutual Funds & SIP');
+  const [newInvValue, setNewInvValue] = useState('');
+  const [newInvMonthly, setNewInvMonthly] = useState('');
+  const [newInvReturn, setNewInvReturn] = useState('12');
+  const [newInvNav, setNewInvNav] = useState('');
+  const [newInvUnits, setNewInvUnits] = useState('');
+  const [newInvPurchaseNav, setNewInvPurchaseNav] = useState('');
 
   // AI Assistant Chat & Custom Query State
   const [aiQuestion, setAiQuestion] = useState('');
@@ -893,13 +961,14 @@ Strategic Focus: ${result.biggestPriority}`;
     }, 4000);
   };
 
-  // Reset FinScore: Completely clear ALL information across profile, expenses, loans, insurance, emergency, and goals
+  // Reset FinScore: Completely clear ALL information across profile, expenses, loans, insurance, emergency, investments, and goals
   const handleResetData = () => {
     setProfile(EMPTY_FINSCORE_PROFILE);
     setExpenses(EMPTY_FINSCORE_EXPENSES);
     setLoans([]);
     setInsurance(EMPTY_FINSCORE_INSURANCE);
     setEmergency(EMPTY_FINSCORE_EMERGENCY);
+    setFinScoreInvestments([]);
     setGoals([]);
     setSimEmergencyAdd(0);
     setSimPrepayDebt(0);
@@ -922,6 +991,7 @@ Strategic Focus: ${result.biggestPriority}`;
     setLoans(INITIAL_FINSCORE_LOANS);
     setInsurance(INITIAL_FINSCORE_INSURANCE);
     setEmergency(INITIAL_FINSCORE_EMERGENCY);
+    setFinScoreInvestments(INITIAL_FINSCORE_INVESTMENTS);
     setGoals(INITIAL_FINSCORE_GOALS);
     setSimEmergencyAdd(0);
     setSimPrepayDebt(0);
@@ -1008,6 +1078,74 @@ Strategic Focus: ${result.biggestPriority}`;
   // Delete a Loan
   const handleDeleteLoan = (id: string) => {
     setLoans(prev => prev.filter(l => l.id !== id));
+  };
+
+  // Adjust Loan Tenure
+  const handleUpdateLoanTenure = (loanId: string, deltaMonths: number) => {
+    setLoans(prev => prev.map(l => {
+      if (l.id === loanId) {
+        const nextTenure = Math.max(1, (l.remainingTenureMonths || 12) + deltaMonths);
+        return { ...l, remainingTenureMonths: nextTenure };
+      }
+      return l;
+    }));
+  };
+
+  // Add Investment Item (Step 6)
+  const handleAddInvestment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newInvName.trim()) return;
+
+    const navNum = parseFloat(newInvNav) || undefined;
+    const unitsNum = parseFloat(newInvUnits) || undefined;
+    const purchaseNavNum = parseFloat(newInvPurchaseNav) || undefined;
+
+    let computedVal = parseFloat(newInvValue) || 0;
+    if ((!computedVal || computedVal <= 0) && navNum && unitsNum) {
+      computedVal = Math.round(navNum * unitsNum * 100) / 100;
+    }
+
+    if (computedVal <= 0 && (!unitsNum || !navNum)) {
+      showToast('Please provide a current valuation or both NAV and Units.');
+      return;
+    }
+
+    const newInv = {
+      id: `inv-${Date.now()}`,
+      name: newInvName.trim(),
+      category: newInvCategory,
+      currentValue: computedVal,
+      monthlyContribution: parseFloat(newInvMonthly) || 0,
+      expectedReturnRate: parseFloat(newInvReturn) || 12,
+      nav: navNum,
+      units: unitsNum,
+      purchaseNav: purchaseNavNum,
+    };
+
+    setFinScoreInvestments(prev => [...prev, newInv]);
+    setNewInvName('');
+    setNewInvValue('');
+    setNewInvMonthly('');
+    setNewInvNav('');
+    setNewInvUnits('');
+    setNewInvPurchaseNav('');
+    showToast(`Added ${newInv.name} to portfolio!`);
+  };
+
+  const handleDeleteInvestment = (id: string) => {
+    setFinScoreInvestments(prev => prev.filter(item => item.id !== id));
+  };
+
+  // Clear Investments & Assets on this page only
+  const handleClearInvestmentsPage = () => {
+    setFinScoreInvestments([]);
+    showToast('Investments & Assets cleared for this page only.');
+  };
+
+  // Restore benchmark investments on this page
+  const handleLoadSampleInvestments = () => {
+    setFinScoreInvestments(INITIAL_FINSCORE_INVESTMENTS);
+    showToast('Benchmark investments restored for this page.');
   };
 
   // Auto-scroll chat to latest message
@@ -1362,9 +1500,10 @@ Strategic Focus: ${result.biggestPriority}`;
             { id: 'debt', label: '3. Debt Score', icon: Briefcase },
             { id: 'insurance', label: '4. Insurance Score', icon: ShieldCheck },
             { id: 'emergency', label: '5. Emergency Fund', icon: AlertTriangle },
-            { id: 'goals', label: '6. Future Goals', icon: Target },
-            { id: 'ai_assistant', label: '7. AI Assistant', icon: Bot, isAi: true },
-            { id: 'dashboard', label: '8. Score Dashboard', icon: Activity },
+            { id: 'investments_assets', label: '6. Investments & Assets', icon: TrendingUp },
+            { id: 'goals', label: '7. Future Goals', icon: Target },
+            { id: 'ai_assistant', label: '8. AI Assistant', icon: Bot, isAi: true },
+            { id: 'dashboard', label: '9. Score Dashboard', icon: Activity },
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -3362,172 +3501,336 @@ Strategic Focus: ${result.biggestPriority}`;
       {/* ------------------------------------------------------------- */}
       {/* SECTION 4: LOAN / DEBT SCORE (Step 3) */}
       {/* ------------------------------------------------------------- */}
-      {activeTab === 'debt' && (
-        <div className={`p-6 sm:p-8 rounded-3xl border shadow-sm space-y-6 ${
-          isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
-        }`}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-bold">Step 3 — Loan / Debt Score ({result.scores.debt}/100)</h2>
-              <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Evaluates your debt-to-income ratio, monthly EMI burden, and interest exposure.
-              </p>
-            </div>
-            <span className={`text-xs font-mono font-bold px-3 py-1 rounded-full border ${
-              result.metrics.emiToIncomeRatio > 40
-                ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-                : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-            }`}>
-              EMI to Income: {result.metrics.emiToIncomeRatio}%
-            </span>
-          </div>
+      {activeTab === 'debt' && (() => {
+        const totalOutstanding = loans.reduce((sum, l) => sum + (l.outstandingAmount || 0), 0);
+        const totalMonthlyEmi = loans.reduce((sum, l) => sum + (l.monthlyEmi || 0), 0);
 
-          {/* Active Loans Table */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Existing Loans & Credit Commitments ({loans.length})
-              </h4>
-            </div>
+        // Calculate timeline details across all loans
+        const loanClosures = loans.map(l => ({
+          ...l,
+          closure: getLoanClosureInfo(l.remainingTenureMonths)
+        })).sort((a, b) => a.remainingTenureMonths - b.remainingTenureMonths);
 
-            {loans.length === 0 ? (
-              <div className="p-6 text-center rounded-2xl border border-dashed border-slate-800 text-xs text-slate-400">
-                🎉 Congratulations! You currently have zero outstanding loan commitments. Your Debt Score is 100/100.
+        const earliestClosure = loanClosures[0];
+        const latestClosure = loanClosures[loanClosures.length - 1];
+
+        // Preview closure for new loan form
+        const newTenureMonths = parseInt(newLoanTenure) || 36;
+        const newLoanClosurePreview = getLoanClosureInfo(newTenureMonths);
+
+        return (
+          <div className={`p-6 sm:p-8 rounded-3xl border shadow-sm space-y-6 ${
+            isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+          }`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-bold">Step 3 — 💳 Loan & Debt Score ({result.scores.debt}/100)</h2>
+                <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  Evaluates loan tenures, expected closure dates, monthly EMI drain, and interest exposure.
+                </p>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {loans.map(loan => (
-                  <div key={loan.id} className={`p-4 rounded-2xl border flex items-center justify-between ${
-                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
-                  }`}>
-                    <div>
-                      <div className="font-bold text-xs">{loan.type}</div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
-                        Outstanding: {currSym}{(loan.outstandingAmount ?? 0).toLocaleString()} • APR: {loan.interestRate}% • {loan.remainingTenureMonths} mo left
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="text-xs font-mono font-bold text-rose-400">
-                          {currSym}{(loan.monthlyEmi ?? 0).toLocaleString()}/mo
-                        </div>
-                        <div className="text-[10px] text-slate-500">EMI</div>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteLoan(loan.id)}
-                        className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-mono font-bold px-3 py-1 rounded-full border ${
+                  result.metrics.emiToIncomeRatio > 40
+                    ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                }`}>
+                  EMI to Income: {result.metrics.emiToIncomeRatio}%
+                </span>
+              </div>
+            </div>
+
+            {/* Debt Overview & Payoff Timeline KPI Banner */}
+            {loans.length > 0 && (
+              <div className={`p-4 sm:p-5 rounded-2xl border space-y-3 ${
+                isLight ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200' : 'bg-gradient-to-r from-blue-950/40 to-indigo-950/40 border-blue-500/30'
+              }`}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500 dark:text-blue-400">
+                      Debt Payoff & Cash Flow Liberation Timeline
+                    </span>
+                    <h3 className="text-sm sm:text-base font-extrabold mt-0.5">
+                      Total Debt: {currSym}{totalOutstanding.toLocaleString()} • Monthly EMI: {currSym}{totalMonthlyEmi.toLocaleString()}/mo
+                    </h3>
                   </div>
-                ))}
+
+                  {earliestClosure && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="px-3 py-1.5 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-blue-200 dark:border-blue-500/30 shadow-xs">
+                        <span className="text-[10px] text-slate-500 block">Earliest Loan Payoff:</span>
+                        <span className="font-bold text-emerald-500">{earliestClosure.closure.closureDate}</span>
+                        <span className="text-[10px] text-slate-400 ml-1">(+{currSym}{earliestClosure.monthlyEmi.toLocaleString()}/mo freed)</span>
+                      </div>
+
+                      {latestClosure && (
+                        <div className="px-3 py-1.5 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-blue-200 dark:border-blue-500/30 shadow-xs">
+                          <span className="text-[10px] text-slate-500 block">100% Debt-Free Horizon:</span>
+                          <span className="font-bold text-blue-500">{latestClosure.closure.closureDate}</span>
+                          <span className="text-[10px] text-slate-400 ml-1">({latestClosure.remainingTenureMonths} mo)</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-2.5 border-t border-blue-200/60 dark:border-blue-500/20 text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <span className="text-amber-500 text-sm">💡</span>
+                  <span>
+                    <strong>Tenure Cash Flow Link:</strong> Once your loans reach closure, their monthly EMIs unlock and can directly boost your <strong>Investments & Assets (Step 6)</strong> before funding your <strong>Future Goals (Step 7)</strong>.
+                  </span>
+                </div>
               </div>
             )}
-          </div>
 
-          {/* Add Loan Form */}
-          <form onSubmit={handleAddLoan} className={`p-4 rounded-2xl border ${
-            isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/60 border-slate-800'
-          }`}>
-            <h5 className="text-xs font-bold uppercase tracking-wider mb-3">Add Existing Loan</h5>
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
-              <div>
-                <label className="block text-slate-400 mb-1">Loan Type</label>
-                <select
-                  value={newLoanType}
-                  onChange={e => setNewLoanType(e.target.value)}
-                  className={`w-full px-2.5 py-2 rounded-xl border ${isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'}`}
-                >
-                  <option value="Personal Loan">Personal Loan</option>
-                  <option value="Home Loan">Home Loan</option>
-                  <option value="Auto Loan">Auto Loan</option>
-                  <option value="Credit Card">Credit Card</option>
-                  <option value="Education Loan">Education Loan</option>
-                </select>
+            {/* Active Loans Table with Tenure & Closure Details */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Existing Loans & Credit Commitments ({loans.length})
+                </h4>
+                <span className="text-[11px] text-slate-500">
+                  Calculated payoff date based on remaining tenure
+                </span>
               </div>
 
-              <div>
-                <FinScoreAmountInput
-                  id="debt-outstanding-input"
-                  label={`Outstanding (${currSym})`}
-                  value={newLoanOutstanding ? parseFloat(newLoanOutstanding) : 0}
-                  onChange={val => setNewLoanOutstanding(val > 0 ? val.toString() : '')}
-                  currSym={currSym}
-                  isLight={isLight}
-                  placeholder="200000"
-                  compact
-                />
-              </div>
+              {loans.length === 0 ? (
+                <div className="p-6 text-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+                  🎉 Congratulations! You currently have zero outstanding loan commitments. Your Debt Score is 100/100.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {loanClosures.map(loan => (
+                    <div key={loan.id} className={`p-4 rounded-2xl border transition-all ${
+                      isLight ? 'bg-slate-50 border-slate-200 hover:border-slate-300' : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                    }`}>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm">{loan.type}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-blue-500/15 text-blue-500 border border-blue-500/30">
+                              Tenure: {loan.remainingTenureMonths} Months ({loan.closure.yearsLeft} yrs)
+                            </span>
+                          </div>
+                          
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            <span>Outstanding: <strong className="text-slate-800 dark:text-slate-200 font-mono">{currSym}{(loan.outstandingAmount ?? 0).toLocaleString()}</strong></span>
+                            <span>•</span>
+                            <span>Interest Rate: <strong className="font-mono">{loan.interestRate}%</strong></span>
+                            <span>•</span>
+                            <span className="text-emerald-500 font-semibold flex items-center gap-1">
+                              <span>📅 Closes / Debt-Free:</span>
+                              <strong className="underline underline-offset-2">{loan.closure.closureDate}</strong>
+                              <span>({loan.closure.monthsLeft} mo left)</span>
+                            </span>
+                          </div>
+                        </div>
 
-              <div>
-                <FinScoreAmountInput
-                  id="debt-emi-input"
-                  label={`Monthly EMI (${currSym})`}
-                  value={newLoanEmi ? parseFloat(newLoanEmi) : 0}
-                  onChange={val => setNewLoanEmi(val > 0 ? val.toString() : '')}
-                  currSym={currSym}
-                  isLight={isLight}
-                  placeholder="6500"
-                  compact
-                />
-              </div>
+                        <div className="flex items-center gap-4 justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200 dark:border-slate-800">
+                          {/* Tenure adjustment pill buttons */}
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleUpdateLoanTenure(loan.id, -6)}
+                              title="Prepay / Reduce tenure by 6 months"
+                              className="px-2 py-1 text-[10px] font-bold rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                            >
+                              -6 mo
+                            </button>
+                            <button
+                              onClick={() => handleUpdateLoanTenure(loan.id, 6)}
+                              title="Extend tenure by 6 months"
+                              className="px-2 py-1 text-[10px] font-bold rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                            >
+                              +6 mo
+                            </button>
+                          </div>
 
-              <div>
-                <label className="block text-slate-400 mb-1">Interest Rate (%)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={newLoanRate}
-                  onChange={e => setNewLoanRate(e.target.value)}
-                  className={`w-full px-2.5 py-2 rounded-xl border ${isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'}`}
-                />
-              </div>
+                          <div className="text-right">
+                            <div className="text-sm font-mono font-bold text-rose-500">
+                              {currSym}{(loan.monthlyEmi ?? 0).toLocaleString()}/mo
+                            </div>
+                            <div className="text-[10px] text-slate-400">Monthly EMI</div>
+                          </div>
 
-              <div className="flex items-end">
-                <button
-                  type="submit"
-                  className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center justify-center gap-1"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Loan</span>
-                </button>
-              </div>
+                          <button
+                            onClick={() => handleDeleteLoan(loan.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
+                            title="Delete this loan"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Cash Flow Liberation Note on Tenure Close */}
+                      <div className="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
+                        <span>
+                          🎉 When this tenure closes in <strong>{loan.closure.closureDate}</strong>:
+                        </span>
+                        <span className="font-mono font-bold text-emerald-500">
+                          +{currSym}{(loan.monthlyEmi ?? 0).toLocaleString()}/month unlocked for Investments
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </form>
 
-          {/* Core Recommendations based on User's Debt Profile */}
-          <div className={`p-4 rounded-2xl border ${
-            isLight ? 'bg-purple-50/70 border-purple-200 text-purple-950' : 'bg-purple-500/10 border-purple-500/20 text-purple-100'
-          }`}>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-2">
-              Actionable Debt Management Recommendations
-            </h4>
-            <ul className="text-xs space-y-1.5 list-disc list-inside">
-              <li><strong>Reduce unnecessary loans:</strong> Avoid financing lifestyle depreciating assets.</li>
-              <li><strong>Avoid additional high-interest debt:</strong> Never carry forward revolving credit card balances.</li>
-              <li><strong>Accelerate monthly repayment:</strong> Applying an extra 5-10% toward principal drastically cuts overall interest.</li>
-              <li><strong>Prioritize high-interest debt:</strong> Use the Avalanche method to extinguish high-APR loans first.</li>
-            </ul>
-          </div>
+            {/* Add Loan Form with Configurable Tenure & Expected Closure Date */}
+            <form onSubmit={handleAddLoan} className={`p-5 rounded-2xl border space-y-3 ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/60 border-slate-800'
+            }`}>
+              <div className="flex items-center justify-between">
+                <h5 className="text-xs font-bold uppercase tracking-wider">Add Existing Loan with Tenure</h5>
+                <span className="text-[11px] text-blue-500 font-medium">
+                  Closure Date dynamically calculated from tenure
+                </span>
+              </div>
 
-          <div className="pt-4 border-t border-slate-800 flex justify-between">
-            <button
-              onClick={() => setActiveTab('income_expenses')}
-              className="px-5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
-            >
-              Back to Income & Expenses
-            </button>
-            <button
-              onClick={() => setActiveTab('insurance')}
-              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-md"
-            >
-              <span>Next: Insurance Score</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">Loan Type</label>
+                  <select
+                    value={newLoanType}
+                    onChange={e => setNewLoanType(e.target.value)}
+                    className={`w-full px-2.5 py-2 rounded-xl border ${isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'}`}
+                  >
+                    <option value="Personal Loan">Personal Loan</option>
+                    <option value="Home Loan">Home Loan</option>
+                    <option value="Auto Loan">Auto Loan</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Education Loan">Education Loan</option>
+                    <option value="Consumer Loan">Consumer Loan</option>
+                  </select>
+                </div>
+
+                <div>
+                  <FinScoreAmountInput
+                    id="debt-outstanding-input"
+                    label={`Outstanding (${currSym})`}
+                    value={newLoanOutstanding ? parseFloat(newLoanOutstanding) : 0}
+                    onChange={val => setNewLoanOutstanding(val > 0 ? val.toString() : '')}
+                    currSym={currSym}
+                    isLight={isLight}
+                    placeholder="200000"
+                    compact
+                  />
+                </div>
+
+                <div>
+                  <FinScoreAmountInput
+                    id="debt-emi-input"
+                    label={`Monthly EMI (${currSym})`}
+                    value={newLoanEmi ? parseFloat(newLoanEmi) : 0}
+                    onChange={val => setNewLoanEmi(val > 0 ? val.toString() : '')}
+                    currSym={currSym}
+                    isLight={isLight}
+                    placeholder="6500"
+                    compact
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">Interest Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={newLoanRate}
+                    onChange={e => setNewLoanRate(e.target.value)}
+                    className={`w-full px-2.5 py-2 rounded-xl border ${isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'}`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">Tenure (Months)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="360"
+                    value={newLoanTenure}
+                    onChange={e => setNewLoanTenure(e.target.value)}
+                    className={`w-full px-2.5 py-2 rounded-xl border font-mono ${isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'}`}
+                  />
+                </div>
+              </div>
+
+              {/* Quick Tenure Presets & Calculated Closure Date Preview */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/80 dark:border-slate-800 text-xs">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-slate-400 text-[11px]">Quick Tenure:</span>
+                  {[
+                    { label: '12m (1y)', val: '12' },
+                    { label: '24m (2y)', val: '24' },
+                    { label: '36m (3y)', val: '36' },
+                    { label: '60m (5y)', val: '60' },
+                    { label: '120m (10y)', val: '120' },
+                    { label: '240m (20y)', val: '240' },
+                  ].map(preset => (
+                    <button
+                      key={preset.val}
+                      type="button"
+                      onClick={() => setNewLoanTenure(preset.val)}
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer ${
+                        newLoanTenure === preset.val
+                          ? 'bg-blue-600 text-white border-blue-500'
+                          : isLight ? 'bg-white text-slate-600 border-slate-300' : 'bg-slate-900 text-slate-400 border-slate-700'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                    Expected Closure: <strong>{newLoanClosurePreview.closureDate}</strong> ({newTenureMonths} mo)
+                  </span>
+
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center justify-center gap-1.5 shadow-md transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Loan</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* Core Recommendations based on User's Debt Profile */}
+            <div className={`p-4 rounded-2xl border ${
+              isLight ? 'bg-purple-50/70 border-purple-200 text-purple-950' : 'bg-purple-500/10 border-purple-500/20 text-purple-100'
+            }`}>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-2">
+                Actionable Debt Management Recommendations
+              </h4>
+              <ul className="text-xs space-y-1.5 list-disc list-inside">
+                <li><strong>Track Tenure Closures:</strong> When a loan tenure ends, immediately re-route its EMI into recurring investment SIPs in Step 6.</li>
+                <li><strong>Avoid unnecessary loans:</strong> Refrain from financing depreciating assets with high rates.</li>
+                <li><strong>Prepay High-APR Debt:</strong> Trimming even 6 months off a loan tenure saves substantial cumulative interest.</li>
+                <li><strong>Debt-Free Acceleration:</strong> Use the snowball or avalanche method to systematically retire tenures one by one.</li>
+              </ul>
+            </div>
+
+            <div className="pt-4 border-t border-slate-800 flex justify-between">
+              <button
+                onClick={() => setActiveTab('income_expenses')}
+                className="px-5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white cursor-pointer"
+              >
+                Back to Income & Expenses
+              </button>
+              <button
+                onClick={() => setActiveTab('insurance')}
+                className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer"
+              >
+                <span>Next: Insurance Score</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ------------------------------------------------------------- */}
       {/* SECTION 5: INSURANCE SCORE (Step 4) */}
@@ -3804,15 +4107,15 @@ Strategic Focus: ${result.biggestPriority}`;
           <div className="pt-4 border-t border-slate-800 flex justify-between">
             <button
               onClick={() => setActiveTab('insurance')}
-              className="px-5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
+              className="px-5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white cursor-pointer"
             >
               Back to Insurance
             </button>
             <button
-              onClick={() => setActiveTab('goals')}
-              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-md"
+              onClick={() => setActiveTab('investments_assets')}
+              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer"
             >
-              <span>Next: Future Goals</span>
+              <span>Next: Investments & Assets</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -3820,7 +4123,573 @@ Strategic Focus: ${result.biggestPriority}`;
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* SECTION 7: FUTURE GOALS PLANNER (Step 6) */}
+      {/* SECTION 6: INVESTMENTS & ASSETS (Step 6 — Before Future Goals) */}
+      {/* ------------------------------------------------------------- */}
+      {activeTab === 'investments_assets' && (() => {
+        const totalInvestedCorpus = finScoreInvestments.reduce((sum, item) => sum + (item.currentValue || 0), 0);
+        const totalMonthlyInvestment = finScoreInvestments.reduce((sum, item) => sum + (item.monthlyContribution || 0), 0);
+        
+        // Calculate weighted average return rate
+        const weightedReturn = totalInvestedCorpus > 0
+          ? finScoreInvestments.reduce((sum, item) => sum + (item.currentValue * (item.expectedReturnRate || 10)), 0) / totalInvestedCorpus
+          : 11;
+
+        // Compound interest projections (5 yr and 10 yr)
+        const rMonthly = (weightedReturn / 100) / 12;
+        const projectCorpus = (years: number) => {
+          const months = years * 12;
+          const principalGrowth = totalInvestedCorpus * Math.pow(1 + rMonthly, months);
+          const sipGrowth = totalMonthlyInvestment * ((Math.pow(1 + rMonthly, months) - 1) / rMonthly);
+          return Math.round(principalGrowth + (isNaN(sipGrowth) ? 0 : sipGrowth));
+        };
+
+        const corpus5Yr = projectCorpus(5);
+        const corpus10Yr = projectCorpus(10);
+
+        // Calculate freed-up cash flow from loan closures
+        const totalEmiFromLoans = loans.reduce((sum, l) => sum + (l.monthlyEmi || 0), 0);
+        const loansWithClosure = loans.map(l => ({
+          ...l,
+          closure: getLoanClosureInfo(l.remainingTenureMonths)
+        })).sort((a, b) => a.remainingTenureMonths - b.remainingTenureMonths);
+
+        // Group investments by category
+        const categoryMap: Record<string, number> = {};
+        finScoreInvestments.forEach(item => {
+          categoryMap[item.category] = (categoryMap[item.category] || 0) + item.currentValue;
+        });
+
+        return (
+          <div className={`p-6 sm:p-8 rounded-3xl border shadow-sm space-y-6 ${
+            isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+          }`}>
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold">Step 6 — 📈 Investments & Assets Portfolio</h2>
+                  <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-bold border border-emerald-500/30">
+                    Wealth Foundation
+                  </span>
+                </div>
+                <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  Review and build your investment corpus before mapping your milestones. See how freed EMIs from loan closures accelerate your portfolio.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Clear This Page Only Button */}
+                {finScoreInvestments.length > 0 ? (
+                  <button
+                    id="btn-clear-investments-page"
+                    type="button"
+                    onClick={handleClearInvestmentsPage}
+                    title="Clear all investment and asset holdings for this page only"
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear This Page</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleLoadSampleInvestments}
+                    title="Restore sample benchmark investment portfolio"
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-blue-500/30 text-blue-500 hover:bg-blue-500/10 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Load Sample Portfolio</span>
+                  </button>
+                )}
+
+                <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-500 border border-blue-500/30">
+                  Monthly SIP Run-Rate: {currSym}{totalMonthlyInvestment.toLocaleString()}/mo
+                </span>
+              </div>
+            </div>
+
+            {/* Top KPI Metrics Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className={`p-4 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Invested Corpus</span>
+                <div className="text-xl sm:text-2xl font-extrabold font-mono text-emerald-500 mt-1">
+                  {currSym}{totalInvestedCorpus.toLocaleString()}
+                </div>
+                <span className="text-[10px] text-slate-500 mt-0.5 block">{finScoreInvestments.length} Active Holdings</span>
+              </div>
+
+              <div className={`p-4 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Monthly Inflow / SIP</span>
+                <div className="text-xl sm:text-2xl font-extrabold font-mono text-blue-500 mt-1">
+                  {currSym}{totalMonthlyInvestment.toLocaleString()}/mo
+                </div>
+                <span className="text-[10px] text-slate-500 mt-0.5 block">{currSym}{(totalMonthlyInvestment * 12).toLocaleString()}/year added</span>
+              </div>
+
+              <div className={`p-4 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Weighted Return</span>
+                <div className="text-xl sm:text-2xl font-extrabold font-mono text-purple-500 mt-1">
+                  {weightedReturn.toFixed(1)}% CAGR
+                </div>
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Portfolio compounding rate</span>
+              </div>
+
+              <div className={`p-4 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">5-Year Projected Corpus</span>
+                <div className="text-xl sm:text-2xl font-extrabold font-mono text-amber-500 mt-1">
+                  {currSym}{corpus5Yr.toLocaleString()}
+                </div>
+                <span className="text-[10px] text-slate-500 mt-0.5 block">10-Yr: {currSym}{corpus10Yr.toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* DEBT-TO-WEALTH ACCELERATION BRIDGE CARD */}
+            {loans.length > 0 && (
+              <div className={`p-5 rounded-2xl border space-y-3 ${
+                isLight ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border-emerald-200 text-slate-900' : 'bg-gradient-to-r from-emerald-950/40 via-teal-950/40 to-blue-950/40 border-emerald-500/30 text-white'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    Debt Tenure Closure Acceleration Bridge
+                  </h4>
+                </div>
+
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  As your active loan tenures close according to schedule, their monthly EMIs unlock. Channeling this liberated cash flow directly into your investments gives you immense leverage to fund upcoming life goals without increasing earned income:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                  {loansWithClosure.map(l => (
+                    <div key={l.id} className="p-3 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-emerald-200/80 dark:border-emerald-500/20 text-xs shadow-xs">
+                      <div className="flex items-center justify-between font-bold">
+                        <span>{l.type}</span>
+                        <span className="text-emerald-500 font-mono">+{currSym}{l.monthlyEmi.toLocaleString()}/mo</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-1">
+                        Closes: <strong className="text-slate-700 dark:text-slate-200">{l.closure.closureDate}</strong> ({l.closure.monthsLeft} mo left)
+                      </div>
+                      <div className="mt-1.5 pt-1.5 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-400">
+                        Redirect into SIPs upon closure to supercharge future milestones!
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Asset Allocation Breakdown */}
+            <div className={`p-5 rounded-2xl border space-y-3 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Asset Class Distribution</span>
+                <span className="text-xs font-mono font-bold text-slate-400">{Object.keys(categoryMap).length} Categories</span>
+              </div>
+
+              {/* Visual Distribution Bar */}
+              <div className="w-full bg-slate-200 dark:bg-slate-800 h-3 rounded-full overflow-hidden flex">
+                {Object.entries(categoryMap).map(([category, val], idx) => {
+                  const pct = totalInvestedCorpus > 0 ? (val / totalInvestedCorpus) * 100 : 0;
+                  const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500'];
+                  return (
+                    <div
+                      key={category}
+                      style={{ width: `${pct}%` }}
+                      className={`${colors[idx % colors.length]} h-full transition-all`}
+                      title={`${category}: ${pct.toFixed(1)}%`}
+                    />
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-wrap gap-3 pt-1 text-xs">
+                {Object.entries(categoryMap).map(([category, val], idx) => {
+                  const pct = totalInvestedCorpus > 0 ? (val / totalInvestedCorpus) * 100 : 0;
+                  const dotColors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500'];
+                  return (
+                    <div key={category} className="flex items-center gap-1.5">
+                      <div className={`w-2 h-2 rounded-full ${dotColors[idx % dotColors.length]}`} />
+                      <span className="text-slate-600 dark:text-slate-400">{category}:</span>
+                      <strong className="font-mono text-slate-800 dark:text-slate-200">{currSym}{val.toLocaleString()} ({pct.toFixed(1)}%)</strong>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Investments List */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Current Holdings & Portfolios ({finScoreInvestments.length})
+                  </h4>
+                  {finScoreInvestments.length === 0 && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 font-semibold">
+                      Cleared (0)
+                    </span>
+                  )}
+                </div>
+
+                {finScoreInvestments.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearInvestmentsPage}
+                    className="text-xs font-semibold text-rose-500 hover:text-rose-400 transition-colors flex items-center gap-1 cursor-pointer"
+                    title="Clear all investments on this page"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear All Holdings</span>
+                  </button>
+                )}
+              </div>
+
+              {finScoreInvestments.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 space-y-2">
+                  <div className="text-3xl">🌱</div>
+                  <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Investments & assets have been cleared for this page.
+                  </div>
+                  <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+                    Your portfolio is currently reset to {currSym}0. Add your mutual funds, equity stocks, fixed deposits, gold, and retirement savings below, or load benchmark holdings.
+                  </p>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleLoadSampleInvestments}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 hover:bg-blue-100 transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Restore Benchmark Portfolio</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {finScoreInvestments.map(item => (
+                    <div key={item.id} className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      isLight ? 'bg-slate-50 border-slate-200 hover:border-slate-300' : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                    }`}>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs sm:text-sm">{item.name}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-500 font-bold border border-blue-500/20">
+                            {item.category}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span>Expected CAGR: <strong className="text-purple-500">{item.expectedReturnRate}%</strong></span>
+                          <span>•</span>
+                          <span>Monthly Addition: <strong className="text-blue-500">{currSym}{item.monthlyContribution.toLocaleString()}/mo</strong></span>
+                        </div>
+
+                        {/* Mutual Fund NAV & Units Details */}
+                        {item.nav && (
+                          <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[11px]">
+                            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold border border-emerald-500/20 flex items-center gap-1">
+                              <span>NAV:</span>
+                              <strong>{currSym}{item.nav.toFixed(2)}</strong>
+                            </span>
+                            {item.units && (
+                              <span className="px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-mono font-bold border border-indigo-500/20 flex items-center gap-1">
+                                <span>Units:</span>
+                                <strong>{item.units.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 3 })}</strong>
+                              </span>
+                            )}
+                            {item.purchaseNav && (
+                              <span className="text-slate-500 dark:text-slate-400 font-mono text-[10px]">
+                                Buy NAV: {currSym}{item.purchaseNav.toFixed(2)} ({(((item.nav - item.purchaseNav) / item.purchaseNav) * 100) >= 0 ? '+' : ''}{(((item.nav - item.purchaseNav) / item.purchaseNav) * 100).toFixed(1)}%)
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-4 justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200 dark:border-slate-800">
+                        <div className="text-right">
+                          <div className="text-sm font-mono font-bold text-emerald-500">
+                            {currSym}{item.currentValue.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] text-slate-400">Current Value</div>
+                        </div>
+
+                        <button
+                          onClick={() => handleDeleteInvestment(item.id)}
+                          className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
+                          title="Remove investment"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Add Investment Form */}
+            <form onSubmit={handleAddInvestment} className={`p-5 rounded-2xl border space-y-4 ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/60 border-slate-800'
+            }`}>
+              <div className="flex items-center justify-between">
+                <h5 className="text-xs font-bold uppercase tracking-wider">Add Investment / Asset Holding</h5>
+                {newInvCategory === 'Mutual Funds & SIP' && (
+                  <span className="text-[11px] text-emerald-500 font-semibold flex items-center gap-1">
+                    <span>⚡ NAV & Units Tracking Active</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Quick Mutual Fund Presets when Mutual Funds is selected */}
+              {newInvCategory === 'Mutual Funds & SIP' && (
+                <div className="p-3 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
+                  <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    Quick Sample Schemes (Click to auto-fill NAV):
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { name: 'Parag Parikh Flexi Cap Direct (G)', nav: 82.45, ret: 14.5, units: 1000 },
+                      { name: 'Mirae Asset Large & Midcap Direct (G)', nav: 138.20, ret: 13.8, units: 800 },
+                      { name: 'Quant Small Cap Fund Direct (G)', nav: 248.60, ret: 18.2, units: 500 },
+                      { name: 'HDFC Top 100 Fund Direct (G)', nav: 1120.15, ret: 13.2, units: 100 },
+                      { name: 'SBI Bluechip Fund Direct (G)', nav: 89.70, ret: 12.8, units: 1200 },
+                      { name: 'Nippon India Small Cap Direct (G)', nav: 174.30, ret: 19.5, units: 600 },
+                    ].map(mf => (
+                      <button
+                        key={mf.name}
+                        type="button"
+                        onClick={() => {
+                          setNewInvName(mf.name);
+                          setNewInvNav(mf.nav.toString());
+                          setNewInvReturn(mf.ret.toString());
+                          if (!newInvUnits) {
+                            setNewInvUnits(mf.units.toString());
+                            setNewInvValue((mf.nav * mf.units).toString());
+                          } else {
+                            const u = parseFloat(newInvUnits) || mf.units;
+                            setNewInvValue((mf.nav * u).toString());
+                          }
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 hover:text-emerald-500 transition-all cursor-pointer shadow-2xs"
+                      >
+                        {mf.name.split(' Direct')[0]} • <span className="font-mono font-bold text-emerald-500">NAV: ₹{mf.nav}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">Asset / Scheme Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder={newInvCategory === 'Mutual Funds & SIP' ? 'e.g. Parag Parikh Flexi Cap' : 'e.g. Reliance Industries / Fixed Deposit'}
+                    value={newInvName}
+                    onChange={e => setNewInvName(e.target.value)}
+                    className={`w-full px-3 py-2 rounded-xl border ${isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'}`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">Category</label>
+                  <select
+                    value={newInvCategory}
+                    onChange={e => setNewInvCategory(e.target.value as any)}
+                    className={`w-full px-2.5 py-2 rounded-xl border ${isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'}`}
+                  >
+                    <option value="Mutual Funds & SIP">Mutual Funds & SIP</option>
+                    <option value="Equity / Stocks">Equity / Stocks</option>
+                    <option value="Fixed Deposit / Bonds">Fixed Deposit / Bonds</option>
+                    <option value="Real Estate">Real Estate</option>
+                    <option value="Gold & Precious Metals">Gold & Precious Metals</option>
+                    <option value="Retirement (PF/NPS)">Retirement (PF/NPS)</option>
+                    <option value="Cash & Liquid">Cash & Liquid</option>
+                  </select>
+                </div>
+
+                {/* If Mutual Fund: NAV and Units inputs with auto-sync */}
+                {newInvCategory === 'Mutual Funds & SIP' ? (
+                  <>
+                    <div>
+                      <label className="block text-slate-400 mb-1 font-medium">
+                        Current NAV ({currSym}) *
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="82.45"
+                        value={newInvNav}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setNewInvNav(val);
+                          const navNum = parseFloat(val);
+                          const unitsNum = parseFloat(newInvUnits);
+                          if (navNum > 0 && unitsNum > 0) {
+                            setNewInvValue(Math.round(navNum * unitsNum).toString());
+                          }
+                        }}
+                        className={`w-full px-3 py-2 rounded-xl border font-mono font-bold text-emerald-600 dark:text-emerald-400 ${isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'}`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 mb-1 font-medium">
+                        Units Held *
+                      </label>
+                      <input
+                        type="number"
+                        step="0.001"
+                        placeholder="1200.5"
+                        value={newInvUnits}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setNewInvUnits(val);
+                          const unitsNum = parseFloat(val);
+                          const navNum = parseFloat(newInvNav);
+                          if (unitsNum > 0 && navNum > 0) {
+                            setNewInvValue(Math.round(unitsNum * navNum).toString());
+                          }
+                        }}
+                        className={`w-full px-3 py-2 rounded-xl border font-mono font-bold ${isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'}`}
+                      />
+                    </div>
+
+                    <div>
+                      <FinScoreAmountInput
+                        id="inv-value-input"
+                        label={`Current Value (${currSym})`}
+                        value={newInvValue ? parseFloat(newInvValue) : 0}
+                        onChange={val => {
+                          setNewInvValue(val > 0 ? val.toString() : '');
+                          const navNum = parseFloat(newInvNav);
+                          if (val > 0 && navNum > 0) {
+                            setNewInvUnits((val / navNum).toFixed(3));
+                          }
+                        }}
+                        currSym={currSym}
+                        isLight={isLight}
+                        placeholder="100000"
+                        compact
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <FinScoreAmountInput
+                        id="inv-value-input"
+                        label={`Current Value (${currSym})`}
+                        value={newInvValue ? parseFloat(newInvValue) : 0}
+                        onChange={val => setNewInvValue(val > 0 ? val.toString() : '')}
+                        currSym={currSym}
+                        isLight={isLight}
+                        placeholder="100000"
+                        compact
+                      />
+                    </div>
+
+                    <div>
+                      <FinScoreAmountInput
+                        id="inv-monthly-input"
+                        label={`Monthly SIP (${currSym})`}
+                        value={newInvMonthly ? parseFloat(newInvMonthly) : 0}
+                        onChange={val => setNewInvMonthly(val > 0 ? val.toString() : '')}
+                        currSym={currSym}
+                        isLight={isLight}
+                        placeholder="5000"
+                        compact
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 mb-1 font-medium">Expected CAGR (%)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={newInvReturn}
+                        onChange={e => setNewInvReturn(e.target.value)}
+                        className={`w-full px-3 py-2 rounded-xl border font-mono ${isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'}`}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Secondary row for Mutual Funds: Monthly SIP, CAGR, and Buy NAV */}
+              {newInvCategory === 'Mutual Funds & SIP' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                  <div>
+                    <FinScoreAmountInput
+                      id="inv-mf-monthly-input"
+                      label={`Monthly SIP Inflow (${currSym})`}
+                      value={newInvMonthly ? parseFloat(newInvMonthly) : 0}
+                      onChange={val => setNewInvMonthly(val > 0 ? val.toString() : '')}
+                      currSym={currSym}
+                      isLight={isLight}
+                      placeholder="5000"
+                      compact
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 mb-1 font-medium">Expected Return / CAGR (%)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={newInvReturn}
+                      onChange={e => setNewInvReturn(e.target.value)}
+                      className={`w-full px-3 py-2 rounded-xl border font-mono ${isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'}`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 mb-1 font-medium">Purchase / Buy NAV (Optional)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="e.g. 64.10"
+                      value={newInvPurchaseNav}
+                      onChange={e => setNewInvPurchaseNav(e.target.value)}
+                      className={`w-full px-3 py-2 rounded-xl border font-mono ${isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'}`}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-1">
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center justify-center gap-1.5 shadow-md transition-colors cursor-pointer text-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Investment Holding</span>
+                </button>
+              </div>
+            </form>
+
+            {/* Bottom Nav */}
+            <div className="pt-4 border-t border-slate-800 flex justify-between">
+              <button
+                onClick={() => setActiveTab('emergency')}
+                className="px-5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white cursor-pointer"
+              >
+                Back to Emergency Fund
+              </button>
+              <button
+                onClick={() => setActiveTab('goals')}
+                className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer"
+              >
+                <span>Next: Future Goals</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ------------------------------------------------------------- */}
+      {/* SECTION 7: FUTURE GOALS PLANNER (Step 7) */}
       {/* ------------------------------------------------------------- */}
       {activeTab === 'goals' && (
         <div className={`p-6 sm:p-8 rounded-3xl border shadow-sm space-y-6 ${
@@ -3830,13 +4699,13 @@ Strategic Focus: ${result.biggestPriority}`;
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-bold">Step 6 — 🎯 Future Goals Planner ({result.scores.futureGoals}/100)</h2>
+                <h2 className="text-lg font-bold">Step 7 — 🎯 Future Goals Planner ({result.scores.futureGoals}/100)</h2>
                 <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400 font-bold border border-blue-500/30">
                   {goals.length} Active {goals.length === 1 ? 'Milestone' : 'Milestones'}
                 </span>
               </div>
               <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Define milestones (e.g. Car, Higher Education, House, Marriage, Travel). The system calculates the exact monthly saving/SIP required.
+                Define milestones (e.g. Car, Higher Education, House, Marriage, Travel). Backed by your current investments and freed EMIs from loan closures.
               </p>
             </div>
 
@@ -4368,10 +5237,10 @@ Strategic Focus: ${result.biggestPriority}`;
 
           <div className="pt-4 border-t border-slate-800 flex justify-between">
             <button
-              onClick={() => setActiveTab('emergency')}
-              className="px-5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
+              onClick={() => setActiveTab('investments_assets')}
+              className="px-5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white cursor-pointer"
             >
-              Back to Emergency Fund
+              Back to Investments & Assets
             </button>
             <button
               onClick={() => setActiveTab('ai_assistant')}

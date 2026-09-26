@@ -86,6 +86,19 @@ export const Navbar: React.FC = () => {
     }
   ];
 
+  // Dynamic active tab titles for navbar header
+  const tabTitles: Record<string, { title: string; subtitle: string }> = {
+    overview: { title: 'Dashboard', subtitle: 'Overview & Net Worth' },
+    wealth: { title: 'Wealth & Allocation', subtitle: 'Portfolio & Assets' },
+    goals: { title: 'Goals & Essentials', subtitle: 'Milestones & Targets' },
+    account: { title: 'Accounts & Budgets', subtitle: 'Cash Flow & Envelopes' },
+    calendar: { title: 'Cash Flow Calendar', subtitle: 'Scheduled Recurring Items' },
+    balancesheet: { title: 'Balance Sheet & Audit', subtitle: 'Assets & Liabilities Verification' },
+    reports: { title: 'Reports & Analytics', subtitle: 'Performance & Breakdowns' },
+    calculators: { title: 'Tools & Calculators', subtitle: 'FIRE & Loan Simulators' },
+    settings: { title: 'Settings', subtitle: 'Preferences & System' }
+  };
+
   return (
     <header className={`sticky top-0 z-30 w-full border-b transition-colors ${
       isLight 
@@ -93,62 +106,35 @@ export const Navbar: React.FC = () => {
         : 'border-slate-800/60 bg-slate-950/80 backdrop-blur-md text-white'
     } px-4 sm:px-6 py-3`}>
       <div className="w-full flex items-center justify-between gap-3">
-        {/* Brand / Logo & Sidebar Toggle */}
-        <div className="flex items-center gap-2.5">
+        {/* Left: Mobile Drawer Button & Active View Context */}
+        <div className="flex items-center gap-3">
+          {/* Mobile-only menu toggle (hidden on desktop where sidebar is sticky on the left) */}
           <button
-            id="btn-sidebar-toggle"
+            id="btn-mobile-sidebar-toggle"
             onClick={toggleSidebar}
-            aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
-            title={isSidebarOpen ? "Close sidebar (⌘B / [ )" : "Open sidebar (⌘B / [ )"}
-            className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
-              isLight
-                ? isSidebarOpen 
-                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200' 
-                  : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200 ring-2 ring-blue-500/20'
-                : isSidebarOpen 
-                  ? 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800' 
-                  : 'bg-blue-950/60 hover:bg-blue-900/60 text-blue-400 border-blue-500/30 ring-2 ring-blue-500/20'
-            }`}
+            aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
+            className="lg:hidden p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
           >
-            {isSidebarOpen ? (
-              <PanelLeftClose className="w-4 h-4" />
-            ) : (
-              <PanelLeft className="w-4 h-4" />
-            )}
+            <PanelLeft className="w-4 h-4" />
           </button>
 
-          <div 
-            onClick={() => setActiveTab('overview')}
-            className="flex items-center gap-2.5 cursor-pointer group"
-          >
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform ring-1 ring-blue-400/30">
-              <Sparkles className="w-5 h-5 text-white" />
+          {/* Desktop Active Page Breadcrumb / Title */}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span className={`text-sm sm:text-base font-bold tracking-tight ${
+                isLight ? 'text-slate-900' : 'text-white'
+              }`}>
+                {tabTitles[activeTab]?.title || 'Dashboard'}
+              </span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-mono">
+                {activeTab.toUpperCase()}
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className={`font-extrabold text-base sm:text-lg tracking-tight group-hover:text-blue-500 transition-colors ${
-                  isLight ? 'text-slate-900' : 'text-white'
-                }`}>
-                  FIX
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-500 border border-blue-500/30 tracking-wider">
-                  WEALTH
-                </span>
-              </div>
-              {/* Palette Accent Dots */}
-              <div className="flex items-center gap-1 mt-0.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
-                <div className="w-1.5 h-1.5 rounded-full bg-[#FA5F55]" />
-                <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]" />
-                <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-                <div className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]" />
-                <span className={`text-[10px] hidden sm:inline ml-1 font-medium ${
-                  isLight ? 'text-slate-500' : 'text-slate-400'
-                }`}>
-                  Capital & Net Worth
-                </span>
-              </div>
-            </div>
+            <span className={`text-[11px] font-medium hidden md:inline ${
+              isLight ? 'text-slate-500' : 'text-slate-400'
+            }`}>
+              {tabTitles[activeTab]?.subtitle || 'Capital & Net Worth'}
+            </span>
           </div>
         </div>
 
