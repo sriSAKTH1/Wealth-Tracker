@@ -13,6 +13,7 @@ import {
   Trash2,
   AlertCircle
 } from 'lucide-react';
+import { ThankYouFeedbackModal } from '../ThankYouFeedbackModal';
 
 interface FeedbackItem {
   id: string;
@@ -85,6 +86,7 @@ export const ToolsFeedbackSection: React.FC<ToolsFeedbackSectionProps> = ({
   const [submittedList, setSubmittedList] = useState<FeedbackItem[]>([]);
   const [upvotedIdeas, setUpvotedIdeas] = useState<Record<string, boolean>>({});
   const [isSubmittedSuccess, setIsSubmittedSuccess] = useState<boolean>(false);
+  const [isThankYouModalOpen, setIsThankYouModalOpen] = useState<boolean>(false);
 
   // Load from local storage
   useEffect(() => {
@@ -158,6 +160,7 @@ export const ToolsFeedbackSection: React.FC<ToolsFeedbackSectionProps> = ({
     setTitle('');
     setMessage('');
     setIsSubmittedSuccess(true);
+    setIsThankYouModalOpen(true);
     setTimeout(() => {
       setIsSubmittedSuccess(false);
     }, 6000);
@@ -556,6 +559,14 @@ export const ToolsFeedbackSection: React.FC<ToolsFeedbackSectionProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Celebratory Thank You Animation */}
+      <ThankYouFeedbackModal
+        isOpen={isThankYouModalOpen}
+        onClose={() => setIsThankYouModalOpen(false)}
+        rating={rating}
+        category={category}
+      />
     </div>
   );
 };

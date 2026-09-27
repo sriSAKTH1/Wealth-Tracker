@@ -35,7 +35,133 @@ export const BalanceSheetView: React.FC = () => {
   } = useFinance();
 
   const [activeSubSection, setActiveSubSection] = useState<'statement' | 'chart' | 'assets' | 'liabilities' | 'ratios'>('statement');
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
+
+  // Theme-aware styles: Only dark/midnight modes have black color themes
+  const bsStyles = React.useMemo(() => {
+    switch (theme) {
+      case 'flavorfit':
+        return {
+          card: 'bg-[#131522] border-[#202438] text-white shadow-lg shadow-black/20',
+          innerCard: 'bg-[#161827] border-[#22263D] text-slate-200',
+          heading: 'text-white',
+          muted: 'text-[#8D93B4]',
+          track: 'bg-[#1E2235]',
+          pillActive: 'bg-[#9FE0E8] text-[#0B101D] font-bold shadow-sm',
+          pillInactive: 'text-slate-400 hover:text-white',
+          border: 'border-[#202438]',
+          btnSecondary: 'bg-[#1A1C2D] hover:bg-[#22253B] text-slate-300 border border-[#262A44]',
+          equityCard: 'bg-[#161827] border-[#202438] text-white',
+          divider: 'border-[#202438]',
+          rowHover: 'hover:bg-[#1A1C2D]/50',
+        };
+      case 'nature':
+        return {
+          card: 'bg-[#FAF8F3] border-[#DED9CD] text-[#283618] shadow-xs',
+          innerCard: 'bg-[#F4F1EA] border-[#DED9CD] text-[#283618]',
+          heading: 'text-[#283618]',
+          muted: 'text-[#5C664E]',
+          track: 'bg-[#DED9CD]',
+          pillActive: 'bg-[#606C38] text-white font-bold shadow-sm',
+          pillInactive: 'text-[#5C664E] hover:text-[#283618]',
+          border: 'border-[#DED9CD]',
+          btnSecondary: 'bg-[#ECE8DD] hover:bg-[#E2DDD0] text-[#283618] border border-[#DED9CD]',
+          equityCard: 'bg-[#F4F1EA] border-[#DED9CD] text-[#283618]',
+          divider: 'border-[#DED9CD]',
+          rowHover: 'hover:bg-[#ECE8DD]/60',
+        };
+      case 'retro':
+        return {
+          card: 'bg-[#FAF6ED] border-[#D6CCB5] text-[#2B2520] shadow-xs',
+          innerCard: 'bg-[#F5EEDF] border-[#D6CCB5] text-[#2B2520]',
+          heading: 'text-[#2B2520]',
+          muted: 'text-[#6E6256]',
+          track: 'bg-[#D6CCB5]',
+          pillActive: 'bg-[#C65952] text-white font-bold shadow-sm',
+          pillInactive: 'text-[#6E6256] hover:text-[#2B2520]',
+          border: 'border-[#D6CCB5]',
+          btnSecondary: 'bg-[#EDE5D3] hover:bg-[#E2D8C3] text-[#2B2520] border border-[#D6CCB5]',
+          equityCard: 'bg-[#F5EEDF] border-[#D6CCB5] text-[#2B2520]',
+          divider: 'border-[#D6CCB5]',
+          rowHover: 'hover:bg-[#EDE5D3]/60',
+        };
+      case 'coolors':
+        return {
+          card: 'bg-[#111c38] border-[#1e2d54] text-white shadow-lg shadow-black/20',
+          innerCard: 'bg-[#152347] border-[#22335e] text-blue-100',
+          heading: 'text-white',
+          muted: 'text-[#8ba3d4]',
+          track: 'bg-[#1a284e]',
+          pillActive: 'bg-blue-600 text-white font-bold shadow-sm',
+          pillInactive: 'text-[#8ba3d4] hover:text-white',
+          border: 'border-[#1e2d54]',
+          btnSecondary: 'bg-[#17254a] hover:bg-[#1d2f5e] text-blue-200 border border-[#22335e]',
+          equityCard: 'bg-[#152347] border-[#1e2d54] text-white',
+          divider: 'border-[#1e2d54]',
+          rowHover: 'hover:bg-[#17254a]/50',
+        };
+      case 'emerald':
+        return {
+          card: 'bg-[#062a20] border-[#0e4a39] text-white shadow-lg shadow-black/20',
+          innerCard: 'bg-[#09382b] border-[#115743] text-emerald-100',
+          heading: 'text-white',
+          muted: 'text-[#6ee7b7]',
+          track: 'bg-[#0b4031]',
+          pillActive: 'bg-emerald-600 text-white font-bold shadow-sm',
+          pillInactive: 'text-[#6ee7b7] hover:text-white',
+          border: 'border-[#0e4a39]',
+          btnSecondary: 'bg-[#09382b] hover:bg-[#0c4737] text-emerald-200 border border-[#115743]',
+          equityCard: 'bg-[#09382b] border-[#0e4a39] text-white',
+          divider: 'border-[#0e4a39]',
+          rowHover: 'hover:bg-[#09382b]/50',
+        };
+      case 'slate':
+        return {
+          card: 'bg-[#1e293b] border-[#334155] text-white shadow-lg',
+          innerCard: 'bg-[#243247] border-[#3b4b63] text-slate-100',
+          heading: 'text-white',
+          muted: 'text-[#94a3b8]',
+          track: 'bg-[#334155]',
+          pillActive: 'bg-slate-700 text-white font-bold shadow-sm',
+          pillInactive: 'text-slate-400 hover:text-white',
+          border: 'border-[#334155]',
+          btnSecondary: 'bg-[#27354c] hover:bg-[#30415d] text-slate-200 border border-[#3b4b63]',
+          equityCard: 'bg-[#243247] border-[#334155] text-white',
+          divider: 'border-[#334155]',
+          rowHover: 'hover:bg-[#27354c]/50',
+        };
+      case 'light':
+        return {
+          card: 'bg-white border-slate-200 text-slate-900 shadow-xs',
+          innerCard: 'bg-slate-50 border-slate-200 text-slate-800',
+          heading: 'text-slate-900',
+          muted: 'text-slate-500',
+          track: 'bg-slate-200',
+          pillActive: 'bg-blue-600 text-white font-bold shadow-sm',
+          pillInactive: 'text-slate-600 hover:text-slate-900',
+          border: 'border-slate-200',
+          btnSecondary: 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200',
+          equityCard: 'bg-blue-50/70 border-blue-200 text-slate-900',
+          divider: 'border-slate-100',
+          rowHover: 'hover:bg-slate-50/60',
+        };
+      default: // Only dark / midnight mode has black color themes
+        return {
+          card: 'bg-zinc-900/90 border-zinc-800 text-white shadow-lg',
+          innerCard: 'bg-zinc-950/80 border-zinc-800 text-zinc-200',
+          heading: 'text-white',
+          muted: 'text-zinc-400',
+          track: 'bg-zinc-800',
+          pillActive: 'bg-blue-600 text-white font-bold shadow-sm',
+          pillInactive: 'text-zinc-400 hover:text-zinc-200',
+          border: 'border-zinc-800',
+          btnSecondary: 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700',
+          equityCard: 'bg-blue-950/30 border-blue-800/40 text-blue-100',
+          divider: 'border-zinc-800/60',
+          rowHover: 'hover:bg-zinc-800/40',
+        };
+    }
+  }, [theme]);
 
   // Computed metrics
   const debtToEquityRatio = netWorth > 0 ? Math.round((totalLiabilities / netWorth) * 100) : 100;
@@ -61,10 +187,10 @@ export const BalanceSheetView: React.FC = () => {
               <Scale className="w-5 h-5" />
             </div>
             <div>
-              <h1 className={`text-xl font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              <h1 className={`text-xl font-bold tracking-tight ${bsStyles.heading}`}>
                 Balance Sheet & Solvency Statement
               </h1>
-              <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+              <p className={`text-xs ${bsStyles.muted}`}>
                 Audited financial position statement & balance snapshot as of {currentDateStr}
               </p>
             </div>
@@ -99,11 +225,7 @@ export const BalanceSheetView: React.FC = () => {
 
           <button
             onClick={exportDataJSON}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-colors ${
-              isLight 
-                ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' 
-                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-colors ${bsStyles.btnSecondary}`}
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export Report</span>
@@ -112,11 +234,7 @@ export const BalanceSheetView: React.FC = () => {
           <button
             onClick={handlePrint}
             title="Print Balance Sheet or Save as PDF"
-            className={`no-print flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer ${
-              isLight 
-                ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' 
-                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
-            }`}
+            className={`no-print flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer ${bsStyles.btnSecondary}`}
           >
             <Printer className="w-3.5 h-3.5 text-blue-400" />
             <span>Print Sheet</span>
@@ -127,35 +245,31 @@ export const BalanceSheetView: React.FC = () => {
       {/* Primary KPI Grid: Assets = Liabilities + Net Worth */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Total Assets */}
-        <div className={`p-4 rounded-2xl border transition-all ${
-          isLight ? 'bg-white border-slate-200/90 shadow-sm' : 'bg-slate-900/80 border-slate-800/80'
-        }`}>
+        <div className={`p-4 rounded-2xl border transition-all ${bsStyles.card}`}>
           <div className="flex items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <span className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+              <span className={`text-xs font-semibold uppercase tracking-wider ${bsStyles.muted}`}>
                 1. Total Assets
               </span>
             </div>
             <ArrowUpRight className="w-4 h-4 text-emerald-500" />
           </div>
-          <div className={`text-2xl font-extrabold font-mono tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+          <div className={`text-2xl font-extrabold font-mono tracking-tight ${bsStyles.heading}`}>
             {formatMoney(totalAssets)}
           </div>
-          <div className={`mt-2 flex items-center justify-between text-xs pt-2 border-t ${isLight ? 'border-slate-100 text-slate-500' : 'border-slate-800 text-slate-400'}`}>
+          <div className={`mt-2 flex items-center justify-between text-xs pt-2 border-t border-inherit/25 ${bsStyles.muted}`}>
             <span>Liquid Cash:</span>
-            <span className={`font-mono font-medium ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>{formatMoney(liquidCash)}</span>
+            <span className={`font-mono font-medium ${bsStyles.heading}`}>{formatMoney(liquidCash)}</span>
           </div>
         </div>
 
         {/* Total Liabilities */}
-        <div className={`p-4 rounded-2xl border transition-all ${
-          isLight ? 'bg-white border-slate-200/90 shadow-sm' : 'bg-slate-900/80 border-slate-800/80'
-        }`}>
+        <div className={`p-4 rounded-2xl border transition-all ${bsStyles.card}`}>
           <div className="flex items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-              <span className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+              <span className={`text-xs font-semibold uppercase tracking-wider ${bsStyles.muted}`}>
                 2. Total Liabilities
               </span>
             </div>
@@ -164,29 +278,27 @@ export const BalanceSheetView: React.FC = () => {
           <div className="text-2xl font-extrabold font-mono tracking-tight text-rose-500">
             {formatMoney(totalLiabilities)}
           </div>
-          <div className={`mt-2 flex items-center justify-between text-xs pt-2 border-t ${isLight ? 'border-slate-100 text-slate-500' : 'border-slate-800 text-slate-400'}`}>
+          <div className={`mt-2 flex items-center justify-between text-xs pt-2 border-t border-inherit/25 ${bsStyles.muted}`}>
             <span>Debt-to-Asset Load:</span>
             <span className="font-mono font-medium text-rose-500">{debtToAssetRatio}%</span>
           </div>
         </div>
 
         {/* Equity / Net Worth */}
-        <div className={`p-4 rounded-2xl border transition-all ${
-          isLight ? 'bg-white border-slate-200/90 shadow-sm' : 'bg-slate-900/80 border-slate-800/80'
-        }`}>
+        <div className={`p-4 rounded-2xl border transition-all ${bsStyles.card}`}>
           <div className="flex items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-              <span className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+              <span className={`text-xs font-semibold uppercase tracking-wider ${bsStyles.muted}`}>
                 3. Net Equity (Net Worth)
               </span>
             </div>
             <ShieldCheck className="w-4 h-4 text-blue-500" />
           </div>
-          <div className={`text-2xl font-extrabold font-mono tracking-tight ${isLight ? 'text-blue-700' : 'text-blue-400'}`}>
+          <div className="text-2xl font-extrabold font-mono tracking-tight text-blue-600 dark:text-blue-400">
             {formatMoney(netWorth)}
           </div>
-          <div className={`mt-2 flex items-center justify-between text-xs pt-2 border-t ${isLight ? 'border-slate-100 text-slate-500' : 'border-slate-800 text-slate-400'}`}>
+          <div className={`mt-2 flex items-center justify-between text-xs pt-2 border-t border-inherit/25 ${bsStyles.muted}`}>
             <span>Solvency Status:</span>
             <span className={`font-semibold flex items-center gap-1 ${isSolvent ? 'text-emerald-500' : 'text-rose-500'}`}>
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -197,15 +309,13 @@ export const BalanceSheetView: React.FC = () => {
       </div>
 
       {/* Visual Balance Sheet Equation Bar */}
-      <div className={`p-4 sm:p-5 rounded-2xl border space-y-3 ${
-        isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/80 border-slate-800/80'
-      }`}>
+      <div className={`p-4 sm:p-5 rounded-2xl border space-y-3 ${bsStyles.card}`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <div>
-            <h3 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            <h3 className={`text-sm font-bold ${bsStyles.heading}`}>
               Accounting Equation: Assets = Liabilities + Equity
             </h3>
-            <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+            <p className={`text-xs ${bsStyles.muted}`}>
               Visual proportional composition of your balance sheet capital
             </p>
           </div>
@@ -222,7 +332,7 @@ export const BalanceSheetView: React.FC = () => {
         </div>
 
         {/* Stacked Proportional Bar */}
-        <div className="w-full h-3.5 rounded-full overflow-hidden flex bg-slate-200/60 dark:bg-slate-800">
+        <div className={`w-full h-3.5 rounded-full overflow-hidden flex ${bsStyles.track}`}>
           <div 
             className="bg-emerald-500 h-full transition-all duration-500" 
             style={{ width: `${totalAssets > 0 ? Math.max(0, Math.min(100, Math.round((netWorth / totalAssets) * 100))) : 0}%` }}
@@ -240,13 +350,13 @@ export const BalanceSheetView: React.FC = () => {
       <FinancialStatementChart className="my-2" />
 
       {/* Sub-section Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b pb-2 border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar">
+      <div className={`flex items-center gap-2 border-b pb-2 ${bsStyles.border} overflow-x-auto no-scrollbar`}>
         <button
           onClick={() => setActiveSubSection('statement')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
             activeSubSection === 'statement'
-              ? isLight ? 'bg-blue-600 text-white shadow-sm' : 'bg-blue-600 text-white'
-              : isLight ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              ? bsStyles.pillActive
+              : bsStyles.pillInactive
           }`}
         >
           Summary Statement
@@ -254,10 +364,10 @@ export const BalanceSheetView: React.FC = () => {
         <button
           id="tab-balancesheet-chart"
           onClick={() => setActiveSubSection('chart')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
             activeSubSection === 'chart'
-              ? isLight ? 'bg-blue-600 text-white shadow-sm' : 'bg-blue-600 text-white'
-              : isLight ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              ? bsStyles.pillActive
+              : bsStyles.pillInactive
           }`}
         >
           <LayoutGrid className="w-3.5 h-3.5" />
@@ -265,30 +375,30 @@ export const BalanceSheetView: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveSubSection('assets')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
             activeSubSection === 'assets'
-              ? isLight ? 'bg-blue-600 text-white shadow-sm' : 'bg-blue-600 text-white'
-              : isLight ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              ? bsStyles.pillActive
+              : bsStyles.pillInactive
           }`}
         >
           Assets Ledger ({assets.length})
         </button>
         <button
           onClick={() => setActiveSubSection('liabilities')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
             activeSubSection === 'liabilities'
-              ? isLight ? 'bg-blue-600 text-white shadow-sm' : 'bg-blue-600 text-white'
-              : isLight ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              ? bsStyles.pillActive
+              : bsStyles.pillInactive
           }`}
         >
           Liabilities Ledger ({liabilities.length})
         </button>
         <button
           onClick={() => setActiveSubSection('ratios')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
             activeSubSection === 'ratios'
-              ? isLight ? 'bg-blue-600 text-white shadow-sm' : 'bg-blue-600 text-white'
-              : isLight ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              ? bsStyles.pillActive
+              : bsStyles.pillInactive
           }`}
         >
           Solvency & Ratios
@@ -297,11 +407,11 @@ export const BalanceSheetView: React.FC = () => {
 
       {/* Tab: Dedicated Chart View if selected */}
       {activeSubSection === 'chart' && (
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-500 space-y-2">
-          <p className="font-semibold text-slate-800 dark:text-slate-200">
+        <div className={`p-4 rounded-2xl border text-xs space-y-2 ${bsStyles.innerCard}`}>
+          <p className={`font-semibold ${bsStyles.heading}`}>
             About the Financial Statement Quadrant Chart:
           </p>
-          <p>
+          <p className={bsStyles.muted}>
             This diagram illustrates how cash flows through your personal income statement and balance sheet. In sound financial health, your <strong>Assets</strong> box expands higher than your <strong>Liabilities</strong>, producing positive passive cashflow back into the <strong>Income</strong> box.
           </p>
         </div>
@@ -311,13 +421,11 @@ export const BalanceSheetView: React.FC = () => {
       {activeSubSection === 'statement' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column: Assets Statement */}
-          <div className={`p-5 rounded-2xl border space-y-4 ${
-            isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/80 border-slate-800'
-          }`}>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+          <div className={`p-5 rounded-2xl border space-y-4 ${bsStyles.card}`}>
+            <div className={`flex items-center justify-between pb-3 border-b ${bsStyles.divider}`}>
               <div className="flex items-center gap-2">
                 <Building className="w-4 h-4 text-emerald-500" />
-                <h3 className={`text-sm font-bold uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+                <h3 className={`text-sm font-bold uppercase tracking-wider ${bsStyles.heading}`}>
                   Assets (What You Own)
                 </h3>
               </div>
@@ -330,21 +438,21 @@ export const BalanceSheetView: React.FC = () => {
               {assets.map((asset) => {
                 const pct = totalAssets > 0 ? ((asset.value / totalAssets) * 100).toFixed(1) : '0';
                 return (
-                  <div key={asset.id} className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800/60 last:border-0">
+                  <div key={asset.id} className={`flex items-center justify-between py-1.5 border-b ${bsStyles.divider} last:border-0`}>
                     <div className="space-y-0.5">
-                      <div className={`font-semibold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+                      <div className={`font-semibold ${bsStyles.heading}`}>
                         {asset.name}
                       </div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                      <div className={`text-[10px] ${bsStyles.muted}`}>
                         {asset.category} • {pct}% of assets
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className={`font-mono font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                      <div className={`font-mono font-bold ${bsStyles.heading}`}>
                         {formatMoney(asset.value)}
                       </div>
                       {asset.institution && (
-                        <div className="text-[10px] text-slate-400 font-sans">
+                        <div className={`text-[10px] ${bsStyles.muted} font-sans`}>
                           {asset.institution}
                         </div>
                       )}
@@ -354,14 +462,14 @@ export const BalanceSheetView: React.FC = () => {
               })}
 
               {assets.length === 0 && (
-                <div className="py-8 text-center text-slate-400 text-xs">
+                <div className={`py-8 text-center ${bsStyles.muted} text-xs`}>
                   No assets recorded on the balance sheet yet.
                 </div>
               )}
             </div>
 
-            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between font-bold text-xs">
-              <span className={isLight ? 'text-slate-700' : 'text-slate-300'}>TOTAL ASSETS</span>
+            <div className={`pt-3 border-t ${bsStyles.divider} flex items-center justify-between font-bold text-xs`}>
+              <span className={bsStyles.muted}>TOTAL ASSETS</span>
               <span className="font-mono text-emerald-500 text-sm">{formatMoney(totalAssets)}</span>
             </div>
           </div>
@@ -369,13 +477,11 @@ export const BalanceSheetView: React.FC = () => {
           {/* Right Column: Liabilities & Equity Statement */}
           <div className="space-y-6">
             {/* Liabilities Card */}
-            <div className={`p-5 rounded-2xl border space-y-4 ${
-              isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/80 border-slate-800'
-            }`}>
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+            <div className={`p-5 rounded-2xl border space-y-4 ${bsStyles.card}`}>
+              <div className={`flex items-center justify-between pb-3 border-b ${bsStyles.divider}`}>
                 <div className="flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-rose-500" />
-                  <h3 className={`text-sm font-bold uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+                  <h3 className={`text-sm font-bold uppercase tracking-wider ${bsStyles.heading}`}>
                     Liabilities (What You Owe)
                   </h3>
                 </div>
@@ -388,12 +494,12 @@ export const BalanceSheetView: React.FC = () => {
                 {liabilities.map((liab) => {
                   const pct = totalLiabilities > 0 ? ((liab.amount / totalLiabilities) * 100).toFixed(1) : '0';
                   return (
-                    <div key={liab.id} className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800/60 last:border-0">
+                    <div key={liab.id} className={`flex items-center justify-between py-1.5 border-b ${bsStyles.divider} last:border-0`}>
                       <div className="space-y-0.5">
-                        <div className={`font-semibold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+                        <div className={`font-semibold ${bsStyles.heading}`}>
                           {liab.name}
                         </div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                        <div className={`text-[10px] ${bsStyles.muted}`}>
                           {liab.category} {liab.interestRate ? `• ${liab.interestRate}% APR` : ''} • {pct}% of debt
                         </div>
                       </div>
@@ -402,7 +508,7 @@ export const BalanceSheetView: React.FC = () => {
                           {formatMoney(liab.amount)}
                         </div>
                         {liab.minimumPayment && (
-                          <div className="text-[10px] text-slate-400">
+                          <div className={`text-[10px] ${bsStyles.muted}`}>
                             Min: {formatMoney(liab.minimumPayment)}/mo
                           </div>
                         )}
@@ -412,32 +518,30 @@ export const BalanceSheetView: React.FC = () => {
                 })}
 
                 {liabilities.length === 0 && (
-                  <div className="py-8 text-center text-slate-400 text-xs">
+                  <div className={`py-8 text-center ${bsStyles.muted} text-xs`}>
                     No liabilities recorded. Debt-free balance sheet!
                   </div>
                 )}
               </div>
 
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between font-bold text-xs">
-                <span className={isLight ? 'text-slate-700' : 'text-slate-300'}>TOTAL LIABILITIES</span>
+              <div className={`pt-3 border-t ${bsStyles.divider} flex items-center justify-between font-bold text-xs`}>
+                <span className={bsStyles.muted}>TOTAL LIABILITIES</span>
                 <span className="font-mono text-rose-500 text-sm">{formatMoney(totalLiabilities)}</span>
               </div>
             </div>
 
             {/* Net Worth (Equity) Card */}
-            <div className={`p-4 rounded-2xl border ${
-              isLight ? 'bg-blue-50/70 border-blue-200 text-slate-900' : 'bg-blue-950/20 border-blue-800/40 text-blue-100'
-            }`}>
+            <div className={`p-4 rounded-2xl border ${bsStyles.equityCard}`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-blue-500">
                     Net Equity Statement
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  <div className={`text-xs ${bsStyles.muted} mt-0.5`}>
                     Net Worth = Assets ({formatMoney(totalAssets)}) - Liabilities ({formatMoney(totalLiabilities)})
                   </div>
                 </div>
-                <div className="text-right font-mono font-bold text-lg text-blue-600 dark:text-blue-400">
+                <div className="text-right font-mono font-bold text-lg text-blue-500">
                   {formatMoney(netWorth)}
                 </div>
               </div>
@@ -448,16 +552,14 @@ export const BalanceSheetView: React.FC = () => {
 
       {/* Tab 2: Assets Ledger */}
       {activeSubSection === 'assets' && (
-        <div className={`p-5 rounded-2xl border space-y-4 ${
-          isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/80 border-slate-800'
-        }`}>
+        <div className={`p-5 rounded-2xl border space-y-4 ${bsStyles.card}`}>
           <div className="flex items-center justify-between">
-            <h3 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            <h3 className={`text-sm font-bold ${bsStyles.heading}`}>
               Itemized Assets Ledger
             </h3>
             <button
               onClick={() => openQuickAdd('asset')}
-              className="flex items-center gap-1 text-xs text-blue-600 hover:underline font-semibold"
+              className="flex items-center gap-1 text-xs text-blue-500 hover:underline font-semibold"
             >
               <Plus className="w-3.5 h-3.5" />
               Add New Asset
@@ -467,7 +569,7 @@ export const BalanceSheetView: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
-                <tr className={`border-b ${isLight ? 'border-slate-200 text-slate-500' : 'border-slate-800 text-slate-400'}`}>
+                <tr className={`border-b ${bsStyles.divider} ${bsStyles.muted}`}>
                   <th className="py-2.5 font-semibold">Asset Name</th>
                   <th className="py-2.5 font-semibold">Category</th>
                   <th className="py-2.5 font-semibold">Institution</th>
@@ -475,13 +577,13 @@ export const BalanceSheetView: React.FC = () => {
                   <th className="py-2.5 font-semibold text-right">Value</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              <tbody className={`divide-y ${bsStyles.divider}`}>
                 {assets.map((asset) => (
-                  <tr key={asset.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                    <td className={`py-3 font-semibold ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{asset.name}</td>
-                    <td className="py-3 text-slate-500">{asset.category}</td>
-                    <td className="py-3 text-slate-400">{asset.institution || '—'}</td>
-                    <td className="py-3 text-right font-mono text-slate-500">
+                  <tr key={asset.id} className={`transition-colors ${bsStyles.rowHover}`}>
+                    <td className={`py-3 font-semibold ${bsStyles.heading}`}>{asset.name}</td>
+                    <td className={`py-3 ${bsStyles.muted}`}>{asset.category}</td>
+                    <td className={`py-3 ${bsStyles.muted}`}>{asset.institution || '—'}</td>
+                    <td className={`py-3 text-right font-mono ${bsStyles.muted}`}>
                       {totalAssets > 0 ? ((asset.value / totalAssets) * 100).toFixed(1) : 0}%
                     </td>
                     <td className="py-3 text-right font-mono font-bold text-emerald-500">
@@ -497,16 +599,14 @@ export const BalanceSheetView: React.FC = () => {
 
       {/* Tab 3: Liabilities Ledger */}
       {activeSubSection === 'liabilities' && (
-        <div className={`p-5 rounded-2xl border space-y-4 ${
-          isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/80 border-slate-800'
-        }`}>
+        <div className={`p-5 rounded-2xl border space-y-4 ${bsStyles.card}`}>
           <div className="flex items-center justify-between">
-            <h3 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            <h3 className={`text-sm font-bold ${bsStyles.heading}`}>
               Itemized Liabilities Ledger
             </h3>
             <button
               onClick={() => openQuickAdd('liability')}
-              className="flex items-center gap-1 text-xs text-rose-600 hover:underline font-semibold"
+              className="flex items-center gap-1 text-xs text-rose-500 hover:underline font-semibold"
             >
               <Plus className="w-3.5 h-3.5" />
               Add New Liability
@@ -516,7 +616,7 @@ export const BalanceSheetView: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
-                <tr className={`border-b ${isLight ? 'border-slate-200 text-slate-500' : 'border-slate-800 text-slate-400'}`}>
+                <tr className={`border-b ${bsStyles.divider} ${bsStyles.muted}`}>
                   <th className="py-2.5 font-semibold">Liability Name</th>
                   <th className="py-2.5 font-semibold">Category</th>
                   <th className="py-2.5 font-semibold">Interest (APR)</th>
@@ -524,13 +624,13 @@ export const BalanceSheetView: React.FC = () => {
                   <th className="py-2.5 font-semibold text-right">Balance</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              <tbody className={`divide-y ${bsStyles.divider}`}>
                 {liabilities.map((liab) => (
-                  <tr key={liab.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                    <td className={`py-3 font-semibold ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{liab.name}</td>
-                    <td className="py-3 text-slate-500">{liab.category}</td>
-                    <td className="py-3 text-slate-400">{liab.interestRate ? `${liab.interestRate}%` : '—'}</td>
-                    <td className="py-3 text-right font-mono text-slate-500">
+                  <tr key={liab.id} className={`transition-colors ${bsStyles.rowHover}`}>
+                    <td className={`py-3 font-semibold ${bsStyles.heading}`}>{liab.name}</td>
+                    <td className={`py-3 ${bsStyles.muted}`}>{liab.category}</td>
+                    <td className={`py-3 ${bsStyles.muted}`}>{liab.interestRate ? `${liab.interestRate}%` : '—'}</td>
+                    <td className={`py-3 text-right font-mono ${bsStyles.muted}`}>
                       {liab.minimumPayment ? formatMoney(liab.minimumPayment) : '—'}
                     </td>
                     <td className="py-3 text-right font-mono font-bold text-rose-500">
@@ -547,36 +647,28 @@ export const BalanceSheetView: React.FC = () => {
       {/* Tab 4: Solvency & Ratios */}
       {activeSubSection === 'ratios' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className={`p-4 rounded-2xl border space-y-2 ${
-            isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/80 border-slate-800'
-          }`}>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Debt-to-Asset Ratio</span>
+          <div className={`p-4 rounded-2xl border space-y-2 ${bsStyles.card}`}>
+            <span className={`text-[11px] font-semibold uppercase tracking-wider ${bsStyles.muted}`}>Debt-to-Asset Ratio</span>
             <div className="text-xl font-bold font-mono text-rose-500">{debtToAssetRatio}%</div>
-            <p className="text-[11px] text-slate-500">Measures the proportion of assets financed by debt. &lt;30% is ideal.</p>
+            <p className={`text-[11px] ${bsStyles.muted}`}>Measures the proportion of assets financed by debt. &lt;30% is ideal.</p>
           </div>
 
-          <div className={`p-4 rounded-2xl border space-y-2 ${
-            isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/80 border-slate-800'
-          }`}>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Debt-to-Equity Ratio</span>
+          <div className={`p-4 rounded-2xl border space-y-2 ${bsStyles.card}`}>
+            <span className={`text-[11px] font-semibold uppercase tracking-wider ${bsStyles.muted}`}>Debt-to-Equity Ratio</span>
             <div className="text-xl font-bold font-mono text-amber-500">{debtToEquityRatio}%</div>
-            <p className="text-[11px] text-slate-500">Comparison of liabilities to equity. Lower means higher financial resilience.</p>
+            <p className={`text-[11px] ${bsStyles.muted}`}>Comparison of liabilities to equity. Lower means higher financial resilience.</p>
           </div>
 
-          <div className={`p-4 rounded-2xl border space-y-2 ${
-            isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/80 border-slate-800'
-          }`}>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Liquid Solvency</span>
+          <div className={`p-4 rounded-2xl border space-y-2 ${bsStyles.card}`}>
+            <span className={`text-[11px] font-semibold uppercase tracking-wider ${bsStyles.muted}`}>Liquid Solvency</span>
             <div className="text-xl font-bold font-mono text-emerald-500">{formatMoney(liquidCash)}</div>
-            <p className="text-[11px] text-slate-500">Immediately accessible cash reserves for emergency financial protection.</p>
+            <p className={`text-[11px] ${bsStyles.muted}`}>Immediately accessible cash reserves for emergency financial protection.</p>
           </div>
 
-          <div className={`p-4 rounded-2xl border space-y-2 ${
-            isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/80 border-slate-800'
-          }`}>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Working Capital</span>
+          <div className={`p-4 rounded-2xl border space-y-2 ${bsStyles.card}`}>
+            <span className={`text-[11px] font-semibold uppercase tracking-wider ${bsStyles.muted}`}>Working Capital</span>
             <div className="text-xl font-bold font-mono text-blue-500">{formatMoney(workingCapital)}</div>
-            <p className="text-[11px] text-slate-500">Surplus liquid capital available after covering immediate short-term obligations.</p>
+            <p className={`text-[11px] ${bsStyles.muted}`}>Surplus liquid capital available after covering immediate short-term obligations.</p>
           </div>
         </div>
       )}

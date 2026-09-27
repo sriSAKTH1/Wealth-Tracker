@@ -27,6 +27,7 @@ import {
 import { useFinance, CURRENCY_CONFIGS } from '../../context/FinanceContext';
 import { MoreSubTab, AppTheme, CurrencyCode } from '../../types';
 import { FinancialCalculatorsView } from '../calculators/FinancialCalculatorsView';
+import { ThankYouFeedbackModal } from '../ThankYouFeedbackModal';
 
 export const MoreView: React.FC = () => {
   const { 
@@ -84,6 +85,7 @@ export const MoreView: React.FC = () => {
   const [feedbackType, setFeedbackType] = useState('Feature Request');
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [isThankYouOpen, setIsThankYouOpen] = useState(false);
 
   // Compound Interest computation
   const compoundResults = React.useMemo(() => {
@@ -174,14 +176,18 @@ export const MoreView: React.FC = () => {
   const handleFeedbackSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFeedbackSubmitted(true);
+    setIsThankYouOpen(true);
+    setFeedbackText('');
     setTimeout(() => {
       setFeedbackSubmitted(false);
-      setFeedbackText('');
-    }, 2500);
+    }, 4000);
   };
 
   const themes: { id: AppTheme; name: string; desc: string; previewBg: string; border: string }[] = [
     { id: 'light', name: 'Day Mode (Pure Light - Default)', desc: 'Clean, high-contrast daylight theme with bright cards and crisp typography', previewBg: 'bg-white', border: 'border-blue-500' },
+    { id: 'flavorfit', name: 'FlavorFit Neo-Dark (Cyan & Pastel)', desc: 'Modern dark obsidian canvas with pastel ice cyan, lilac lavender, and apricot cream bento cards', previewBg: 'bg-[#0B0C14]', border: 'border-[#9FE0E8]' },
+    { id: 'nature', name: 'Nature Theme (Olive & Sage)', desc: 'Organic earthy palette with sage green, calming linen cream, and deep olive moss', previewBg: 'bg-[#787D60]', border: 'border-[#606C38]' },
+    { id: 'retro', name: 'Retro 90s (Vintage Warm)', desc: 'Nostalgic 90s aesthetic with warm kraft sand, antique paper ivory, and terracotta', previewBg: 'bg-[#E8DEC8]', border: 'border-[#C65952]' },
     { id: 'coolors', name: 'Coolors Electric Blue', desc: 'Vibrant electric blue & modern coolors palette with slate depth', previewBg: 'bg-slate-900', border: 'border-blue-500' },
     { id: 'dark', name: 'Dark Titanium', desc: 'Refined deep zinc with neutral high-contrast edges', previewBg: 'bg-zinc-900', border: 'border-zinc-700' },
     { id: 'midnight', name: 'Midnight Obsidian', desc: 'Deepest OLED black canvas with emerald accents', previewBg: 'bg-zinc-950', border: 'border-emerald-500/40' },
@@ -693,6 +699,14 @@ export const MoreView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Celebratory Thank You Animation */}
+      <ThankYouFeedbackModal
+        isOpen={isThankYouOpen}
+        onClose={() => setIsThankYouOpen(false)}
+        rating={feedbackRating}
+        category={feedbackType}
+      />
     </div>
   );
 };

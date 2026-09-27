@@ -202,6 +202,468 @@
 }
 
 /* =========================================================================
+   1. FLAVORFIT NEO-DARK THEME (Reference Image: Modern Dark with Ice Cyan, Lilac, & Apricot)
+   Canvas: Obsidian Navy #0B0C14, Panels: Midnight Charcoal #131522,
+   Accents: Ice Cyan #9FE0E8, Lilac Lavender #C7C4F8, Apricot Cream #EDD0BA
+   ========================================================================= */
+.flavorfit-theme, [data-theme="flavorfit"] {
+  color-scheme: dark;
+  background-color: #0b0c14 !important;
+  color: #f1f3f9 !important;
+}
+
+.flavorfit-theme #desktop-sidebar,
+.flavorfit-theme aside,
+.flavorfit-theme header,
+.flavorfit-theme nav {
+  background-color: #0e101b !important;
+  border-color: #202438 !important;
+  color: #f1f3f9 !important;
+}
+
+.flavorfit-theme .bg-slate-950,
+.flavorfit-theme .bg-zinc-950,
+.flavorfit-theme .bg-slate-900,
+.flavorfit-theme .bg-zinc-900,
+.flavorfit-theme .bg-black {
+  background-color: #131522 !important;
+  box-shadow: 0 4px 20px -2px rgba(11, 12, 20, 0.7) !important;
+  border-color: #22263d !important;
+}
+
+.flavorfit-theme .bg-white {
+  background-color: #161827 !important;
+  border-color: #262a44 !important;
+  color: #f1f3f9 !important;
+}
+
+.flavorfit-theme .bg-slate-800,
+.flavorfit-theme .bg-zinc-800,
+.flavorfit-theme .bg-slate-50,
+.flavorfit-theme .bg-slate-100 {
+  background-color: #1a1c2d !important;
+  border-color: #282d47 !important;
+  color: #f1f3f9 !important;
+}
+
+.flavorfit-theme .text-white,
+.flavorfit-theme .text-slate-100,
+.flavorfit-theme .text-zinc-100,
+.flavorfit-theme .text-slate-200 {
+  color: #ffffff !important;
+}
+
+.flavorfit-theme .text-slate-900 {
+  color: #f1f3f9 !important;
+}
+
+.flavorfit-theme .text-slate-400,
+.flavorfit-theme .text-zinc-400,
+.flavorfit-theme .text-slate-500,
+.flavorfit-theme .text-slate-600 {
+  color: #8d93b4 !important;
+}
+
+.flavorfit-theme .border-slate-800,
+.flavorfit-theme .border-zinc-800,
+.flavorfit-theme .border-slate-700,
+.flavorfit-theme .border-slate-200 {
+  border-color: #22263d !important;
+}
+
+.flavorfit-theme input,
+.flavorfit-theme select,
+.flavorfit-theme textarea {
+  background-color: #10121e !important;
+  border-color: #262a45 !important;
+  color: #ffffff !important;
+}
+
+/* =========================================================================
+   2. NATURE THEME (Image 2: Nature Theme Color Palette)
+   Sage Mist #B4C5A4, Organic Cream #F5F2EB, Olive Moss #606C38, Forest #283618
+   ========================================================================= */
+.nature-theme, [data-theme="nature"] {
+  color-scheme: light;
+  background-color: #f4f1ea !important;
+  color: #283618 !important;
+}
+
+.nature-theme #desktop-sidebar,
+.nature-theme aside,
+.nature-theme header,
+.nature-theme nav {
+  background-color: #faf8f3 !important;
+  border-color: #e2ddcf !important;
+  color: #283618 !important;
+}
+
+.nature-theme .bg-slate-950,
+.nature-theme .bg-zinc-950,
+.nature-theme .bg-slate-900,
+.nature-theme .bg-zinc-900,
+.nature-theme .bg-black,
+.nature-theme .bg-white {
+  background-color: #fcfaf7 !important;
+  box-shadow: 0 4px 16px -2px rgba(88, 98, 72, 0.06) !important;
+  border-color: #ded9cd !important;
+}
+
+.nature-theme .bg-slate-800,
+.nature-theme .bg-zinc-800,
+.nature-theme .bg-slate-50,
+.nature-theme .bg-slate-100 {
+  background-color: #ece8dd !important;
+  color: #283618 !important;
+}
+
+.nature-theme .text-white,
+.nature-theme .text-slate-100,
+.nature-theme .text-zinc-100,
+.nature-theme .text-slate-200,
+.nature-theme .text-slate-900 {
+  color: #283618 !important;
+}
+
+.nature-theme .text-slate-400,
+.nature-theme .text-zinc-400,
+.nature-theme .text-slate-500,
+.nature-theme .text-slate-600 {
+  color: #5c664e !important;
+}
+
+.nature-theme .border-slate-800,
+.nature-theme .border-zinc-800,
+.nature-theme .border-slate-700,
+.nature-theme .border-slate-200 {
+  border-color: #ded9cd !important;
+}
+
+.nature-theme input,
+.nature-theme select,
+.nature-theme textarea {
+  background-color: #ffffff !important;
+  border-color: #ded9cd !important;
+  color: #283618 !important;
+}
+
+/* =========================================================================
+   3. RETRO 90S THEME (Image 3: Retro Web Design / Back To The 90s)
+   Warm Kraft Sand #E8DEC8, Antique Paper #FAF6ED, Denim Blue #6B9AC4, Terracotta #C65952
+   ========================================================================= */
+.retro-theme, [data-theme="retro"] {
+  color-scheme: light;
+  background-color: #e8dec8 !important;
+  color: #2b2520 !important;
+}
+
+.retro-theme #desktop-sidebar,
+.retro-theme aside,
+.retro-theme header,
+.retro-theme nav {
+  background-color: #f7f2e7 !important;
+  border-color: #cfc4ad !important;
+  color: #2b2520 !important;
+}
+
+.retro-theme .bg-slate-950,
+.retro-theme .bg-zinc-950,
+.retro-theme .bg-slate-900,
+.retro-theme .bg-zinc-900,
+.retro-theme .bg-black,
+.retro-theme .bg-white {
+  background-color: #faf6ed !important;
+  box-shadow: 0 4px 14px -2px rgba(43, 37, 32, 0.06) !important;
+  border-color: #d6ccb5 !important;
+}
+
+.retro-theme .bg-slate-800,
+.retro-theme .bg-zinc-800,
+.retro-theme .bg-slate-50,
+.retro-theme .bg-slate-100 {
+  background-color: #ede5d3 !important;
+  color: #2b2520 !important;
+}
+
+.retro-theme .text-white,
+.retro-theme .text-slate-100,
+.retro-theme .text-zinc-100,
+.retro-theme .text-slate-200,
+.retro-theme .text-slate-900 {
+  color: #2b2520 !important;
+}
+
+.retro-theme .text-slate-400,
+.retro-theme .text-zinc-400,
+.retro-theme .text-slate-500,
+.retro-theme .text-slate-600 {
+  color: #6e6256 !important;
+}
+
+.retro-theme .border-slate-800,
+.retro-theme .border-zinc-800,
+.retro-theme .border-slate-700,
+.retro-theme .border-slate-200 {
+  border-color: #d6ccb5 !important;
+}
+
+.retro-theme input,
+.retro-theme select,
+.retro-theme textarea {
+  background-color: #faf6ed !important;
+  border-color: #cfc4ad !important;
+  color: #2b2520 !important;
+}
+
+/* =========================================================================
+   4. EDITORIAL LIGHT THEME (Pure Daylight Mode: Crisp White Canvas)
+   Eliminates all dark/black themes in light mode!
+   ========================================================================= */
+.light-theme, [data-theme="light"] {
+  color-scheme: light;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.light-theme #desktop-sidebar,
+.light-theme aside,
+.light-theme header,
+.light-theme nav {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.light-theme .bg-slate-950,
+.light-theme .bg-zinc-950,
+.light-theme .bg-slate-900,
+.light-theme .bg-zinc-900,
+.light-theme .bg-black {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.light-theme .bg-slate-800,
+.light-theme .bg-zinc-800,
+.light-theme .bg-slate-700 {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+.light-theme .text-white,
+.light-theme .text-slate-100,
+.light-theme .text-zinc-100,
+.light-theme .text-slate-200 {
+  color: #0f172a !important;
+}
+
+.light-theme .text-slate-400,
+.light-theme .text-zinc-400,
+.light-theme .text-slate-500 {
+  color: #64748b !important;
+}
+
+.light-theme .border-slate-800,
+.light-theme .border-zinc-800,
+.light-theme .border-slate-700 {
+  border-color: #e2e8f0 !important;
+}
+
+.light-theme input,
+.light-theme select,
+.light-theme textarea {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+/* =========================================================================
+   5. COOLORS ELECTRIC BLUE THEME (Deep Sapphire Navy & Electric Accents)
+   No black color themes: uses matching rich deep sapphire navy!
+   ========================================================================= */
+.coolors-theme, [data-theme="coolors"] {
+  color-scheme: dark;
+  background-color: #0b1329 !important;
+  color: #f1f5f9 !important;
+}
+
+.coolors-theme #desktop-sidebar,
+.coolors-theme aside,
+.coolors-theme header,
+.coolors-theme nav {
+  background-color: #0e1834 !important;
+  border-color: #1e2d54 !important;
+  color: #f1f5f9 !important;
+}
+
+.coolors-theme .bg-slate-950,
+.coolors-theme .bg-zinc-950,
+.coolors-theme .bg-slate-900,
+.coolors-theme .bg-zinc-900,
+.coolors-theme .bg-black {
+  background-color: #111c38 !important;
+  box-shadow: 0 4px 20px -2px rgba(11, 19, 41, 0.6) !important;
+  border-color: #1e2d54 !important;
+}
+
+.coolors-theme .bg-slate-800,
+.coolors-theme .bg-zinc-800 {
+  background-color: #172445 !important;
+  border-color: #22335e !important;
+  color: #e2e8f0 !important;
+}
+
+.coolors-theme .text-white,
+.coolors-theme .text-slate-100,
+.coolors-theme .text-zinc-100 {
+  color: #ffffff !important;
+}
+
+.coolors-theme .text-slate-400,
+.coolors-theme .text-zinc-400 {
+  color: #8ba3d4 !important;
+}
+
+.coolors-theme .border-slate-800,
+.coolors-theme .border-zinc-800,
+.coolors-theme .border-slate-700 {
+  border-color: #1e2d54 !important;
+}
+
+.coolors-theme input,
+.coolors-theme select,
+.coolors-theme textarea {
+  background-color: #0e172e !important;
+  border-color: #1e2d54 !important;
+  color: #ffffff !important;
+}
+
+/* =========================================================================
+   6. EMERALD WEALTH THEME (Deep Forest Emerald & Mint Accents)
+   No black color themes: uses matching deep forest emerald!
+   ========================================================================= */
+.emerald-theme, [data-theme="emerald"] {
+  color-scheme: dark;
+  background-color: #021a13 !important;
+  color: #ecfdf5 !important;
+}
+
+.emerald-theme #desktop-sidebar,
+.emerald-theme aside,
+.emerald-theme header,
+.emerald-theme nav {
+  background-color: #042119 !important;
+  border-color: #0e4a39 !important;
+  color: #ecfdf5 !important;
+}
+
+.emerald-theme .bg-slate-950,
+.emerald-theme .bg-zinc-950,
+.emerald-theme .bg-slate-900,
+.emerald-theme .bg-zinc-900,
+.emerald-theme .bg-black {
+  background-color: #062a20 !important;
+  box-shadow: 0 4px 20px -2px rgba(2, 26, 19, 0.6) !important;
+  border-color: #0e4a39 !important;
+}
+
+.emerald-theme .bg-slate-800,
+.emerald-theme .bg-zinc-800 {
+  background-color: #09382b !important;
+  border-color: #115743 !important;
+  color: #ecfdf5 !important;
+}
+
+.emerald-theme .text-white,
+.emerald-theme .text-slate-100,
+.emerald-theme .text-zinc-100 {
+  color: #ecfdf5 !important;
+}
+
+.emerald-theme .text-slate-400,
+.emerald-theme .text-zinc-400 {
+  color: #6ee7b7 !important;
+}
+
+.emerald-theme .border-slate-800,
+.emerald-theme .border-zinc-800,
+.emerald-theme .border-slate-700 {
+  border-color: #0e4a39 !important;
+}
+
+.emerald-theme input,
+.emerald-theme select,
+.emerald-theme textarea {
+  background-color: #042018 !important;
+  border-color: #0e4a39 !important;
+  color: #ecfdf5 !important;
+}
+
+/* =========================================================================
+   7. COOL SLATE THEME (Refined Slate Blue & Charcoal)
+   No black color themes: uses matching slate tones!
+   ========================================================================= */
+.slate-theme, [data-theme="slate"] {
+  color-scheme: dark;
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+.slate-theme #desktop-sidebar,
+.slate-theme aside,
+.slate-theme header,
+.slate-theme nav {
+  background-color: #131d31 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+.slate-theme .bg-slate-950,
+.slate-theme .bg-zinc-950,
+.slate-theme .bg-slate-900,
+.slate-theme .bg-zinc-900,
+.slate-theme .bg-black {
+  background-color: #1e293b !important;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.6) !important;
+  border-color: #334155 !important;
+}
+
+.slate-theme .bg-slate-800,
+.slate-theme .bg-zinc-800 {
+  background-color: #27354c !important;
+  border-color: #3b4b63 !important;
+  color: #f1f5f9 !important;
+}
+
+.slate-theme .text-white,
+.slate-theme .text-slate-100,
+.slate-theme .text-zinc-100 {
+  color: #f8fafc !important;
+}
+
+.slate-theme .text-slate-400,
+.slate-theme .text-zinc-400 {
+  color: #94a3b8 !important;
+}
+
+.slate-theme .border-slate-800,
+.slate-theme .border-zinc-800,
+.slate-theme .border-slate-700 {
+  border-color: #334155 !important;
+}
+
+.slate-theme input,
+.slate-theme select,
+.slate-theme textarea {
+  background-color: #172030 !important;
+  border-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+/* =========================================================================
    ACCENT COLOR THEMES & DYNAMIC WEB APP HIGHLIGHT ENGINE
    Supports: blue (Electric Blue), indigo (Royal Indigo), emerald (Emerald Vault),
    purple (Amethyst Purple), rose (Rose Wealth), amber (Sunset Amber)
@@ -288,6 +750,61 @@
   --accent-800: #92400e;
   --accent-rgb: 245, 158, 11;
   --accent-gradient: linear-gradient(135deg, #b45309 0%, #d97706 50%, #fbbf24 100%);
+}
+
+[data-accent="flavorfit"] {
+  --accent-50: #edfbfd;
+  --accent-100: #d4f5f9;
+  --accent-200: #b5eef5;
+  --accent-300: #9fe0e8;
+  --accent-400: #82d7e0;
+  --accent-500: #9fe0e8;
+  --accent-600: #71cbda;
+  --accent-700: #4baebf;
+  --accent-800: #2d8190;
+  --accent-rgb: 159, 224, 232;
+  --accent-gradient: linear-gradient(135deg, #9fe0e8 0%, #c7c4f8 50%, #edd0ba 100%);
+}
+
+[data-accent="flavorfit"] .bg-blue-600,
+[data-accent="flavorfit"] button.bg-blue-600 {
+  background-color: #9fe0e8 !important;
+  color: #0b101d !important;
+  font-weight: 700 !important;
+}
+
+[data-accent="flavorfit"] .hover\:bg-blue-500:hover,
+[data-accent="flavorfit"] .hover\:bg-blue-600:hover {
+  background-color: #b5eef5 !important;
+  color: #0b101d !important;
+}
+
+[data-accent="nature"] {
+  --accent-50: #f4f6f1;
+  --accent-100: #e7ece0;
+  --accent-200: #d1dcc5;
+  --accent-300: #b4c5a4;
+  --accent-400: #8fa57b;
+  --accent-500: #606c38;
+  --accent-600: #505c2d;
+  --accent-700: #3f4a22;
+  --accent-800: #283618;
+  --accent-rgb: 96, 108, 56;
+  --accent-gradient: linear-gradient(135deg, #3f4a22 0%, #606c38 50%, #b4c5a4 100%);
+}
+
+[data-accent="retro"] {
+  --accent-50: #fdf5f4;
+  --accent-100: #fbeae8;
+  --accent-200: #f7d5d2;
+  --accent-300: #efb4ae;
+  --accent-400: #df8880;
+  --accent-500: #c65952;
+  --accent-600: #b2463f;
+  --accent-700: #943731;
+  --accent-800: #7c312c;
+  --accent-rgb: 198, 89, 82;
+  --accent-gradient: linear-gradient(135deg, #943731 0%, #c65952 50%, #6b9ac4 100%);
 }
 
 /* Global Dynamic Accent Highlights for App Elements */

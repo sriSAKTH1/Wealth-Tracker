@@ -56,19 +56,23 @@ const MainLayout: React.FC = () => {
     }
   };
 
-  // Theme styling mapper
+  // Theme styling mapper: Only dark and midnight have black themes
   const themeClasses: Record<string, string> = {
-    coolors: 'bg-[#0a0e1a] text-slate-100 dark-theme',
+    coolors: 'bg-[#0b1329] text-slate-100 coolors-theme',
     dark: 'bg-zinc-950 text-zinc-100 dark-theme',
-    midnight: 'bg-black text-zinc-100 dark-theme',
-    emerald: 'bg-[#06140f] text-emerald-50 dark-theme',
-    slate: 'bg-slate-950 text-slate-100 dark-theme',
-    light: 'bg-[#f4f7fb] text-slate-900 light-theme',
+    midnight: 'bg-black text-zinc-100 midnight-theme dark-theme',
+    emerald: 'bg-[#021a13] text-emerald-50 emerald-theme',
+    slate: 'bg-[#0f172a] text-slate-100 slate-theme',
+    light: 'bg-[#f8fafc] text-slate-900 light-theme',
+    flavorfit: 'bg-[#0B0C14] text-slate-100 flavorfit-theme',
+    nature: 'bg-[#F4F1EA] text-[#283618] nature-theme light-theme',
+    retro: 'bg-[#E8DEC8] text-[#2B2520] retro-theme light-theme',
   };
 
   return (
     <div
       data-accent={accentColor}
+      data-theme={theme}
       className={`h-screen w-full flex overflow-hidden font-['Plus_Jakarta_Sans',sans-serif] ${themeClasses[theme] || 'bg-zinc-950 text-zinc-100'}`}
     >
       {/* Desktop & Mobile Sidebar: Spans TOP TO END (Full-height h-screen) */}

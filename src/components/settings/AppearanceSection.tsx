@@ -25,11 +25,14 @@ export const ACCENT_COLORS = [
   { id: 'purple', name: 'Amethyst Purple', hex: '#a855f7', border: 'border-purple-500', bg: 'bg-purple-500', ring: 'ring-purple-500' },
   { id: 'rose', name: 'Rose Wealth', hex: '#f43f5e', border: 'border-rose-500', bg: 'bg-rose-500', ring: 'ring-rose-500' },
   { id: 'amber', name: 'Sunset Amber', hex: '#f59e0b', border: 'border-amber-500', bg: 'bg-amber-500', ring: 'ring-amber-500' },
+  { id: 'flavorfit', name: 'FlavorFit Ice Cyan', hex: '#9fe0e8', border: 'border-[#9fe0e8]', bg: 'bg-[#9fe0e8]', ring: 'ring-[#9fe0e8]' },
+  { id: 'nature', name: 'Nature Olive', hex: '#606c38', border: 'border-[#606c38]', bg: 'bg-[#606c38]', ring: 'ring-[#606c38]' },
+  { id: 'retro', name: 'Retro Terracotta', hex: '#c65952', border: 'border-[#c65952]', bg: 'bg-[#c65952]', ring: 'ring-[#c65952]' },
 ];
 
 export const AppearanceSection: React.FC = () => {
   const { theme, setTheme, isPrivateMode, togglePrivateMode, formatMoney, accentColor, setAccentColor } = useFinance();
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   // 1. Font Size State
   const [fontSize, setFontSize] = useState<string>(() => {
@@ -144,67 +147,157 @@ export const AppearanceSection: React.FC = () => {
         )}
       </div>
 
-      {/* 1. LIGHT / DARK / SYSTEM THEME SELECTOR */}
-      <div className="space-y-3">
+      {/* 1. LIGHT / CURATED THEME SELECTOR */}
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <span className="font-bold text-xs text-slate-800 dark:text-slate-200">
-            Color Theme Mode
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-xs text-slate-800 dark:text-slate-200">
+              Color Theme Mode
+            </span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-500/10 text-purple-500 border border-purple-500/20">
+              4 Theme Modes
+            </span>
+          </div>
           <span className="text-[10px] font-mono text-slate-500">Current: {theme}</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        {/* Daylight Mode */}
+        <div className="text-xs">
           {/* Light Theme Card */}
           <button
-            onClick={() => setTheme('light')}
-            className={`p-4 rounded-2xl border text-left flex items-start justify-between transition-all ${
-              isLight
-                ? 'bg-blue-50/50 border-blue-500 shadow-md ring-2 ring-blue-500/20'
-                : 'bg-white/40 border-slate-200 dark:bg-slate-900/40 dark:border-slate-800 hover:border-slate-300'
+            id="theme-btn-light"
+            onClick={() => {
+              setTheme('light');
+              setAccentColor('blue');
+            }}
+            className={`w-full p-4 rounded-2xl border text-left flex items-start justify-between transition-all cursor-pointer ${
+              theme === 'light'
+                ? 'bg-amber-50/60 dark:bg-amber-950/30 border-amber-500 shadow-md ring-2 ring-amber-500/25 text-slate-900 dark:text-slate-100'
+                : 'bg-white/60 border-slate-200 dark:bg-slate-900/40 dark:border-slate-800 hover:border-amber-300 text-slate-900 dark:text-slate-100'
             }`}
           >
             <div className="space-y-2">
-              <div className="flex items-center gap-2 font-bold text-slate-900">
+              <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
+                <div className="w-3.5 h-3.5 rounded-full bg-amber-500 shadow-xs" />
                 <Sun className="w-4 h-4 text-amber-500" />
                 <span>Editorial Light Theme</span>
               </div>
-              <p className="text-[11px] text-slate-600">
-                High legibility, soft cream-slate canvas, crisp contrast for daylight and office work.
+              <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                High legibility daylight canvas, soft cream-slate surfaces, and crisp contrast for daylight and office work.
               </p>
               <div className="flex items-center gap-1.5 pt-1">
-                <div className="w-5 h-5 rounded-md bg-white border border-slate-300 shadow-xs" />
-                <div className="w-5 h-5 rounded-md bg-slate-100 border border-slate-300" />
-                <div className="w-5 h-5 rounded-md bg-blue-600" />
+                <div className="w-5 h-5 rounded-md bg-white border border-slate-300 shadow-xs" title="Daylight White #FFFFFF" />
+                <div className="w-5 h-5 rounded-md bg-[#F4F7FB] border border-slate-300" title="Soft Mist Canvas #F4F7FB" />
+                <div className="w-5 h-5 rounded-md bg-[#2563EB]" title="Electric Blue #2563EB" />
+                <div className="w-5 h-5 rounded-md bg-[#F59E0B]" title="Sunlight Amber #F59E0B" />
               </div>
             </div>
-            {isLight && <Check className="w-5 h-5 text-blue-600 shrink-0" />}
+            {theme === 'light' && <Check className="w-5 h-5 text-amber-500 shrink-0" />}
           </button>
+        </div>
 
-          {/* Dark Theme Card */}
-          <button
-            onClick={() => setTheme('dark')}
-            className={`p-4 rounded-2xl border text-left flex items-start justify-between transition-all ${
-              !isLight
-                ? 'bg-slate-900 border-blue-500 shadow-md ring-2 ring-blue-500/20 text-white'
-                : 'bg-slate-950/80 border-slate-800 text-slate-300 hover:border-slate-700'
-            }`}
-          >
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 font-bold text-slate-100">
-                <Moon className="w-4 h-4 text-indigo-400" />
-                <span>Midnight Dark Theme</span>
+        {/* 3 Reference Palette Modes */}
+        <div className="space-y-2 pt-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Curated Designer Palettes (3 Reference Modes)
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            {/* 1. FlavorFit Neo-Dark (Reference Image Mode) */}
+            <button
+              id="theme-btn-flavorfit"
+              onClick={() => {
+                setTheme('flavorfit');
+                setAccentColor('flavorfit');
+              }}
+              className={`p-4 rounded-2xl border text-left flex items-start justify-between transition-all cursor-pointer ${
+                theme === 'flavorfit'
+                  ? 'bg-slate-900 border-[#9FE0E8] shadow-md ring-2 ring-[#9FE0E8]/30 text-white'
+                  : 'bg-white/40 border-slate-200 dark:bg-slate-900/40 dark:border-slate-800 hover:border-cyan-300'
+              }`}
+            >
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
+                  <div className="w-3.5 h-3.5 rounded-full bg-[#9FE0E8]" />
+                  <span>FlavorFit Neo-Dark</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Sleek dark obsidian canvas with pastel Ice Cyan, Lilac Lavender, and Apricot Cream bento cards.
+                </p>
+                <div className="flex items-center gap-1.5 pt-1">
+                  <div className="w-5 h-5 rounded-md bg-[#0B0C14] border border-slate-700 shadow-xs" title="Obsidian Canvas #0B0C14" />
+                  <div className="w-5 h-5 rounded-md bg-[#9FE0E8] shadow-xs" title="Ice Cyan #9FE0E8" />
+                  <div className="w-5 h-5 rounded-md bg-[#C7C4F8]" title="Lilac Lavender #C7C4F8" />
+                  <div className="w-5 h-5 rounded-md bg-[#EDD0BA]" title="Apricot Cream #EDD0BA" />
+                </div>
               </div>
-              <p className="text-[11px] text-slate-400">
-                OLED-friendly slate obsidian tones, reduced eye strain, deep contrast chart glows.
-              </p>
-              <div className="flex items-center gap-1.5 pt-1">
-                <div className="w-5 h-5 rounded-md bg-slate-950 border border-slate-800" />
-                <div className="w-5 h-5 rounded-md bg-slate-900 border border-slate-800" />
-                <div className="w-5 h-5 rounded-md bg-blue-500" />
+              {theme === 'flavorfit' && <Check className="w-5 h-5 text-[#9FE0E8] shrink-0" />}
+            </button>
+
+            {/* 2. Nature Theme (Image 2) */}
+            <button
+              id="theme-btn-nature"
+              onClick={() => {
+                setTheme('nature');
+                setAccentColor('nature');
+              }}
+              className={`p-4 rounded-2xl border text-left flex items-start justify-between transition-all cursor-pointer ${
+                theme === 'nature'
+                  ? 'bg-emerald-50/70 border-[#606C38] shadow-md ring-2 ring-[#606C38]/30'
+                  : 'bg-white/40 border-slate-200 dark:bg-slate-900/40 dark:border-slate-800 hover:border-emerald-300'
+              }`}
+            >
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
+                  <div className="w-3.5 h-3.5 rounded-full bg-[#606C38]" />
+                  <span>Nature Theme</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Organic earthy palette with sage green, calming linen cream, deep olive moss, and golden mustard.
+                </p>
+                <div className="flex items-center gap-1.5 pt-1">
+                  <div className="w-5 h-5 rounded-md bg-[#B4C5A4] shadow-xs" title="Sage Green #B4C5A4" />
+                  <div className="w-5 h-5 rounded-md bg-[#F5F2EB] border border-amber-200" title="Organic Cream #F5F2EB" />
+                  <div className="w-5 h-5 rounded-md bg-[#606C38]" title="Olive Moss #606C38" />
+                  <div className="w-5 h-5 rounded-md bg-[#B6A136]" title="Golden Mustard #B6A136" />
+                </div>
               </div>
-            </div>
-            {!isLight && <Check className="w-5 h-5 text-blue-400 shrink-0" />}
-          </button>
+              {theme === 'nature' && <Check className="w-5 h-5 text-[#606C38] shrink-0" />}
+            </button>
+
+            {/* 3. Retro 90s (Image 3) */}
+            <button
+              id="theme-btn-retro"
+              onClick={() => {
+                setTheme('retro');
+                setAccentColor('retro');
+              }}
+              className={`p-4 rounded-2xl border text-left flex items-start justify-between transition-all cursor-pointer ${
+                theme === 'retro'
+                  ? 'bg-amber-50/70 border-[#C65952] shadow-md ring-2 ring-[#C65952]/30'
+                  : 'bg-white/40 border-slate-200 dark:bg-slate-900/40 dark:border-slate-800 hover:border-amber-300'
+              }`}
+            >
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
+                  <div className="w-3.5 h-3.5 rounded-full bg-[#C65952]" />
+                  <span>Retro 90s</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Nostalgic 90s aesthetic featuring warm kraft sand, antique paper ivory, dusty denim blue, and terracotta.
+                </p>
+                <div className="flex items-center gap-1.5 pt-1">
+                  <div className="w-5 h-5 rounded-md bg-[#E8DEC8] shadow-xs border border-amber-300" title="Kraft Sand #E8DEC8" />
+                  <div className="w-5 h-5 rounded-md bg-[#FAF6ED] border border-slate-300 shadow-xs" title="Antique Paper #FAF6ED" />
+                  <div className="w-5 h-5 rounded-md bg-[#6B9AC4]" title="Dusty 90s Denim #6B9AC4" />
+                  <div className="w-5 h-5 rounded-md bg-[#C65952]" title="Terracotta Rust #C65952" />
+                </div>
+              </div>
+              {theme === 'retro' && <Check className="w-5 h-5 text-[#C65952] shrink-0" />}
+            </button>
+          </div>
         </div>
       </div>
 

@@ -378,9 +378,40 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('aura_currency', c);
   };
 
+  const syncThemeDOM = (t: AppTheme) => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.setAttribute('data-theme', t);
+    document.body.setAttribute('data-theme', t);
+    
+    const allThemeClasses = [
+      'coolors-theme',
+      'dark-theme',
+      'midnight-theme',
+      'emerald-theme',
+      'slate-theme',
+      'light-theme',
+      'flavorfit-theme',
+      'nature-theme',
+      'retro-theme',
+      'dark'
+    ];
+    document.documentElement.classList.remove(...allThemeClasses);
+    document.body.classList.remove(...allThemeClasses);
+
+    document.documentElement.classList.add(`${t}-theme`);
+    document.body.classList.add(`${t}-theme`);
+
+    // Only dark and midnight get the 'dark' and 'dark-theme' classes for black color themes
+    if (t === 'dark' || t === 'midnight') {
+      document.documentElement.classList.add('dark', 'dark-theme');
+      document.body.classList.add('dark', 'dark-theme');
+    }
+  };
+
   const setTheme = (t: AppTheme) => {
     setThemeState(t);
     localStorage.setItem('aura_theme', t);
+    syncThemeDOM(t);
   };
 
   const setAccentColor = (color: string) => {
@@ -391,6 +422,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       document.body.setAttribute('data-accent', color);
     }
   };
+
+  useEffect(() => {
+    syncThemeDOM(theme);
+  }, [theme]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {

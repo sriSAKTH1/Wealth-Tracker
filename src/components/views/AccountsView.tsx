@@ -85,8 +85,127 @@ export const AccountsView: React.FC = () => {
     deleteTransaction,
     openQuickAdd,
     currency,
-    convertCurrency
+    convertCurrency,
+    theme
   } = useFinance();
+
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
+
+  // Theme-aware styles for AccountsView components, modals, buttons, and badges
+  const accStyles = React.useMemo(() => {
+    switch (theme) {
+      case 'flavorfit':
+        return {
+          card: 'bg-[#131522] border-[#202438] text-white shadow-lg shadow-black/20',
+          cardSub: 'bg-[#161827] border-[#22263D] text-slate-200',
+          modal: 'bg-[#0B0C14] border-[#202438] text-white shadow-2xl',
+          input: 'bg-[#131522] border-[#22263D] text-white placeholder-slate-500 focus:border-[#9FE0E8] focus:ring-[#9FE0E8]',
+          badgeActive: 'bg-[#9FE0E8]/20 border-[#9FE0E8] text-[#9FE0E8]',
+          badgeInactive: 'bg-[#131522] border-[#202438] text-slate-300 hover:border-[#9FE0E8]/50 hover:text-white',
+          btnPrimary: 'bg-[#9FE0E8] hover:bg-[#8CD5DD] text-[#0B101D] font-bold shadow-md shadow-[#9FE0E8]/20',
+          btnSecondary: 'bg-[#1A1C2D] hover:bg-[#22253B] text-slate-300 border border-[#262A44]',
+          accentText: 'text-[#9FE0E8]',
+          accentBg: 'bg-[#9FE0E8]',
+          accentBorder: 'border-[#9FE0E8]',
+          subtabContainer: 'bg-[#0B0C14] border-[#202438]',
+          subtabActive: 'bg-[#9FE0E8]/20 text-[#9FE0E8] border-[#9FE0E8]/40 shadow-sm',
+          subtabInactive: 'text-slate-400 hover:text-white',
+          pillContainer: 'bg-[#131522] border-[#202438]',
+          pillActive: 'bg-[#9FE0E8] text-[#0B101D] font-bold shadow-sm',
+          pillInactive: 'text-slate-400 hover:text-white',
+          heading: 'text-white',
+          muted: 'text-[#8D93B4]',
+        };
+      case 'nature':
+        return {
+          card: 'bg-[#FAF8F3] border-[#DED9CD] text-[#283618] shadow-xs',
+          cardSub: 'bg-[#ECE8DD] border-[#DED9CD] text-[#283618]',
+          modal: 'bg-[#FAF8F3] border-[#DED9CD] text-[#283618] shadow-xl',
+          input: 'bg-[#F4F1EA] border-[#DED9CD] text-[#283618] placeholder-[#787D60] focus:border-[#606C38] focus:ring-[#606C38]',
+          badgeActive: 'bg-[#606C38]/20 border-[#606C38] text-[#283618]',
+          badgeInactive: 'bg-[#F4F1EA] border-[#DED9CD] text-[#5C664E] hover:border-[#606C38]/40 hover:text-[#283618]',
+          btnPrimary: 'bg-[#606C38] hover:bg-[#4E582E] text-white font-bold shadow-sm',
+          btnSecondary: 'bg-[#ECE8DD] hover:bg-[#E2DDD0] text-[#283618] border border-[#DED9CD]',
+          accentText: 'text-[#606C38]',
+          accentBg: 'bg-[#606C38]',
+          accentBorder: 'border-[#606C38]',
+          subtabContainer: 'bg-[#FAF8F3] border-[#DED9CD]',
+          subtabActive: 'bg-[#606C38] text-white font-bold shadow-sm',
+          subtabInactive: 'text-[#5C664E] hover:text-[#283618]',
+          pillContainer: 'bg-[#F4F1EA] border-[#DED9CD]',
+          pillActive: 'bg-[#606C38] text-white font-bold shadow-sm',
+          pillInactive: 'text-[#5C664E] hover:text-[#283618]',
+          heading: 'text-[#283618]',
+          muted: 'text-[#5C664E]',
+        };
+      case 'retro':
+        return {
+          card: 'bg-[#FAF6ED] border-[#D6CCB5] text-[#2B2520] shadow-xs',
+          cardSub: 'bg-[#EDE5D3] border-[#D6CCB5] text-[#2B2520]',
+          modal: 'bg-[#FAF6ED] border-[#D6CCB5] text-[#2B2520] shadow-xl',
+          input: 'bg-[#F5EEDF] border-[#D6CCB5] text-[#2B2520] placeholder-[#8A7C6E] focus:border-[#C65952] focus:ring-[#C65952]',
+          badgeActive: 'bg-[#C65952]/20 border-[#C65952] text-[#2B2520]',
+          badgeInactive: 'bg-[#F5EEDF] border-[#D6CCB5] text-[#6E6256] hover:border-[#C65952]/40 hover:text-[#2B2520]',
+          btnPrimary: 'bg-[#C65952] hover:bg-[#B34E47] text-white font-bold shadow-sm',
+          btnSecondary: 'bg-[#EDE5D3] hover:bg-[#E2D8C3] text-[#2B2520] border border-[#D6CCB5]',
+          accentText: 'text-[#C65952]',
+          accentBg: 'bg-[#C65952]',
+          accentBorder: 'border-[#C65952]',
+          subtabContainer: 'bg-[#FAF6ED] border-[#D6CCB5]',
+          subtabActive: 'bg-[#C65952] text-white font-bold shadow-sm',
+          subtabInactive: 'text-[#6E6256] hover:text-[#2B2520]',
+          pillContainer: 'bg-[#F5EEDF] border-[#D6CCB5]',
+          pillActive: 'bg-[#C65952] text-white font-bold shadow-sm',
+          pillInactive: 'text-[#6E6256] hover:text-[#2B2520]',
+          heading: 'text-[#2B2520]',
+          muted: 'text-[#6E6256]',
+        };
+      case 'light':
+        return {
+          card: 'bg-white border-slate-200 text-slate-900 shadow-xs',
+          cardSub: 'bg-slate-50 border-slate-200 text-slate-800',
+          modal: 'bg-white border-slate-200 text-slate-900 shadow-2xl',
+          input: 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500',
+          badgeActive: 'bg-blue-50 border-blue-500 text-blue-700 font-bold',
+          badgeInactive: 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300',
+          btnPrimary: 'bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-sm shadow-blue-500/20',
+          btnSecondary: 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200',
+          accentText: 'text-blue-600',
+          accentBg: 'bg-blue-600',
+          accentBorder: 'border-blue-500',
+          subtabContainer: 'bg-slate-100 border-slate-200',
+          subtabActive: 'bg-white text-blue-700 font-bold shadow-xs border border-slate-200',
+          subtabInactive: 'text-slate-600 hover:text-slate-900',
+          pillContainer: 'bg-slate-100 border-slate-200',
+          pillActive: 'bg-white text-blue-700 font-bold shadow-xs border border-slate-200',
+          pillInactive: 'text-slate-600 hover:text-slate-900',
+          heading: 'text-slate-900',
+          muted: 'text-slate-500',
+        };
+      default:
+        return {
+          card: 'bg-zinc-900/80 border-zinc-800 text-zinc-100',
+          cardSub: 'bg-zinc-950/60 border-zinc-800 text-zinc-200',
+          modal: 'bg-zinc-900 border-zinc-800 text-zinc-100 shadow-2xl',
+          input: 'bg-zinc-950 border-zinc-800 text-zinc-100 placeholder-zinc-500 focus:border-blue-500 focus:ring-blue-500',
+          badgeActive: 'bg-blue-500/20 border-blue-500 text-blue-400 font-bold',
+          badgeInactive: 'bg-zinc-950/60 border-zinc-800 text-zinc-300 hover:border-zinc-700',
+          btnPrimary: 'bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-sm',
+          btnSecondary: 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700',
+          accentText: 'text-blue-400',
+          accentBg: 'bg-blue-600',
+          accentBorder: 'border-blue-500',
+          subtabContainer: 'bg-zinc-900/90 border-zinc-800',
+          subtabActive: 'bg-zinc-800 text-blue-400 font-bold shadow-sm',
+          subtabInactive: 'text-zinc-400 hover:text-zinc-200',
+          pillContainer: 'bg-zinc-950 border-zinc-800',
+          pillActive: 'bg-zinc-800 text-blue-400 font-bold shadow-sm',
+          pillInactive: 'text-zinc-400 hover:text-zinc-200',
+          heading: 'text-zinc-100',
+          muted: 'text-zinc-400',
+        };
+    }
+  }, [theme]);
 
   // Deletion confirmation states
   const [accountToDelete, setAccountToDelete] = useState<AccountItem | null>(null);
@@ -200,15 +319,15 @@ export const AccountsView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24 lg:pb-12 animate-in fade-in duration-200">
-      {/* 4 Sub-Tabs Bar: Money, Budget, Accounts, State */}
-      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-900/90 border border-zinc-800 text-xs overflow-x-auto no-scrollbar">
+      {/* Sub-Tabs Bar: Money, Budget, Accounts, State */}
+      <div className={`flex items-center gap-1.5 p-1 rounded-2xl border text-xs overflow-x-auto no-scrollbar transition-all ${accStyles.subtabContainer}`}>
         <button
           id="tab-account-money"
           onClick={() => setAccountSubTab('money')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer ${
             accountSubTab === 'money'
-              ? 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-sm'
-              : 'text-zinc-400 hover:text-zinc-200'
+              ? accStyles.subtabActive
+              : accStyles.subtabInactive
           }`}
         >
           <DollarSign className="w-4 h-4" />
@@ -218,10 +337,10 @@ export const AccountsView: React.FC = () => {
         <button
           id="tab-account-budget"
           onClick={() => setAccountSubTab('budget')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer ${
             accountSubTab === 'budget'
-              ? 'bg-zinc-800 text-cyan-400 border border-zinc-700 shadow-sm'
-              : 'text-zinc-400 hover:text-zinc-200'
+              ? accStyles.subtabActive
+              : accStyles.subtabInactive
           }`}
         >
           <PieChart className="w-4 h-4" />
@@ -231,10 +350,10 @@ export const AccountsView: React.FC = () => {
         <button
           id="tab-account-accounts"
           onClick={() => setAccountSubTab('accounts')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer ${
             accountSubTab === 'accounts'
-              ? 'bg-zinc-800 text-purple-400 border border-zinc-700 shadow-sm'
-              : 'text-zinc-400 hover:text-zinc-200'
+              ? accStyles.subtabActive
+              : accStyles.subtabInactive
           }`}
         >
           <Wallet className="w-4 h-4" />
@@ -244,10 +363,10 @@ export const AccountsView: React.FC = () => {
         <button
           id="tab-account-state"
           onClick={() => setAccountSubTab('state')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer ${
             accountSubTab === 'state'
-              ? 'bg-zinc-800 text-amber-400 border border-zinc-700 shadow-sm'
-              : 'text-zinc-400 hover:text-zinc-200'
+              ? accStyles.subtabActive
+              : accStyles.subtabInactive
           }`}
         >
           <Activity className="w-4 h-4" />
@@ -718,40 +837,40 @@ export const AccountsView: React.FC = () => {
 
       {/* Add Account Modal */}
       {isAddAccountOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-100">
-            <h3 className="text-sm font-bold text-zinc-100">Link Financial Account</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
+          <div className={`w-full max-w-md border rounded-2xl p-5 space-y-4 shadow-2xl animate-in zoom-in-95 duration-100 ${accStyles.modal}`}>
+            <h3 className={`text-sm font-bold ${accStyles.heading}`}>Link Financial Account</h3>
             <form onSubmit={handleCreateAccount} className="space-y-3 text-xs">
               <div>
-                <label className="block text-zinc-400 mb-1">Account Name</label>
+                <label className={`block mb-1 ${accStyles.muted}`}>Account Name</label>
                 <input
                   type="text"
                   required
                   value={newAccName}
                   onChange={e => setNewAccName(e.target.value)}
                   placeholder="e.g. Daily Checking, High-Yield Savings"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 focus:border-emerald-500"
+                  className={`w-full border rounded-xl px-3 py-2 ${accStyles.input}`}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-zinc-400 mb-1">Institution</label>
+                  <label className={`block mb-1 ${accStyles.muted}`}>Institution</label>
                   <input
                     type="text"
                     required
                     value={newAccInstitution}
                     onChange={e => setNewAccInstitution(e.target.value)}
                     placeholder="e.g. Chase, Vanguard"
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 focus:border-emerald-500"
+                    className={`w-full border rounded-xl px-3 py-2 ${accStyles.input}`}
                   />
                 </div>
                 <div>
-                  <label className="block text-zinc-400 mb-1">Account Type</label>
+                  <label className={`block mb-1 ${accStyles.muted}`}>Account Type</label>
                   <select
                     value={newAccType}
                     onChange={e => setNewAccType(e.target.value as any)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-200 focus:border-emerald-500"
+                    className={`w-full border rounded-xl px-3 py-2 ${accStyles.input}`}
                   >
                     <option value="checking">Checking</option>
                     <option value="savings">Savings / Vault</option>
@@ -764,7 +883,7 @@ export const AccountsView: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-zinc-400 mb-1">Initial Balance ($)</label>
+                  <label className={`block mb-1 ${accStyles.muted}`}>Initial Balance ($)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -772,32 +891,32 @@ export const AccountsView: React.FC = () => {
                     value={newAccBalance}
                     onChange={e => setNewAccBalance(e.target.value)}
                     placeholder="0.00"
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 font-mono text-zinc-100 focus:border-emerald-500"
+                    className={`w-full border rounded-xl px-3 py-2 font-mono ${accStyles.input}`}
                   />
                 </div>
                 <div>
-                  <label className="block text-zinc-400 mb-1">Masked Number</label>
+                  <label className={`block mb-1 ${accStyles.muted}`}>Masked Number</label>
                   <input
                     type="text"
                     value={newAccMasked}
                     onChange={e => setNewAccMasked(e.target.value)}
                     placeholder="•••• 4829"
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100 focus:border-emerald-500"
+                    className={`w-full border rounded-xl px-3 py-2 ${accStyles.input}`}
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-inherit/30">
                 <button
                   type="button"
                   onClick={() => setIsAddAccountOpen(false)}
-                  className="px-3 py-2 rounded-xl bg-zinc-800 text-zinc-300"
+                  className={`px-3 py-2 rounded-xl transition-colors cursor-pointer ${accStyles.btnSecondary}`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-500 text-zinc-950 font-semibold"
+                  className={`px-5 py-2 rounded-xl font-semibold transition-all shadow-sm active:scale-95 cursor-pointer ${accStyles.btnPrimary}`}
                 >
                   Add Account
                 </button>
@@ -809,38 +928,38 @@ export const AccountsView: React.FC = () => {
 
       {/* Add Budget Envelope Modal */}
       {isAddEnvelopeOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className={`w-full max-w-lg border rounded-3xl p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-150 ${accStyles.modal}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div 
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-950"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-950 shadow-sm"
                   style={{ backgroundColor: newEnvColor }}
                 >
                   <Layers className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-zinc-100">Create Budget Envelope</h3>
-                  <p className="text-xs text-zinc-400">Set spending limit & category allowance</p>
+                  <h3 className={`text-base font-bold ${accStyles.heading}`}>Create Budget Envelope</h3>
+                  <p className={`text-xs ${accStyles.muted}`}>Set spending limit & category allowance</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsAddEnvelopeOpen(false)}
-                className="p-1.5 text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-800 transition-colors"
+                className={`p-1.5 rounded-xl transition-colors cursor-pointer ${accStyles.muted} hover:${accStyles.heading}`}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleCreateEnvelope} className="space-y-4 text-xs">
-              {/* Category Selector */}
+              {/* Category Selector - Contains button:nth-of-type(11) targeted by user */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-zinc-300 font-semibold">Expense Category</label>
+                  <label className={`font-semibold ${accStyles.heading}`}>Expense Category</label>
                   <button
                     type="button"
                     onClick={() => setIsCustomCategory(!isCustomCategory)}
-                    className="text-[11px] text-cyan-400 hover:text-cyan-300 font-medium"
+                    className={`text-[11px] font-medium cursor-pointer ${accStyles.accentText} hover:underline`}
                   >
                     {isCustomCategory ? '← Choose standard category' : '+ Custom category name'}
                   </button>
@@ -854,7 +973,7 @@ export const AccountsView: React.FC = () => {
                       value={customCategoryName}
                       onChange={e => setCustomCategoryName(e.target.value)}
                       placeholder="e.g. Pet Care & Vet, Gaming & Hardware..."
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-xs"
+                      className={`w-full border rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 ${accStyles.input}`}
                       autoFocus
                     />
                   </div>
@@ -868,10 +987,10 @@ export const AccountsView: React.FC = () => {
                           key={cat}
                           type="button"
                           onClick={() => setNewEnvCategory(cat)}
-                          className={`flex items-center justify-between p-2 rounded-xl text-left border transition-all ${
+                          className={`flex items-center justify-between p-2 rounded-xl text-left border transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-cyan-950/60 border-cyan-500/80 text-cyan-300 font-bold'
-                              : 'bg-zinc-950/60 border-zinc-800/80 text-zinc-300 hover:border-zinc-700'
+                              ? `${accStyles.badgeActive} font-bold shadow-xs`
+                              : `${accStyles.badgeInactive}`
                           }`}
                         >
                           <span className="truncate text-[11px]">{cat}</span>
@@ -885,7 +1004,7 @@ export const AccountsView: React.FC = () => {
                 )}
 
                 {!isCustomCategory && budgets.some(b => b.category === newEnvCategory) && (
-                  <p className="text-[11px] text-amber-400/90 flex items-center gap-1 mt-1">
+                  <p className="text-[11px] text-amber-500 font-medium flex items-center gap-1 mt-1">
                     <AlertTriangle className="w-3 h-3 shrink-0" />
                     <span>An envelope for &quot;{newEnvCategory}&quot; already exists.</span>
                   </p>
@@ -894,9 +1013,9 @@ export const AccountsView: React.FC = () => {
 
               {/* Allowance Limit */}
               <div className="space-y-1.5">
-                <label className="text-zinc-300 font-semibold block">Planned Spending Allowance</label>
+                <label className={`font-semibold block ${accStyles.heading}`}>Planned Spending Allowance</label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono text-zinc-400 text-sm font-bold">
+                  <span className={`absolute left-3.5 top-1/2 -translate-y-1/2 font-mono text-sm font-bold ${accStyles.muted}`}>
                     {currencyConfig.symbol}
                   </span>
                   <input
@@ -907,19 +1026,19 @@ export const AccountsView: React.FC = () => {
                     value={newEnvAmount}
                     onChange={e => setNewEnvAmount(e.target.value)}
                     placeholder="500"
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-8 pr-3.5 py-2.5 font-mono text-sm text-zinc-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                    className={`w-full border rounded-xl pl-8 pr-3.5 py-2.5 font-mono text-sm focus:outline-none focus:ring-1 ${accStyles.input}`}
                   />
                 </div>
 
                 {/* Quick Presets */}
                 <div className="flex items-center gap-1.5 pt-1">
-                  <span className="text-[10px] text-zinc-500 font-medium">Presets:</span>
+                  <span className={`text-[10px] font-medium ${accStyles.muted}`}>Presets:</span>
                   {[100, 250, 500, 1000, 2000].map(val => (
                     <button
                       key={val}
                       type="button"
                       onClick={() => setNewEnvAmount(val.toString())}
-                      className="px-2 py-0.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-[10px] font-mono transition-colors"
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-mono transition-colors cursor-pointer ${accStyles.btnSecondary}`}
                     >
                       {currencyConfig.symbol}{val}
                     </button>
@@ -927,19 +1046,19 @@ export const AccountsView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Period & Color Picker Grid */}
+              {/* Period & Color Picker Grid - Contains button:nth-of-type(1) Monthly targeted by user */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 {/* Period */}
                 <div className="space-y-1.5">
-                  <label className="text-zinc-300 font-semibold block">Budget Cycle</label>
-                  <div className="grid grid-cols-2 gap-1.5 p-1 bg-zinc-950 border border-zinc-800 rounded-xl">
+                  <label className={`font-semibold block ${accStyles.heading}`}>Budget Cycle</label>
+                  <div className={`grid grid-cols-2 gap-1.5 p-1 border rounded-xl ${accStyles.pillContainer}`}>
                     <button
                       type="button"
                       onClick={() => setNewEnvPeriod('monthly')}
-                      className={`py-1.5 rounded-lg font-medium text-center transition-all ${
+                      className={`py-1.5 rounded-lg font-medium text-center transition-all cursor-pointer ${
                         newEnvPeriod === 'monthly'
-                          ? 'bg-zinc-800 text-cyan-400 font-bold shadow-sm'
-                          : 'text-zinc-400 hover:text-zinc-200'
+                          ? accStyles.pillActive
+                          : accStyles.pillInactive
                       }`}
                     >
                       Monthly
@@ -947,10 +1066,10 @@ export const AccountsView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setNewEnvPeriod('yearly')}
-                      className={`py-1.5 rounded-lg font-medium text-center transition-all ${
+                      className={`py-1.5 rounded-lg font-medium text-center transition-all cursor-pointer ${
                         newEnvPeriod === 'yearly'
-                          ? 'bg-zinc-800 text-cyan-400 font-bold shadow-sm'
-                          : 'text-zinc-400 hover:text-zinc-200'
+                          ? accStyles.pillActive
+                          : accStyles.pillInactive
                       }`}
                     >
                       Yearly
@@ -960,14 +1079,14 @@ export const AccountsView: React.FC = () => {
 
                 {/* Color Swatches */}
                 <div className="space-y-1.5">
-                  <label className="text-zinc-300 font-semibold block">Accent Color</label>
-                  <div className="flex items-center gap-1.5 flex-wrap p-1.5 bg-zinc-950 border border-zinc-800 rounded-xl">
+                  <label className={`font-semibold block ${accStyles.heading}`}>Accent Color</label>
+                  <div className={`flex items-center gap-1.5 flex-wrap p-1.5 border rounded-xl ${accStyles.pillContainer}`}>
                     {ENVELOPE_COLORS.map(color => (
                       <button
                         key={color}
                         type="button"
                         onClick={() => setNewEnvColor(color)}
-                        className="w-5 h-5 rounded-full flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
+                        className="w-5 h-5 rounded-full flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer"
                         style={{ backgroundColor: color }}
                       >
                         {newEnvColor === color && <Check className="w-3 h-3 text-zinc-950 stroke-[3]" />}
@@ -978,17 +1097,17 @@ export const AccountsView: React.FC = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800/80">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-inherit/30">
                 <button
                   type="button"
                   onClick={() => setIsAddEnvelopeOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium transition-colors"
+                  className={`px-4 py-2 rounded-xl font-medium transition-colors cursor-pointer ${accStyles.btnSecondary}`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-bold transition-all shadow-sm active:scale-95 flex items-center gap-1.5"
+                  className={`px-5 py-2 rounded-xl font-bold transition-all shadow-sm active:scale-95 flex items-center gap-1.5 cursor-pointer ${accStyles.btnPrimary}`}
                 >
                   <Plus className="w-4 h-4" />
                   <span>Create Envelope</span>

@@ -275,7 +275,7 @@ export interface NetWorthSnapshot {
   totalLiabilities: number;
 }
 
-export type AppTheme = 'coolors' | 'dark' | 'midnight' | 'emerald' | 'slate' | 'light';
+export type AppTheme = 'coolors' | 'dark' | 'midnight' | 'emerald' | 'slate' | 'light' | 'flavorfit' | 'nature' | 'retro';
 
 export type MainTab = 'overview' | 'wealth' | 'goals' | 'account' | 'more' | 'calendar' | 'balancesheet' | 'reports' | 'finscore' | 'settings' | 'calculators';
 

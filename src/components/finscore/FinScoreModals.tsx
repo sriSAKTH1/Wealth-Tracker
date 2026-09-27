@@ -14,6 +14,7 @@ import {
   Clock
 } from 'lucide-react';
 import { FinScoreResult, FinScoreProfile } from '../../types';
+import { useFinance } from '../../context/FinanceContext';
 
 interface HealthPlanModalProps {
   isOpen: boolean;
@@ -25,6 +26,99 @@ interface HealthPlanModalProps {
   onNavigateTab: (tab: any) => void;
 }
 
+const getModalStyles = (theme: string) => {
+  switch (theme) {
+    case 'flavorfit':
+      return {
+        modal: 'bg-[#0B0C14] border-[#202438] text-white',
+        card: 'bg-[#131522] border-[#202438] text-white',
+        inner: 'bg-[#161827] border-[#22263D] text-slate-200',
+        btnSecondary: 'bg-[#1A1C2D] hover:bg-[#22253B] text-slate-300 border border-[#262A44]',
+        headerBorder: 'border-[#202438]',
+        tableHeader: 'bg-[#161827] text-slate-300',
+        tableRow: 'hover:bg-[#1A1C2D]/40',
+        divider: 'border-[#22263D]',
+      };
+    case 'nature':
+      return {
+        modal: 'bg-[#FAF8F3] border-[#DED9CD] text-[#283618]',
+        card: 'bg-[#FAF8F3] border-[#DED9CD] text-[#283618]',
+        inner: 'bg-[#F4F1EA] border-[#DED9CD] text-[#283618]',
+        btnSecondary: 'bg-[#ECE8DD] hover:bg-[#E2DDD0] text-[#283618] border border-[#DED9CD]',
+        headerBorder: 'border-[#DED9CD]',
+        tableHeader: 'bg-[#ECE8DD] text-[#283618]',
+        tableRow: 'hover:bg-[#ECE8DD]/50',
+        divider: 'border-[#DED9CD]',
+      };
+    case 'retro':
+      return {
+        modal: 'bg-[#FAF6ED] border-[#D6CCB5] text-[#2B2520]',
+        card: 'bg-[#FAF6ED] border-[#D6CCB5] text-[#2B2520]',
+        inner: 'bg-[#F5EEDF] border-[#D6CCB5] text-[#2B2520]',
+        btnSecondary: 'bg-[#EDE5D3] hover:bg-[#E2D8C3] text-[#2B2520] border border-[#D6CCB5]',
+        headerBorder: 'border-[#D6CCB5]',
+        tableHeader: 'bg-[#EDE5D3] text-[#2B2520]',
+        tableRow: 'hover:bg-[#EDE5D3]/50',
+        divider: 'border-[#D6CCB5]',
+      };
+    case 'coolors':
+      return {
+        modal: 'bg-[#0b1329] border-[#1e2d54] text-white',
+        card: 'bg-[#111c38] border-[#1e2d54] text-white',
+        inner: 'bg-[#152347] border-[#22335e] text-blue-100',
+        btnSecondary: 'bg-[#17254a] hover:bg-[#1d2f5e] text-blue-200 border border-[#22335e]',
+        headerBorder: 'border-[#1e2d54]',
+        tableHeader: 'bg-[#152347] text-blue-200',
+        tableRow: 'hover:bg-[#17254a]/40',
+        divider: 'border-[#1e2d54]',
+      };
+    case 'emerald':
+      return {
+        modal: 'bg-[#021a13] border-[#0e4a39] text-white',
+        card: 'bg-[#062a20] border-[#0e4a39] text-white',
+        inner: 'bg-[#09382b] border-[#115743] text-emerald-100',
+        btnSecondary: 'bg-[#09382b] hover:bg-[#0c4737] text-emerald-200 border border-[#115743]',
+        headerBorder: 'border-[#0e4a39]',
+        tableHeader: 'bg-[#09382b] text-emerald-200',
+        tableRow: 'hover:bg-[#09382b]/40',
+        divider: 'border-[#0e4a39]',
+      };
+    case 'slate':
+      return {
+        modal: 'bg-[#0f172a] border-[#334155] text-white',
+        card: 'bg-[#1e293b] border-[#334155] text-white',
+        inner: 'bg-[#243247] border-[#3b4b63] text-slate-100',
+        btnSecondary: 'bg-[#27354c] hover:bg-[#30415d] text-slate-200 border border-[#3b4b63]',
+        headerBorder: 'border-[#334155]',
+        tableHeader: 'bg-[#243247] text-slate-200',
+        tableRow: 'hover:bg-[#27354c]/40',
+        divider: 'border-[#334155]',
+      };
+    case 'light':
+      return {
+        modal: 'bg-white border-slate-200 text-slate-900',
+        card: 'bg-white border-slate-200 text-slate-900',
+        inner: 'bg-slate-50 border-slate-200 text-slate-800',
+        btnSecondary: 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200',
+        headerBorder: 'border-slate-200',
+        tableHeader: 'bg-slate-100 text-slate-700',
+        tableRow: 'hover:bg-slate-50',
+        divider: 'border-slate-200',
+      };
+    default: // Only dark / midnight modes keep black color themes
+      return {
+        modal: 'bg-zinc-900 border-zinc-800 text-white',
+        card: 'bg-zinc-900/90 border-zinc-800 text-white',
+        inner: 'bg-zinc-950/80 border-zinc-800 text-zinc-200',
+        btnSecondary: 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700',
+        headerBorder: 'border-zinc-800',
+        tableHeader: 'bg-zinc-800/80 text-zinc-300',
+        tableRow: 'hover:bg-zinc-800/40',
+        divider: 'border-zinc-800',
+      };
+  }
+};
+
 export const FinScoreHealthPlanModal: React.FC<HealthPlanModalProps> = ({
   isOpen,
   onClose,
@@ -34,6 +128,9 @@ export const FinScoreHealthPlanModal: React.FC<HealthPlanModalProps> = ({
   isLight,
   onNavigateTab,
 }) => {
+  const { theme } = useFinance();
+  const modalStyles = React.useMemo(() => getModalStyles(theme), [theme]);
+
   if (!isOpen) return null;
 
   const planSteps = [

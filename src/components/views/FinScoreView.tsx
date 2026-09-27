@@ -136,7 +136,165 @@ export const FinScoreView: React.FC = () => {
     essentialGoals = []
   } = useFinance();
   const appGoals = customGoals || [];
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
+
+  // Theme-aware styles: Only dark/midnight mode has black color themes!
+  const finScoreTheme = React.useMemo(() => {
+    switch (theme) {
+      case 'flavorfit':
+        return {
+          hero: 'bg-gradient-to-br from-[#131522] via-[#161827] to-[#1F2338] border-[#22263D] text-white shadow-2xl shadow-cyan-950/40',
+          banner: 'bg-gradient-to-r from-[#131522] via-[#1A1D30] to-[#131522] border-[#22263D] shadow-sm',
+          card: 'bg-[#131522] border-[#202438] text-white shadow-lg shadow-black/20',
+          innerCard: 'bg-[#161827] border-[#22263D] text-slate-200',
+          heading: 'text-white',
+          muted: 'text-[#8D93B4]',
+          input: 'bg-[#10121e] border-[#22263D] text-white focus:border-[#9FE0E8] focus:ring-[#9FE0E8]',
+          btnSecondary: 'bg-[#1A1C2D] hover:bg-[#22253B] text-slate-300 border border-[#262A44]',
+          subtabContainer: 'bg-[#0B0C14] border-[#202438]',
+          subtabActive: 'bg-[#9FE0E8]/25 text-[#9FE0E8] border border-[#9FE0E8]/40 font-bold shadow-sm',
+          subtabInactive: 'text-slate-400 hover:bg-[#1A1C2D] hover:text-white',
+          badge: 'bg-[#9FE0E8]/15 text-[#9FE0E8] border-[#9FE0E8]/30',
+          border: 'border-[#202438]',
+          divider: 'border-[#22263D]',
+          rowHover: 'hover:bg-[#1A1C2D]/50',
+          gaugeTrack: 'stroke-[#22263D]',
+        };
+      case 'nature':
+        return {
+          hero: 'bg-gradient-to-br from-[#FAF8F3] via-[#F4F1EA] to-[#EBE6DA] border-[#DED9CD] text-[#283618] shadow-xl shadow-[#606C38]/10',
+          banner: 'bg-gradient-to-r from-[#FAF8F3] via-[#F4F1EA] to-[#EBE6DA] border-[#DED9CD] shadow-xs',
+          card: 'bg-[#FAF8F3] border-[#DED9CD] text-[#283618] shadow-xs',
+          innerCard: 'bg-[#F4F1EA] border-[#DED9CD] text-[#283618]',
+          heading: 'text-[#283618]',
+          muted: 'text-[#5C664E]',
+          input: 'bg-[#ffffff] border-[#DED9CD] text-[#283618] focus:border-[#606C38] focus:ring-[#606C38]',
+          btnSecondary: 'bg-[#ECE8DD] hover:bg-[#E2DDD0] text-[#283618] border border-[#DED9CD]',
+          subtabContainer: 'bg-[#F4F1EA] border-[#DED9CD]',
+          subtabActive: 'bg-[#606C38] text-white font-bold shadow-sm',
+          subtabInactive: 'text-[#5C664E] hover:bg-[#ECE8DD] hover:text-[#283618]',
+          badge: 'bg-[#606C38]/15 text-[#283618] border-[#606C38]/30',
+          border: 'border-[#DED9CD]',
+          divider: 'border-[#DED9CD]',
+          rowHover: 'hover:bg-[#ECE8DD]/60',
+          gaugeTrack: 'stroke-[#DED9CD]',
+        };
+      case 'retro':
+        return {
+          hero: 'bg-gradient-to-br from-[#FAF6ED] via-[#F5EEDF] to-[#E8DEC8] border-[#D6CCB5] text-[#2B2520] shadow-xl shadow-[#C65952]/10',
+          banner: 'bg-gradient-to-r from-[#FAF6ED] via-[#F5EEDF] to-[#E8DEC8] border-[#D6CCB5] shadow-xs',
+          card: 'bg-[#FAF6ED] border-[#D6CCB5] text-[#2B2520] shadow-xs',
+          innerCard: 'bg-[#F5EEDF] border-[#D6CCB5] text-[#2B2520]',
+          heading: 'text-[#2B2520]',
+          muted: 'text-[#6E6256]',
+          input: 'bg-[#FAF6ED] border-[#D6CCB5] text-[#2B2520] focus:border-[#C65952] focus:ring-[#C65952]',
+          btnSecondary: 'bg-[#EDE5D3] hover:bg-[#E2D8C3] text-[#2B2520] border border-[#D6CCB5]',
+          subtabContainer: 'bg-[#F5EEDF] border-[#D6CCB5]',
+          subtabActive: 'bg-[#C65952] text-white font-bold shadow-sm',
+          subtabInactive: 'text-[#6E6256] hover:bg-[#EDE5D3] hover:text-[#2B2520]',
+          badge: 'bg-[#C65952]/15 text-[#2B2520] border-[#C65952]/30',
+          border: 'border-[#D6CCB5]',
+          divider: 'border-[#D6CCB5]',
+          rowHover: 'hover:bg-[#EDE5D3]/60',
+          gaugeTrack: 'stroke-[#D6CCB5]',
+        };
+      case 'coolors':
+        return {
+          hero: 'bg-gradient-to-br from-[#111c38] via-[#152347] to-[#1c2e5c] border-[#1e2d54] text-white shadow-xl shadow-blue-950/40',
+          banner: 'bg-gradient-to-r from-[#111c38] via-[#17254a] to-[#111c38] border-[#1e2d54] shadow-xs',
+          card: 'bg-[#111c38] border-[#1e2d54] text-white shadow-lg shadow-black/20',
+          innerCard: 'bg-[#152347] border-[#22335e] text-blue-100',
+          heading: 'text-white',
+          muted: 'text-[#8ba3d4]',
+          input: 'bg-[#0e172e] border-[#1e2d54] text-white focus:border-blue-400 focus:ring-blue-400',
+          btnSecondary: 'bg-[#17254a] hover:bg-[#1d2f5e] text-blue-200 border border-[#22335e]',
+          subtabContainer: 'bg-[#0b1329] border-[#1e2d54]',
+          subtabActive: 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/30',
+          subtabInactive: 'text-blue-300 hover:bg-[#17254a] hover:text-white',
+          badge: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+          border: 'border-[#1e2d54]',
+          divider: 'border-[#1e2d54]',
+          rowHover: 'hover:bg-[#17254a]/50',
+          gaugeTrack: 'stroke-[#1e2d54]',
+        };
+      case 'emerald':
+        return {
+          hero: 'bg-gradient-to-br from-[#062a20] via-[#09382b] to-[#0d4a39] border-[#0e4a39] text-white shadow-xl shadow-emerald-950/40',
+          banner: 'bg-gradient-to-r from-[#062a20] via-[#0b3d2f] to-[#062a20] border-[#0e4a39] shadow-xs',
+          card: 'bg-[#062a20] border-[#0e4a39] text-white shadow-lg shadow-black/20',
+          innerCard: 'bg-[#09382b] border-[#115743] text-emerald-100',
+          heading: 'text-white',
+          muted: 'text-[#6ee7b7]',
+          input: 'bg-[#042018] border-[#0e4a39] text-white focus:border-emerald-400 focus:ring-emerald-400',
+          btnSecondary: 'bg-[#09382b] hover:bg-[#0c4737] text-emerald-200 border border-[#115743]',
+          subtabContainer: 'bg-[#021a13] border-[#0e4a39]',
+          subtabActive: 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-500/30',
+          subtabInactive: 'text-emerald-300 hover:bg-[#09382b] hover:text-white',
+          badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+          border: 'border-[#0e4a39]',
+          divider: 'border-[#0e4a39]',
+          rowHover: 'hover:bg-[#09382b]/50',
+          gaugeTrack: 'stroke-[#0e4a39]',
+        };
+      case 'slate':
+        return {
+          hero: 'bg-gradient-to-br from-[#1e293b] via-[#243247] to-[#2c3d56] border-[#334155] text-white shadow-xl',
+          banner: 'bg-gradient-to-r from-[#1e293b] via-[#27354c] to-[#1e293b] border-[#334155] shadow-xs',
+          card: 'bg-[#1e293b] border-[#334155] text-white shadow-lg',
+          innerCard: 'bg-[#243247] border-[#3b4b63] text-slate-100',
+          heading: 'text-white',
+          muted: 'text-[#94a3b8]',
+          input: 'bg-[#172030] border-[#334155] text-white focus:border-slate-400 focus:ring-slate-400',
+          btnSecondary: 'bg-[#27354c] hover:bg-[#30415d] text-slate-200 border border-[#3b4b63]',
+          subtabContainer: 'bg-[#0f172a] border-[#334155]',
+          subtabActive: 'bg-slate-700 text-white font-bold shadow-md',
+          subtabInactive: 'text-slate-300 hover:bg-[#27354c] hover:text-white',
+          badge: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
+          border: 'border-[#334155]',
+          divider: 'border-[#334155]',
+          rowHover: 'hover:bg-[#27354c]/50',
+          gaugeTrack: 'stroke-[#334155]',
+        };
+      case 'light':
+        return {
+          hero: 'bg-gradient-to-br from-white via-slate-50 to-blue-50/40 border-slate-200/90 text-slate-900 shadow-slate-200/60',
+          banner: 'bg-gradient-to-r from-slate-50 via-blue-50/50 to-indigo-50/40 border-slate-200/80 shadow-xs',
+          card: 'bg-white border-slate-200 text-slate-900 shadow-xs',
+          innerCard: 'bg-slate-50 border-slate-200 text-slate-800',
+          heading: 'text-slate-900',
+          muted: 'text-slate-500',
+          input: 'bg-white border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-blue-500',
+          btnSecondary: 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200',
+          subtabContainer: 'bg-slate-100 border-slate-200',
+          subtabActive: 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/20',
+          subtabInactive: 'text-slate-600 hover:bg-slate-200 hover:text-slate-900',
+          badge: 'bg-blue-50 text-blue-700 border-blue-200',
+          border: 'border-slate-200',
+          divider: 'border-slate-200',
+          rowHover: 'hover:bg-slate-50/60',
+          gaugeTrack: 'stroke-slate-200',
+        };
+      default: // Only dark / midnight modes keep black color themes
+        return {
+          hero: 'bg-gradient-to-br from-zinc-900 via-zinc-950 to-black border-zinc-800 text-white shadow-black/40',
+          banner: 'bg-gradient-to-r from-zinc-900 via-zinc-950 to-zinc-900 border-zinc-800 shadow-sm',
+          card: 'bg-zinc-900/90 border-zinc-800 text-white shadow-lg',
+          innerCard: 'bg-zinc-950/80 border-zinc-800 text-zinc-200',
+          heading: 'text-white',
+          muted: 'text-zinc-400',
+          input: 'bg-zinc-950 border-zinc-800 text-white focus:border-blue-500 focus:ring-blue-500',
+          btnSecondary: 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700',
+          subtabContainer: 'bg-zinc-950 border-zinc-800',
+          subtabActive: 'bg-blue-600 text-white font-bold shadow-lg shadow-blue-500/30',
+          subtabInactive: 'text-zinc-400 hover:bg-zinc-800/70 hover:text-zinc-200',
+          badge: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+          border: 'border-zinc-800',
+          divider: 'border-zinc-800',
+          rowHover: 'hover:bg-zinc-800/40',
+          gaugeTrack: 'stroke-zinc-800',
+        };
+    }
+  }, [theme]);
 
   // Active FinScore section
   const [activeTab, setActiveTab] = useState<FinScoreTab>('dashboard');
@@ -1246,11 +1404,7 @@ Strategic Focus: ${result.biggestPriority}`;
       {/* ------------------------------------------------------------- */}
       {/* Top Header & Context Bar */}
       {/* ------------------------------------------------------------- */}
-      <div className={`p-6 rounded-3xl border shadow-xl relative overflow-hidden ${
-        isLight 
-          ? 'bg-gradient-to-br from-white via-slate-50 to-blue-50/40 border-slate-200/90 text-slate-900 shadow-slate-200/60' 
-          : 'bg-gradient-to-br from-slate-900/90 via-slate-950 to-slate-900 border-slate-800 text-white shadow-black/40'
-      }`}>
+      <div className={`p-6 rounded-3xl border shadow-xl relative overflow-hidden ${finScoreTheme.hero}`}>
         {/* Glow ambient background effect */}
         <div className="absolute -top-24 -right-24 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -1262,9 +1416,7 @@ Strategic Focus: ${result.biggestPriority}`;
                 <ShieldCheck className="w-3.5 h-3.5" />
                 FinScore™ Core Engine
               </span>
-              <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${
-                isLight ? 'bg-slate-100 text-slate-600 border-slate-300' : 'bg-slate-800 text-slate-400 border-slate-700'
-              }`}>
+              <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${finScoreTheme.badge}`}>
                 Academic & Educational Standard
               </span>
             </div>
@@ -1292,11 +1444,7 @@ Strategic Focus: ${result.biggestPriority}`;
               id="btn-finscore-peer-benchmark"
               onClick={() => setShowBenchmarkModal(true)}
               title="Compare your score and 50/30/20 budget with peer benchmarks"
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm cursor-pointer ${
-                isLight
-                  ? 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200'
-                  : 'bg-purple-950/40 hover:bg-purple-900/60 text-purple-300 border-purple-800/60'
-              }`}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm cursor-pointer ${finScoreTheme.btnSecondary}`}
             >
               <TrendingUp className="w-3.5 h-3.5 text-purple-400" />
               <span>Peer Benchmark & Report</span>
@@ -1322,11 +1470,7 @@ Strategic Focus: ${result.biggestPriority}`;
               id="btn-finscore-load-sample"
               onClick={handleLoadSampleData}
               title="Load sample financial profile with benchmark data"
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm ${
-                isLight
-                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
-              }`}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm ${finScoreTheme.btnSecondary}`}
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>Load Sample</span>
@@ -1351,11 +1495,7 @@ Strategic Focus: ${result.biggestPriority}`;
               id="btn-finscore-sync-portfolio"
               onClick={handleSyncFromAppPortfolio}
               title="Import income, assets, and loans from your active portfolio"
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm ${
-                isLight
-                  ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
-                  : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700'
-              }`}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm ${finScoreTheme.btnSecondary}`}
             >
               <RefreshCw className="w-3.5 h-3.5 text-blue-400" />
               <span>Sync from Portfolio</span>
@@ -1373,20 +1513,16 @@ Strategic Focus: ${result.biggestPriority}`;
         </div>
 
         {/* FINANCIAL HEALTH SCORE & PLAN AT THE TOP OF THAT PLACE */}
-        <div className={`mt-5 p-4 sm:p-5 rounded-2xl border transition-all ${
-          isLight
-            ? 'bg-gradient-to-r from-slate-50 via-blue-50/50 to-indigo-50/40 border-slate-200/80 shadow-xs'
-            : 'bg-gradient-to-r from-slate-900/90 via-blue-950/20 to-slate-900/90 border-slate-800 shadow-sm'
-        }`}>
+        <div className={`mt-5 p-4 sm:p-5 rounded-2xl border transition-all ${finScoreTheme.banner}`}>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
             {/* Health Score Glance */}
-            <div className="lg:col-span-5 flex items-center gap-4 border-b lg:border-b-0 lg:border-r border-slate-700/40 pb-4 lg:pb-0 lg:pr-4">
+            <div className={`lg:col-span-5 flex items-center gap-4 border-b lg:border-b-0 lg:border-r ${finScoreTheme.divider} pb-4 lg:pb-0 lg:pr-4`}>
               <div className="relative shrink-0 flex items-center justify-center">
                 <div className="w-16 h-16 rounded-2xl bg-blue-600/15 border border-blue-500/30 flex flex-col items-center justify-center font-mono text-center">
                   <span className="text-2xl font-extrabold text-blue-400 leading-tight">
                     {result.overallScore}
                   </span>
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                  <span className={`text-[9px] font-bold uppercase tracking-wider ${finScoreTheme.muted}`}>
                     /100
                   </span>
                 </div>
@@ -1410,20 +1546,20 @@ Strategic Focus: ${result.biggestPriority}`;
 
                 {/* 4 Pillars Quick Mini Progress */}
                 <div className="grid grid-cols-4 gap-1.5 mt-2.5 text-[10px] font-mono">
-                  <div title={`Emergency Fund: ${result.scores.emergencyFund}/100`} className="text-center p-1 rounded bg-black/10">
-                    <div className="text-slate-400 text-[9px] truncate">Emergency</div>
+                  <div title={`Emergency Fund: ${result.scores.emergencyFund}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard}`}>
+                    <div className={`${finScoreTheme.muted} text-[9px] truncate`}>Emergency</div>
                     <div className="font-bold text-amber-400">{result.scores.emergencyFund}</div>
                   </div>
-                  <div title={`Insurance: ${result.scores.insurance}/100`} className="text-center p-1 rounded bg-black/10">
-                    <div className="text-slate-400 text-[9px] truncate">Insurance</div>
+                  <div title={`Insurance: ${result.scores.insurance}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard}`}>
+                    <div className={`${finScoreTheme.muted} text-[9px] truncate`}>Insurance</div>
                     <div className="font-bold text-blue-400">{result.scores.insurance}</div>
                   </div>
-                  <div title={`Savings: ${result.scores.savings}/100`} className="text-center p-1 rounded bg-black/10">
-                    <div className="text-slate-400 text-[9px] truncate">Savings</div>
+                  <div title={`Savings: ${result.scores.savings}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard}`}>
+                    <div className={`${finScoreTheme.muted} text-[9px] truncate`}>Savings</div>
                     <div className="font-bold text-emerald-400">{result.scores.savings}</div>
                   </div>
-                  <div title={`Debt: ${result.scores.debt}/100`} className="text-center p-1 rounded bg-black/10">
-                    <div className="text-slate-400 text-[9px] truncate">Debt</div>
+                  <div title={`Debt: ${result.scores.debt}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard}`}>
+                    <div className={`${finScoreTheme.muted} text-[9px] truncate`}>Debt</div>
                     <div className="font-bold text-purple-400">{result.scores.debt}</div>
                   </div>
                 </div>
@@ -1444,7 +1580,7 @@ Strategic Focus: ${result.biggestPriority}`;
                 <p className={`text-xs line-clamp-2 ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
                   {result.summaryDiagnosis}
                 </p>
-                <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 pt-0.5">
+                <div className={`flex flex-wrap items-center gap-3 text-[11px] ${finScoreTheme.muted} pt-0.5`}>
                   <span>Monthly Surplus: <strong className="font-mono text-emerald-400">{currSym}{(result.metrics.monthlySavings ?? 0).toLocaleString()}</strong></span>
                   <span>•</span>
                   <span>Goal Target SIP: <strong className="font-mono text-blue-400">{currSym}{(result.metrics.totalGoalRequiredMonthlySavings ?? 0).toLocaleString()}/mo</strong></span>
@@ -1464,9 +1600,7 @@ Strategic Focus: ${result.biggestPriority}`;
                 <button
                   id="btn-finscore-benchmark-preview"
                   onClick={() => setShowBenchmarkModal(true)}
-                  className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer ${
-                    isLight ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
-                  }`}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer ${finScoreTheme.btnSecondary}`}
                 >
                   <TrendingUp className="w-3.5 h-3.5 text-purple-400" />
                   <span>Benchmark</span>
@@ -1493,7 +1627,7 @@ Strategic Focus: ${result.biggestPriority}`;
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 mt-6 pt-4 border-t overflow-x-auto no-scrollbar text-xs font-semibold">
+        <div className={`flex items-center gap-1.5 mt-6 pt-4 border-t ${finScoreTheme.divider} overflow-x-auto no-scrollbar text-xs font-semibold`}>
           {[
             { id: 'profile', label: '1. Profile', icon: User },
             { id: 'income_expenses', label: '2. Income & Expenses', icon: DollarSign },
@@ -1514,12 +1648,8 @@ Strategic Focus: ${result.biggestPriority}`;
                 onClick={() => setActiveTab(tab.id as FinScoreTab)}
                 className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl whitespace-nowrap transition-all cursor-pointer ${
                   isActive
-                    ? isLight
-                      ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/20'
-                      : 'bg-blue-600 text-white font-bold shadow-lg shadow-blue-500/30'
-                    : isLight
-                    ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                    : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-200'
+                    ? finScoreTheme.subtabActive
+                    : finScoreTheme.subtabInactive
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -1542,9 +1672,7 @@ Strategic Focus: ${result.biggestPriority}`;
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
           {/* Main Hero Financial Health Banner */}
-          <div className={`p-6 sm:p-8 rounded-3xl border shadow-xl ${
-            isLight ? 'bg-white border-slate-200/90 text-slate-900' : 'bg-slate-900/90 border-slate-800 text-white'
-          }`}>
+          <div className={`p-6 sm:p-8 rounded-3xl border shadow-xl ${finScoreTheme.card}`}>
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               {/* Overall Score Dial */}
               <div className="lg:col-span-5 flex flex-col items-center justify-center text-center p-4">
@@ -1556,7 +1684,7 @@ Strategic Focus: ${result.biggestPriority}`;
                       cy="60"
                       r="50"
                       strokeWidth="10"
-                      className={`${isLight ? 'stroke-slate-200' : 'stroke-slate-800'}`}
+                      className={finScoreTheme.gaugeTrack}
                       fill="none"
                     />
                     <circle

@@ -9,12 +9,13 @@ import {
   EyeOff, 
   Sun, 
   Moon, 
-  X,
-  MessageSquarePlus,
-  Star,
-  MoreHorizontal
+  X, 
+  MessageSquarePlus, 
+  Star, 
+  MoreHorizontal 
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
+import { ThankYouFeedbackModal } from './ThankYouFeedbackModal';
 
 interface SidebarProfileProps {
   isCollapsed?: boolean;
@@ -48,6 +49,9 @@ export const SidebarProfile: React.FC<SidebarProfileProps> = ({ isCollapsed = fa
   const [feedbackCategory, setFeedbackCategory] = useState('Feature Request');
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [isThankYouOpen, setIsThankYouOpen] = useState(false);
+  const [submittedRating, setSubmittedRating] = useState<number | undefined>(undefined);
+  const [submittedCategory, setSubmittedCategory] = useState<string | undefined>(undefined);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -92,23 +96,28 @@ export const SidebarProfile: React.FC<SidebarProfileProps> = ({ isCollapsed = fa
     e.preventDefault();
     if (!feedbackText.trim()) return;
 
+    const currentRating = feedbackRating;
+    const currentCategory = feedbackCategory;
+
     // Persist feedback to local storage
     const existing = JSON.parse(localStorage.getItem('fix_user_feedback_logs') || '[]');
     const newEntry = {
       id: Date.now().toString(),
-      rating: feedbackRating,
-      category: feedbackCategory,
+      rating: currentRating,
+      category: currentCategory,
       message: feedbackText.trim(),
       date: new Date().toISOString()
     };
     localStorage.setItem('fix_user_feedback_logs', JSON.stringify([newEntry, ...existing]));
 
+    setSubmittedRating(currentRating);
+    setSubmittedCategory(currentCategory);
     setFeedbackSubmitted(true);
-    setTimeout(() => {
-      setFeedbackSubmitted(false);
-      setFeedbackText('');
-      setIsFeedbackModalOpen(false);
-    }, 1200);
+    setFeedbackText('');
+    setIsFeedbackModalOpen(false);
+
+    // Launch celebratory animation dialog saying "Thank you for the feedback!"
+    setIsThankYouOpen(true);
   };
 
   return (
@@ -419,6 +428,14 @@ export const SidebarProfile: React.FC<SidebarProfileProps> = ({ isCollapsed = fa
         </div>,
         document.body
       )}
+
+      {/* Celebratory animation saying "Thank you for the feedback!" */}
+      <ThankYouFeedbackModal
+        isOpen={isThankYouOpen}
+        onClose={() => setIsThankYouOpen(false)}
+        rating={submittedRating}
+        category={submittedCategory}
+      />
     </div>
   );
 };
