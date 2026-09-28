@@ -1420,21 +1420,21 @@ Strategic Focus: ${result.biggestPriority}`;
                 Academic & Educational Standard
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight break-words">
               Financial Health Score & Planner
             </h1>
-            <p className={`text-sm mt-1 max-w-2xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+            <p className={`text-xs sm:text-sm mt-1 max-w-2xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               Answering the central financial question: <strong className={isLight ? 'text-slate-900' : 'text-slate-200'}>“How financially healthy am I, and what should I improve?”</strong>
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {/* The Two New User Buttons */}
             <button
               id="btn-finscore-quick-plan"
               onClick={() => setShowHealthPlanModal(true)}
               title="Open personalized step-by-step 1-Click Financial Health Plan"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-md shadow-blue-500/25 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-md shadow-blue-500/25 transition-all cursor-pointer shrink-0"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
               <span>1-Click Health Plan</span>
@@ -1444,10 +1444,10 @@ Strategic Focus: ${result.biggestPriority}`;
               id="btn-finscore-peer-benchmark"
               onClick={() => setShowBenchmarkModal(true)}
               title="Compare your score and 50/30/20 budget with peer benchmarks"
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm cursor-pointer ${finScoreTheme.btnSecondary}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm cursor-pointer shrink-0 ${finScoreTheme.btnSecondary}`}
             >
               <TrendingUp className="w-3.5 h-3.5 text-purple-400" />
-              <span>Peer Benchmark & Report</span>
+              <span>Peer Benchmark</span>
             </button>
 
             {/* 1. Reset / Clear All Button */}
@@ -1455,81 +1455,60 @@ Strategic Focus: ${result.biggestPriority}`;
               id="btn-finscore-reset"
               onClick={handleResetData}
               title="Clear all information in Financial Health Score & Planner"
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm shrink-0 ${
                 isLight
                   ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 hover:border-rose-300'
                   : 'bg-rose-950/30 hover:bg-rose-950/60 text-rose-300 hover:text-rose-200 border-rose-900/60 hover:border-rose-700/80'
               }`}
             >
               <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
-              <span>Reset (Clear All)</span>
-            </button>
-
-            {/* 2. Load Sample Data Button */}
-            <button
-              id="btn-finscore-load-sample"
-              onClick={handleLoadSampleData}
-              title="Load sample financial profile with benchmark data"
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm ${finScoreTheme.btnSecondary}`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Load Sample</span>
-            </button>
-
-            {/* 3. Add Data to Profile Button */}
-            <button
-              id="btn-finscore-add-data-profile"
-              onClick={handleOpenAddProfileModal}
-              title="Add or update financial profile parameters"
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm ${
-                isLight
-                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
-                  : 'bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border-emerald-700/50'
-              }`}
-            >
-              <UserPlus className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Add Data to Profile</span>
+              <span>Reset</span>
             </button>
 
             <button
               id="btn-finscore-sync-portfolio"
               onClick={handleSyncFromAppPortfolio}
               title="Import income, assets, and loans from your active portfolio"
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm ${finScoreTheme.btnSecondary}`}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl text-xs font-semibold border transition-all shadow-sm shrink-0 ${finScoreTheme.btnSecondary}`}
             >
               <RefreshCw className="w-3.5 h-3.5 text-blue-400" />
-              <span>Sync from Portfolio</span>
-            </button>
-
-            <button
-              id="btn-finscore-ask-ai"
-              onClick={() => setActiveTab('ai_assistant')}
-              className="flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-md shadow-blue-500/20 transition-all"
-            >
-              <Bot className="w-4 h-4" />
-              <span>AI Advisor Plan</span>
+              <span className="hidden sm:inline">Sync from Portfolio</span>
+              <span className="sm:hidden">Sync</span>
             </button>
           </div>
         </div>
 
         {/* FINANCIAL HEALTH SCORE & PLAN AT THE TOP OF THAT PLACE */}
-        <div className={`mt-5 p-4 sm:p-5 rounded-2xl border transition-all ${finScoreTheme.banner}`}>
+        <div className={`mt-5 p-3.5 sm:p-5 rounded-2xl border transition-all overflow-hidden ${finScoreTheme.banner}`}>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
             {/* Health Score Glance */}
-            <div className={`lg:col-span-5 flex items-center gap-4 border-b lg:border-b-0 lg:border-r ${finScoreTheme.divider} pb-4 lg:pb-0 lg:pr-4`}>
-              <div className="relative shrink-0 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-2xl bg-blue-600/15 border border-blue-500/30 flex flex-col items-center justify-center font-mono text-center">
-                  <span className="text-2xl font-extrabold text-blue-400 leading-tight">
-                    {result.overallScore}
-                  </span>
-                  <span className={`text-[9px] font-bold uppercase tracking-wider ${finScoreTheme.muted}`}>
-                    /100
-                  </span>
+            <div className={`lg:col-span-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 border-b lg:border-b-0 lg:border-r ${finScoreTheme.divider} pb-4 lg:pb-0 lg:pr-4`}>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="relative shrink-0 flex items-center justify-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-blue-600/15 border border-blue-500/30 flex flex-col items-center justify-center font-mono text-center">
+                    <span className="text-xl sm:text-2xl font-extrabold text-blue-400 leading-tight">
+                      {result.overallScore}
+                    </span>
+                    <span className={`text-[9px] font-bold uppercase tracking-wider ${finScoreTheme.muted}`}>
+                      /100
+                    </span>
+                  </div>
+                </div>
+
+                <div className="min-w-0 flex-1 sm:hidden">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider border ${result.gradeColor}`}>
+                      Grade {result.grade}
+                    </span>
+                    <span className="text-xs font-semibold truncate">
+                      {result.overallScore >= 80 ? 'Optimal Health' : result.overallScore >= 65 ? 'Good Foundation' : result.overallScore >= 50 ? 'Fair' : 'Needs Action'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
+              <div className="min-w-0 flex-1 w-full">
+                <div className="hidden sm:flex items-center gap-2 flex-wrap">
                   <span className={`px-2 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-wider border ${result.gradeColor}`}>
                     Grade {result.grade}
                   </span>
@@ -1545,21 +1524,21 @@ Strategic Focus: ${result.biggestPriority}`;
                 </div>
 
                 {/* 4 Pillars Quick Mini Progress */}
-                <div className="grid grid-cols-4 gap-1.5 mt-2.5 text-[10px] font-mono">
-                  <div title={`Emergency Fund: ${result.scores.emergencyFund}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard}`}>
-                    <div className={`${finScoreTheme.muted} text-[9px] truncate`}>Emergency</div>
+                <div className="grid grid-cols-4 gap-1 sm:gap-1.5 mt-2.5 text-[9px] sm:text-[10px] font-mono w-full">
+                  <div title={`Emergency Fund: ${result.scores.emergencyFund}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard} min-w-0`}>
+                    <div className={`${finScoreTheme.muted} text-[8px] sm:text-[9px] truncate`}>Emergency</div>
                     <div className="font-bold text-amber-400">{result.scores.emergencyFund}</div>
                   </div>
-                  <div title={`Insurance: ${result.scores.insurance}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard}`}>
-                    <div className={`${finScoreTheme.muted} text-[9px] truncate`}>Insurance</div>
+                  <div title={`Insurance: ${result.scores.insurance}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard} min-w-0`}>
+                    <div className={`${finScoreTheme.muted} text-[8px] sm:text-[9px] truncate`}>Insurance</div>
                     <div className="font-bold text-blue-400">{result.scores.insurance}</div>
                   </div>
-                  <div title={`Savings: ${result.scores.savings}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard}`}>
-                    <div className={`${finScoreTheme.muted} text-[9px] truncate`}>Savings</div>
+                  <div title={`Savings: ${result.scores.savings}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard} min-w-0`}>
+                    <div className={`${finScoreTheme.muted} text-[8px] sm:text-[9px] truncate`}>Savings</div>
                     <div className="font-bold text-emerald-400">{result.scores.savings}</div>
                   </div>
-                  <div title={`Debt: ${result.scores.debt}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard}`}>
-                    <div className={`${finScoreTheme.muted} text-[9px] truncate`}>Debt</div>
+                  <div title={`Debt: ${result.scores.debt}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard} min-w-0`}>
+                    <div className={`${finScoreTheme.muted} text-[8px] sm:text-[9px] truncate`}>Debt</div>
                     <div className="font-bold text-purple-400">{result.scores.debt}</div>
                   </div>
                 </div>
@@ -1567,28 +1546,28 @@ Strategic Focus: ${result.biggestPriority}`;
             </div>
 
             {/* Financial Health Plan Glance */}
-            <div className="lg:col-span-7 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1 min-w-0">
-                <div className="flex items-center gap-2">
+            <div className="lg:col-span-7 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+              <div className="space-y-1 min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono">
                     Financial Health Plan
                   </span>
-                  <span className="text-xs font-bold text-amber-400 truncate">
+                  <span className="text-xs font-bold text-amber-400 truncate max-w-full">
                     Top Priority: {result.biggestPriority}
                   </span>
                 </div>
-                <p className={`text-xs line-clamp-2 ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+                <p className={`text-xs line-clamp-2 ${isLight ? 'text-slate-600' : 'text-slate-300'} break-words`}>
                   {result.summaryDiagnosis}
                 </p>
-                <div className={`flex flex-wrap items-center gap-3 text-[11px] ${finScoreTheme.muted} pt-0.5`}>
-                  <span>Monthly Surplus: <strong className="font-mono text-emerald-400">{currSym}{(result.metrics.monthlySavings ?? 0).toLocaleString()}</strong></span>
+                <div className={`flex flex-wrap items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] ${finScoreTheme.muted} pt-0.5`}>
+                  <span>Surplus: <strong className="font-mono text-emerald-400">{currSym}{(result.metrics.monthlySavings ?? 0).toLocaleString()}</strong></span>
                   <span>•</span>
-                  <span>Goal Target SIP: <strong className="font-mono text-blue-400">{currSym}{(result.metrics.totalGoalRequiredMonthlySavings ?? 0).toLocaleString()}/mo</strong></span>
+                  <span>Goal SIP: <strong className="font-mono text-blue-400">{currSym}{(result.metrics.totalGoalRequiredMonthlySavings ?? 0).toLocaleString()}/mo</strong></span>
                 </div>
               </div>
 
               {/* Quick Action Plan Trigger Buttons */}
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
                 <button
                   id="btn-finscore-plan-preview"
                   onClick={() => setShowHealthPlanModal(true)}
@@ -1627,17 +1606,17 @@ Strategic Focus: ${result.biggestPriority}`;
         )}
 
         {/* Navigation Tabs */}
-        <div className={`flex items-center gap-1.5 mt-6 pt-4 border-t ${finScoreTheme.divider} overflow-x-auto no-scrollbar text-xs font-semibold`}>
+        <div className={`flex items-center gap-1 sm:gap-1.5 mt-6 pt-4 border-t ${finScoreTheme.divider} overflow-x-auto no-scrollbar text-xs font-semibold`}>
           {[
-            { id: 'profile', label: '1. Profile', icon: User },
-            { id: 'income_expenses', label: '2. Income & Expenses', icon: DollarSign },
-            { id: 'debt', label: '3. Debt Score', icon: Briefcase },
-            { id: 'insurance', label: '4. Insurance Score', icon: ShieldCheck },
-            { id: 'emergency', label: '5. Emergency Fund', icon: AlertTriangle },
-            { id: 'investments_assets', label: '6. Investments & Assets', icon: TrendingUp },
-            { id: 'goals', label: '7. Future Goals', icon: Target },
-            { id: 'ai_assistant', label: '8. AI Assistant', icon: Bot, isAi: true },
-            { id: 'dashboard', label: '9. Score Dashboard', icon: Activity },
+            { id: 'profile', label: '1. Profile', shortLabel: 'Profile', icon: User },
+            { id: 'income_expenses', label: '2. Income & Expenses', shortLabel: 'Cashflow', icon: DollarSign },
+            { id: 'debt', label: '3. Debt Score', shortLabel: 'Debt', icon: Briefcase },
+            { id: 'insurance', label: '4. Insurance Score', shortLabel: 'Insurance', icon: ShieldCheck },
+            { id: 'emergency', label: '5. Emergency Fund', shortLabel: 'Emergency', icon: AlertTriangle },
+            { id: 'investments_assets', label: '6. Investments & Assets', shortLabel: 'Assets', icon: TrendingUp },
+            { id: 'goals', label: '7. Future Goals', shortLabel: 'Goals', icon: Target },
+            { id: 'ai_assistant', label: '8. AI Assistant', shortLabel: 'AI', icon: Bot, isAi: true },
+            { id: 'dashboard', label: '9. Score Dashboard', shortLabel: 'Score', icon: Activity },
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1646,14 +1625,17 @@ Strategic Focus: ${result.biggestPriority}`;
                 key={tab.id}
                 id={`tab-finscore-${tab.id}`}
                 onClick={() => setActiveTab(tab.id as FinScoreTab)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl whitespace-nowrap transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl whitespace-nowrap transition-all shrink-0 cursor-pointer ${
                   isActive
                     ? finScoreTheme.subtabActive
                     : finScoreTheme.subtabInactive
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  <span className="sm:hidden">{tab.shortLabel}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </span>
                 {'isAi' in tab && tab.isAi && (
                   <span className="flex h-2 w-2 relative ml-0.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -1846,9 +1828,7 @@ Strategic Focus: ${result.biggestPriority}`;
             {/* Emergency Fund Card */}
             <div 
               onClick={() => setActiveTab('emergency')}
-              className={`p-5 rounded-3xl border shadow-sm cursor-pointer hover:scale-[1.01] transition-all ${
-                isLight ? 'bg-white border-slate-200 hover:border-blue-400' : 'bg-slate-900 border-slate-800 hover:border-blue-500/50'
-              }`}
+              className={`p-5 rounded-3xl border shadow-sm cursor-pointer hover:scale-[1.01] transition-all ${finScoreTheme.card}`}
             >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -1882,9 +1862,7 @@ Strategic Focus: ${result.biggestPriority}`;
             {/* Insurance Score Card */}
             <div 
               onClick={() => setActiveTab('insurance')}
-              className={`p-5 rounded-3xl border shadow-sm cursor-pointer hover:scale-[1.01] transition-all ${
-                isLight ? 'bg-white border-slate-200 hover:border-blue-400' : 'bg-slate-900 border-slate-800 hover:border-blue-500/50'
-              }`}
+              className={`p-5 rounded-3xl border shadow-sm cursor-pointer hover:scale-[1.01] transition-all ${finScoreTheme.card}`}
             >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -1901,7 +1879,7 @@ Strategic Focus: ${result.biggestPriority}`;
               <div className="text-xs text-slate-400 mt-0.5">
                 Life: {currSym}{(insurance.lifeCoverage || 0).toLocaleString()} • Health: {currSym}{(insurance.healthCoverage || 0).toLocaleString()}
               </div>
-              <div className="w-full bg-slate-800 rounded-full h-2 mt-3 overflow-hidden">
+              <div className="w-full bg-slate-800/40 rounded-full h-2 mt-3 overflow-hidden">
                 <div 
                   className="bg-blue-500 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${result.scores.insurance}%` }}
@@ -1915,9 +1893,7 @@ Strategic Focus: ${result.biggestPriority}`;
             {/* Savings Score Card */}
             <div 
               onClick={() => setActiveTab('income_expenses')}
-              className={`p-5 rounded-3xl border shadow-sm cursor-pointer hover:scale-[1.01] transition-all ${
-                isLight ? 'bg-white border-slate-200 hover:border-blue-400' : 'bg-slate-900 border-slate-800 hover:border-blue-500/50'
-              }`}
+              className={`p-5 rounded-3xl border shadow-sm cursor-pointer hover:scale-[1.01] transition-all ${finScoreTheme.card}`}
             >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -1934,7 +1910,7 @@ Strategic Focus: ${result.biggestPriority}`;
               <div className="text-xs text-slate-400 mt-0.5">
                 Monthly surplus: {currSym}{(result.metrics.monthlySavings ?? 0).toLocaleString()}
               </div>
-              <div className="w-full bg-slate-800 rounded-full h-2 mt-3 overflow-hidden">
+              <div className="w-full bg-slate-800/40 rounded-full h-2 mt-3 overflow-hidden">
                 <div 
                   className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${result.scores.savings}%` }}
@@ -1948,9 +1924,7 @@ Strategic Focus: ${result.biggestPriority}`;
             {/* Debt Score Card */}
             <div 
               onClick={() => setActiveTab('debt')}
-              className={`p-5 rounded-3xl border shadow-sm cursor-pointer hover:scale-[1.01] transition-all ${
-                isLight ? 'bg-white border-slate-200 hover:border-blue-400' : 'bg-slate-900 border-slate-800 hover:border-blue-500/50'
-              }`}
+              className={`p-5 rounded-3xl border shadow-sm cursor-pointer hover:scale-[1.01] transition-all ${finScoreTheme.card}`}
             >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -1980,16 +1954,14 @@ Strategic Focus: ${result.biggestPriority}`;
           </div>
 
           {/* Future Goals Quick Progress Overview */}
-          <div className={`p-6 rounded-3xl border shadow-sm ${
-            isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
-          }`}>
+          <div className={`p-6 rounded-3xl border shadow-sm ${finScoreTheme.card}`}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
                   <Target className="w-4 h-4 text-blue-500" />
                   Future Goals Readiness ({result.scores.futureGoals}/100)
                 </h3>
-                <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                <p className={`text-xs mt-0.5 ${finScoreTheme.muted}`}>
                   Required monthly saving across {goals.length} milestones: <strong>{currSym}{(result.metrics.totalGoalRequiredMonthlySavings ?? 0).toLocaleString()}/mo</strong>
                 </p>
               </div>
@@ -2006,7 +1978,7 @@ Strategic Focus: ${result.biggestPriority}`;
                 const req = calculateRequiredMonthlySaving(g.targetAmount, g.currentSavings, g.targetYear, g.expectedReturnRate);
                 const pct = Math.min(100, Math.round((g.currentSavings / (g.targetAmount || 1)) * 100));
                 return (
-                  <div key={g.id} className={`p-4 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
+                  <div key={g.id} className={`p-4 rounded-2xl border ${finScoreTheme.innerCard}`}>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold">{g.name}</span>
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 font-mono">
@@ -2014,12 +1986,12 @@ Strategic Focus: ${result.biggestPriority}`;
                       </span>
                     </div>
                     <div className="text-base font-extrabold font-mono mt-2">
-                      {currSym}{(g.currentSavings ?? 0).toLocaleString()} <span className="text-xs font-normal text-slate-400">/ {currSym}{(g.targetAmount ?? 0).toLocaleString()}</span>
+                      {currSym}{(g.currentSavings ?? 0).toLocaleString()} <span className={`text-xs font-normal ${finScoreTheme.muted}`}>/ {currSym}{(g.targetAmount ?? 0).toLocaleString()}</span>
                     </div>
-                    <div className="w-full bg-slate-800 rounded-full h-2 mt-2.5 overflow-hidden">
+                    <div className="w-full bg-slate-800/40 rounded-full h-2 mt-2.5 overflow-hidden">
                       <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${pct}%` }} />
                     </div>
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2">
+                    <div className={`flex items-center justify-between text-[11px] ${finScoreTheme.muted} mt-2`}>
                       <span>{pct}% funded</span>
                       <span className="text-emerald-400 font-semibold">{currSym}{(req ?? 0).toLocaleString()}/mo</span>
                     </div>
@@ -2030,9 +2002,7 @@ Strategic Focus: ${result.biggestPriority}`;
           </div>
 
           {/* NEW UNIQUE CHARTS & VISUAL ANALYTICS HUB */}
-          <div className={`p-6 rounded-3xl border shadow-sm ${
-            isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
-          }`}>
+          <div className={`p-6 rounded-3xl border shadow-sm ${finScoreTheme.card}`}>
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
               <div>
                 <div className="flex items-center gap-2">
@@ -2046,61 +2016,59 @@ Strategic Focus: ${result.biggestPriority}`;
                     4 Unique Visualizations
                   </span>
                 </div>
-                <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                <p className={`text-xs mt-1 ${finScoreTheme.muted}`}>
                   Explore multi-pillar symmetry, month-over-month trajectory, cash flow allocation, and simulated shock resistance.
                 </p>
               </div>
 
               {/* Unique Chart View Switcher Controls */}
-              <div className={`flex items-center p-1 rounded-2xl border text-xs font-semibold ${
-                isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-950 border-slate-800'
-              }`}>
+              <div className={`grid grid-cols-2 sm:flex sm:items-center p-1 rounded-2xl border text-xs font-semibold gap-1 w-full sm:w-auto ${finScoreTheme.subtabContainer}`}>
                 <button
                   id="btn-chart-mode-radar"
                   onClick={() => setDashboardChartMode('radar')}
-                  className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     dashboardChartMode === 'radar'
                       ? 'bg-blue-600 text-white shadow-sm font-bold'
                       : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  <Compass className="w-3.5 h-3.5" />
-                  <span>Pillar Radar</span>
+                  <Compass className="w-3.5 h-3.5 shrink-0" />
+                  <span>Radar</span>
                 </button>
                 <button
                   id="btn-chart-mode-trajectory"
                   onClick={() => setDashboardChartMode('trajectory')}
-                  className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     dashboardChartMode === 'trajectory'
                       ? 'bg-blue-600 text-white shadow-sm font-bold'
                       : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  <TrendingUp className="w-3.5 h-3.5" />
+                  <TrendingUp className="w-3.5 h-3.5 shrink-0" />
                   <span>Trajectory</span>
                 </button>
                 <button
                   id="btn-chart-mode-cashflow"
                   onClick={() => setDashboardChartMode('cashflow')}
-                  className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     dashboardChartMode === 'cashflow'
                       ? 'bg-blue-600 text-white shadow-sm font-bold'
                       : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  <PieChartIcon className="w-3.5 h-3.5" />
+                  <PieChartIcon className="w-3.5 h-3.5 shrink-0" />
                   <span>Cash Flow</span>
                 </button>
                 <button
                   id="btn-chart-mode-stresstest"
                   onClick={() => setDashboardChartMode('stresstest')}
-                  className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     dashboardChartMode === 'stresstest'
                       ? 'bg-blue-600 text-white shadow-sm font-bold'
                       : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  <ShieldAlert className="w-3.5 h-3.5" />
+                  <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
                   <span>Stress Test</span>
                 </button>
               </div>
@@ -2111,7 +2079,7 @@ Strategic Focus: ${result.biggestPriority}`;
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
                 <div className="lg:col-span-2 h-72 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarPillarData}>
+                    <RadarChart cx="50%" cy="50%" outerRadius="68%" data={radarPillarData}>
                       <PolarGrid stroke={isLight ? '#cbd5e1' : '#334155'} strokeDasharray="3 3" />
                       <PolarAngleAxis 
                         dataKey="pillar" 
@@ -2157,9 +2125,7 @@ Strategic Focus: ${result.biggestPriority}`;
 
                 {/* Radar Diagnostic Takeaways */}
                 <div className="space-y-3">
-                  <div className={`p-4 rounded-2xl border ${
-                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
-                  }`}>
+                  <div className={`p-4 rounded-2xl border ${finScoreTheme.innerCard}`}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                         Financial Balance Index
@@ -2245,9 +2211,7 @@ Strategic Focus: ${result.biggestPriority}`;
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
                   {cashFlowAllocationData.map(item => (
-                    <div key={item.name} className={`p-3.5 rounded-2xl border ${
-                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
-                    }`}>
+                    <div key={item.name} className={`p-3.5 rounded-2xl border ${finScoreTheme.innerCard}`}>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                         <span className="text-[11px] font-bold text-slate-400">{item.name}</span>
@@ -2297,9 +2261,7 @@ Strategic Focus: ${result.biggestPriority}`;
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {stressTestData.map(item => (
-                    <div key={item.scenario} className={`p-4 rounded-2xl border flex flex-col justify-between ${
-                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
-                    }`}>
+                    <div key={item.scenario} className={`p-4 rounded-2xl border flex flex-col justify-between ${finScoreTheme.innerCard}`}>
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-bold text-slate-300">{item.scenario}</span>
@@ -2421,16 +2383,14 @@ Strategic Focus: ${result.biggestPriority}`;
           </div>
 
           {/* Interactive What-If Simulator */}
-          <div className={`p-6 rounded-3xl border ${
-            isLight ? 'bg-gradient-to-r from-blue-50/50 to-indigo-50/50 border-blue-200' : 'bg-slate-900/60 border-slate-800'
-          }`}>
+          <div className={`p-6 rounded-3xl border ${finScoreTheme.banner}`}>
             <div className="flex items-center gap-2 mb-2">
               <Sliders className="w-4 h-4 text-blue-500" />
               <h4 className="text-sm font-bold uppercase tracking-wider">
                 Interactive What-If Score Simulator
               </h4>
             </div>
-            <p className={`text-xs mb-4 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+            <p className={`text-xs mb-4 ${finScoreTheme.muted}`}>
               Test how taking concrete actions will immediately boost your FinScore.
             </p>
 
@@ -2522,9 +2482,7 @@ Strategic Focus: ${result.biggestPriority}`;
           {/* ----------------------------------------------------------- */}
           {/* PERSONAL FINANCIAL SWOT STRATEGIC ANALYSIS (In Last of Score Dashboard) */}
           {/* ----------------------------------------------------------- */}
-          <div className={`p-6 sm:p-8 rounded-3xl border shadow-sm space-y-6 transition-all ${
-            isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
-          }`}>
+          <div className={`p-6 sm:p-8 rounded-3xl border shadow-sm space-y-6 transition-all ${finScoreTheme.card}`}>
             {/* Header: Title, Subtitle, Copy SWOT & Ask AI Buttons */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/40">
               <div className="flex items-start gap-3">
@@ -2577,21 +2535,21 @@ Strategic Focus: ${result.biggestPriority}`;
             </div>
 
             {/* Quadrant Quick Filter Pills */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1">
-                Filter View:
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 shrink-0">
+                Filter:
               </span>
               {[
-                { id: 'all', label: 'All 4 Quadrants (Matrix)', count: swotData.totalFactors },
-                { id: 'strengths', label: 'Strengths (S)', count: swotData.strengths.length, color: 'text-emerald-400' },
-                { id: 'weaknesses', label: 'Weaknesses (W)', count: swotData.weaknesses.length, color: 'text-rose-400' },
-                { id: 'opportunities', label: 'Opportunities (O)', count: swotData.opportunities.length, color: 'text-blue-400' },
-                { id: 'threats', label: 'Threats (T)', count: swotData.threats.length, color: 'text-amber-400' },
+                { id: 'all', label: 'All 4 Quadrants (Matrix)', shortLabel: 'All Matrix', count: swotData.totalFactors },
+                { id: 'strengths', label: 'Strengths (S)', shortLabel: 'Strengths', count: swotData.strengths.length, color: 'text-emerald-400' },
+                { id: 'weaknesses', label: 'Weaknesses (W)', shortLabel: 'Weaknesses', count: swotData.weaknesses.length, color: 'text-rose-400' },
+                { id: 'opportunities', label: 'Opportunities (O)', shortLabel: 'Opportunities', count: swotData.opportunities.length, color: 'text-blue-400' },
+                { id: 'threats', label: 'Threats (T)', shortLabel: 'Threats', count: swotData.threats.length, color: 'text-amber-400' },
               ].map(filter => (
                 <button
                   key={filter.id}
                   onClick={() => setSwotQuadrant(filter.id as any)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
                     swotQuadrant === filter.id
                       ? isLight
                         ? 'bg-blue-600 text-white shadow-sm'
@@ -2601,9 +2559,14 @@ Strategic Focus: ${result.biggestPriority}`;
                       : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300'
                   }`}
                 >
-                  <span>{filter.label}</span>
-                  <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                    swotQuadrant === filter.id ? 'bg-white/20 text-white' : 'bg-slate-900 text-slate-400'
+                  <span>
+                    <span className="sm:hidden">{filter.shortLabel}</span>
+                    <span className="hidden sm:inline">{filter.label}</span>
+                  </span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                    swotQuadrant === filter.id
+                      ? 'bg-white/20 text-white'
+                      : isLight ? 'bg-slate-200 text-slate-700' : 'bg-slate-900 text-slate-400'
                   }`}>
                     {filter.count}
                   </span>
@@ -2979,11 +2942,9 @@ Strategic Focus: ${result.biggestPriority}`;
           {/* SECTION 1.6: FINSCORE PERSONAL BALANCE SHEET & SOLVENCY STATEMENT */}
           {/* Derived directly from FinScore Data (Emergency, Goals, Loans, Protection) */}
           {/* ------------------------------------------------------------- */}
-          <div id="finscore-balance-sheet-section" className={`p-6 sm:p-8 rounded-3xl border shadow-lg space-y-6 ${
-            isLight ? 'bg-white border-slate-200/90 text-slate-900' : 'bg-slate-900/90 border-slate-800 text-white'
-          }`}>
+          <div id="finscore-balance-sheet-section" className={`p-6 sm:p-8 rounded-3xl border shadow-lg space-y-6 ${finScoreTheme.card}`}>
             {/* Header with Title & Quick Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+            <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b ${finScoreTheme.divider}`}>
               <div className="flex items-center gap-3">
                 <div className={`p-2.5 rounded-2xl flex items-center justify-center shadow-md ${
                   isLight ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' : 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30'
@@ -3123,12 +3084,10 @@ Strategic Focus: ${result.biggestPriority}`;
             </div>
 
             {/* Accounting Equation Proportional Progress Bar */}
-            <div className={`p-4 sm:p-5 rounded-2xl border space-y-3 ${
-              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/50 border-slate-800'
-            }`}>
+            <div className={`p-4 sm:p-5 rounded-2xl border space-y-3 ${finScoreTheme.innerCard}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                 <div>
-                  <h3 className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+                  <h3 className={`text-xs font-bold uppercase tracking-wider ${finScoreTheme.heading}`}>
                     Accounting Equation: Assets ({currSym}{(finScoreBalanceSheet.totalTangibleAssets ?? 0).toLocaleString()}) = Liabilities ({currSym}{(finScoreBalanceSheet.totalDebt ?? 0).toLocaleString()}) + Net Equity ({currSym}{(finScoreBalanceSheet.netWorth ?? 0).toLocaleString()})
                   </h3>
                   <p className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -3169,13 +3128,11 @@ Strategic Focus: ${result.biggestPriority}`;
             {/* Two-Column Formal Statement Ledger: Assets vs Liabilities & Protection */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* LEFT COLUMN: ASSETS LEDGER */}
-              <div className={`p-5 rounded-2xl border space-y-4 ${
-                isLight ? 'bg-slate-50/50 border-slate-200' : 'bg-slate-950/40 border-slate-800'
-              }`}>
-                <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className={`p-5 rounded-2xl border space-y-4 ${finScoreTheme.innerCard}`}>
+                <div className={`flex items-center justify-between pb-3 border-b ${finScoreTheme.divider}`}>
                   <div className="flex items-center gap-2">
                     <Building className="w-4 h-4 text-emerald-500" />
-                    <h3 className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+                    <h3 className={`text-xs font-bold uppercase tracking-wider ${finScoreTheme.heading}`}>
                       Assets Portfolio (What You Own)
                     </h3>
                   </div>
@@ -3186,9 +3143,7 @@ Strategic Focus: ${result.biggestPriority}`;
 
                 <div className="space-y-3 text-xs">
                   {/* Liquid Emergency Savings Line Item */}
-                  <div className={`p-3 rounded-xl border flex items-center justify-between gap-3 ${
-                    isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-900 border-slate-800'
-                  }`}>
+                  <div className={`p-3 rounded-xl border flex items-center justify-between gap-3 ${finScoreTheme.card}`}>
                     <div>
                       <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
                         <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
@@ -3261,13 +3216,11 @@ Strategic Focus: ${result.biggestPriority}`;
               {/* RIGHT COLUMN: LIABILITIES & EQUITY LEDGER */}
               <div className="space-y-6">
                 {/* Liabilities Block */}
-                <div className={`p-5 rounded-2xl border space-y-4 ${
-                  isLight ? 'bg-slate-50/50 border-slate-200' : 'bg-slate-950/40 border-slate-800'
-                }`}>
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div className={`p-5 rounded-2xl border space-y-4 ${finScoreTheme.innerCard}`}>
+                  <div className={`flex items-center justify-between pb-3 border-b ${finScoreTheme.divider}`}>
                     <div className="flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-rose-500" />
-                      <h3 className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+                      <h3 className={`text-xs font-bold uppercase tracking-wider ${finScoreTheme.heading}`}>
                         Liabilities (What You Owe)
                       </h3>
                     </div>
@@ -3280,9 +3233,7 @@ Strategic Focus: ${result.biggestPriority}`;
                     {finScoreBalanceSheet.loanLiabilities.map(loan => (
                       <div 
                         key={loan.id} 
-                        className={`p-3 rounded-xl border flex items-center justify-between gap-3 ${
-                          isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-900 border-slate-800'
-                        }`}
+                        className={`p-3 rounded-xl border flex items-center justify-between gap-3 ${finScoreTheme.card}`}
                       >
                         <div>
                           <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
@@ -4150,18 +4101,19 @@ Strategic Focus: ${result.biggestPriority}`;
               <span className="text-xs font-bold uppercase tracking-wider">Configure Emergency Buffer Target</span>
               <span className="text-xs font-bold text-blue-400">{emergency.targetMonths} Months of Expenses</span>
             </div>
-            <div className="grid grid-cols-4 gap-2 text-xs">
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2 text-xs">
               {[3, 6, 9, 12].map(m => (
                 <button
                   key={m}
                   onClick={() => setEmergency({ ...emergency, targetMonths: m })}
-                  className={`py-2 rounded-xl font-bold border transition-all ${
+                  className={`py-2 rounded-xl font-bold border transition-all text-center cursor-pointer ${
                     emergency.targetMonths === m
                       ? 'bg-blue-600 text-white border-blue-500 shadow-md'
                       : isLight ? 'bg-white text-slate-700 border-slate-300' : 'bg-slate-900 text-slate-400 border-slate-700'
                   }`}
                 >
-                  {m} Months
+                  <span className="sm:hidden">{m} Mo</span>
+                  <span className="hidden sm:inline">{m} Months</span>
                 </button>
               ))}
             </div>
@@ -4887,7 +4839,7 @@ Strategic Focus: ${result.biggestPriority}`;
               </div>
 
               {/* Monthly Surplus Capacity vs Required Monthly Add */}
-              <div className={`p-4 rounded-xl border flex flex-col justify-center min-w-[260px] ${
+              <div className={`p-4 rounded-xl border flex flex-col justify-center min-w-0 w-full lg:w-auto lg:min-w-[260px] ${
                 isLight ? 'bg-white/90 border-slate-200' : 'bg-slate-950/70 border-slate-800'
               }`}>
                 <div className="flex items-center justify-between text-xs">
@@ -5563,7 +5515,7 @@ Strategic Focus: ${result.biggestPriority}`;
                 Synced with Current Profile
               </span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 text-xs">
               <div className={`p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800/80'}`}>
                 <span className="text-[10px] text-slate-400">FinScore</span>
                 <p className="font-extrabold font-mono text-sm text-blue-400">{result.overallScore} / 100 ({result.grade})</p>
@@ -6040,7 +5992,7 @@ Strategic Focus: ${result.biggestPriority}`;
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 text-xs">
               <div>
                 <label className="block text-slate-400 mb-1">Savings Weight (%)</label>
                 <input

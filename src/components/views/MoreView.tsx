@@ -204,49 +204,58 @@ export const MoreView: React.FC = () => {
   return (
     <div className="space-y-6 pb-24 lg:pb-12 animate-in fade-in duration-200">
       {/* Sub-Tabs Bar: Import, Calculate, Backup, Feedback */}
-      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-900/90 border border-zinc-800 text-xs overflow-x-auto no-scrollbar">
+      <div className="grid grid-cols-4 sm:flex sm:items-center gap-1 sm:gap-1.5 p-1 rounded-2xl bg-zinc-900/90 border border-zinc-800 text-xs w-full transition-all">
         <button
           id="tab-more-import"
           onClick={() => setMoreSubTab('import')}
-          className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-3.5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             moreSubTab === 'import' ? 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          <FileUp className="w-4 h-4" />
-          <span>Import Data</span>
+          <FileUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">Import</span>
+            <span className="hidden sm:inline">Import Data</span>
+          </span>
         </button>
 
         <button
           id="tab-more-calculate"
           onClick={() => setMoreSubTab('calculate')}
-          className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-3.5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             moreSubTab === 'calculate' ? 'bg-zinc-800 text-cyan-400 border border-zinc-700 shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          <Calculator className="w-4 h-4" />
-          <span>Financial Calculators</span>
+          <Calculator className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">Calc</span>
+            <span className="hidden sm:inline">Financial Calculators</span>
+          </span>
         </button>
 
         <button
           id="tab-more-backup"
           onClick={() => setMoreSubTab('backup')}
-          className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-3.5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             moreSubTab === 'backup' ? 'bg-zinc-800 text-amber-400 border border-zinc-700 shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          <Download className="w-4 h-4" />
-          <span>Backup & Export</span>
+          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">Backup</span>
+            <span className="hidden sm:inline">Backup & Export</span>
+          </span>
         </button>
 
         <button
           id="tab-more-feedback"
           onClick={() => setMoreSubTab('feedback')}
-          className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-3.5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             moreSubTab === 'feedback' ? 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          <MessageSquare className="w-4 h-4" />
-          <span>Feedback</span>
+          <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">Feedback</span>
         </button>
       </div>
 

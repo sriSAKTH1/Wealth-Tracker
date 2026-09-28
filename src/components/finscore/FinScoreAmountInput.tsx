@@ -188,9 +188,9 @@ export const FinScoreAmountInput: React.FC<FinScoreAmountInputProps> = ({
               : 'bg-slate-900/40 border-slate-800 text-slate-500'
         }`}
       >
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <Coins className={`w-3.5 h-3.5 shrink-0 ${numericValue > 0 ? 'text-blue-500' : 'text-slate-500'}`} />
-          <div className="truncate">
+          <div className="truncate min-w-0">
             <span className="font-mono font-bold tracking-tight text-xs mr-1.5">
               {formattedCurrency}
             </span>
@@ -202,13 +202,13 @@ export const FinScoreAmountInput: React.FC<FinScoreAmountInputProps> = ({
 
         {/* Quick increment / preset shortcuts */}
         {presets && presets.length > 0 ? (
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 flex-wrap sm:flex-nowrap overflow-x-auto no-scrollbar max-w-full">
             {presets.map(p => (
               <button
                 key={p}
                 type="button"
                 onClick={() => handlePresetClick(p)}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold transition-colors cursor-pointer ${
+                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold transition-colors cursor-pointer shrink-0 ${
                   numericValue === p
                     ? 'bg-blue-500 text-white font-bold'
                     : isLight
@@ -221,7 +221,7 @@ export const FinScoreAmountInput: React.FC<FinScoreAmountInputProps> = ({
             ))}
           </div>
         ) : !compact && (
-          <div className="flex items-center gap-1 shrink-0 text-[10px] font-mono">
+          <div className="flex items-center gap-1 flex-wrap text-[10px] font-mono">
             <button
               type="button"
               onClick={() => handleIncrement(5000)}

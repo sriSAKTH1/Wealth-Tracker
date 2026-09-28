@@ -320,57 +320,75 @@ export const AccountsView: React.FC = () => {
   return (
     <div className="space-y-6 pb-24 lg:pb-12 animate-in fade-in duration-200">
       {/* Sub-Tabs Bar: Money, Budget, Accounts, State */}
-      <div className={`flex items-center gap-1.5 p-1 rounded-2xl border text-xs overflow-x-auto no-scrollbar transition-all ${accStyles.subtabContainer}`}>
+      <div className={`grid grid-cols-4 sm:flex sm:items-center gap-1 sm:gap-1.5 p-1 rounded-2xl border text-xs w-full transition-all ${accStyles.subtabContainer}`}>
         <button
           id="tab-account-money"
           onClick={() => setAccountSubTab('money')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-4 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             accountSubTab === 'money'
               ? accStyles.subtabActive
               : accStyles.subtabInactive
           }`}
         >
-          <DollarSign className="w-4 h-4" />
-          <span>Money & Cashflow</span>
+          <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">Money</span>
+            <span className="hidden sm:inline">Money & Cashflow</span>
+          </span>
         </button>
 
         <button
           id="tab-account-budget"
           onClick={() => setAccountSubTab('budget')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-4 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             accountSubTab === 'budget'
               ? accStyles.subtabActive
               : accStyles.subtabInactive
           }`}
         >
-          <PieChart className="w-4 h-4" />
-          <span>Budget Envelopes ({budgets.length})</span>
+          <PieChart className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">Budget</span>
+            <span className="hidden sm:inline">Budget Envelopes ({budgets.length})</span>
+          </span>
+          <span className="sm:hidden text-[10px] px-1 py-0.2 rounded bg-inherit/40 font-mono opacity-80">
+            {budgets.length}
+          </span>
         </button>
 
         <button
           id="tab-account-accounts"
           onClick={() => setAccountSubTab('accounts')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-4 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             accountSubTab === 'accounts'
               ? accStyles.subtabActive
               : accStyles.subtabInactive
           }`}
         >
-          <Wallet className="w-4 h-4" />
-          <span>Accounts & Vaults ({accounts.length})</span>
+          <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">Accounts</span>
+            <span className="hidden sm:inline">Accounts & Vaults ({accounts.length})</span>
+          </span>
+          <span className="sm:hidden text-[10px] px-1 py-0.2 rounded bg-inherit/40 font-mono opacity-80">
+            {accounts.length}
+          </span>
         </button>
 
         <button
           id="tab-account-state"
           onClick={() => setAccountSubTab('state')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-4 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             accountSubTab === 'state'
               ? accStyles.subtabActive
               : accStyles.subtabInactive
           }`}
         >
-          <Activity className="w-4 h-4" />
-          <span>Financial State Audit</span>
+          <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">Audit</span>
+            <span className="hidden sm:inline">Financial State Audit</span>
+          </span>
         </button>
       </div>
 

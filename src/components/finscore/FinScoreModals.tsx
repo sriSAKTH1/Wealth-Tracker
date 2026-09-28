@@ -400,7 +400,7 @@ export const FinScoreBenchmarkModal: React.FC<BenchmarkModalProps> = ({
         </div>
 
         {/* Score Card Header */}
-        <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
           <div className={`p-4 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
             <div className="text-xs text-slate-400 font-medium">Your Score</div>
             <div className="text-2xl font-mono font-bold text-blue-500 mt-0.5">{result.overallScore}/100</div>
@@ -421,8 +421,8 @@ export const FinScoreBenchmarkModal: React.FC<BenchmarkModalProps> = ({
         </div>
 
         {/* Benchmark Table */}
-        <div className="border rounded-2xl overflow-hidden text-xs">
-          <table className="w-full">
+        <div className="border rounded-2xl overflow-x-auto no-scrollbar text-xs">
+          <table className="w-full min-w-[420px]">
             <thead className={`${isLight ? 'bg-slate-100 text-slate-700' : 'bg-slate-800/80 text-slate-300'}`}>
               <tr>
                 <th className="text-left p-3 font-semibold">Key Pillar</th>

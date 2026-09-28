@@ -17,7 +17,9 @@ import {
   ShieldCheck,
   Keyboard,
   PanelLeftClose,
-  PanelLeft
+  PanelLeft,
+  MoreVertical,
+  X
 } from 'lucide-react';
 import { useFinance, CURRENCY_CONFIGS } from '../context/FinanceContext';
 import { CurrencyCode } from '../types';
@@ -49,6 +51,8 @@ export const Navbar: React.FC = () => {
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobileAlertsExpanded, setMobileAlertsExpanded] = useState(false);
 
   // Theme-aware styling configurations for the navbar header component and text
   const navStyles = React.useMemo(() => {
@@ -252,48 +256,45 @@ export const Navbar: React.FC = () => {
           </span>
         </div>
 
-        {/* Right Tools: Search, Eye (Privacy), Currency, Mode Switcher, Alerts */}
+        {/* Right Tools:
+            On Mobile: Only Search icon, Eye button, and Menu button.
+            In the Menu: Score (FinScore), Notifications, and Keyboard Shortcuts.
+            On Desktop: Full Search, Keyboard Shortcuts, Eye, FinScore, Notifications.
+        */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Global Search Button */}
+          {/* Mobile Search Icon Button (sm:hidden) */}
+          <button
+            id="btn-mobile-search"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search"
+            title="Search transactions and assets"
+            className={`sm:hidden p-2 rounded-full border transition-all cursor-pointer ${navStyles.btn}`}
+          >
+            <Search className={`w-4 h-4 ${navStyles.accentIcon}`} />
+          </button>
+
+          {/* Desktop Global Search Pill Button (hidden sm:flex) */}
           <button
             id="btn-global-search"
             onClick={() => setSearchOpen(true)}
             aria-label="Search transactions and assets"
             title="Search transactions, assets, and tools (/ or ⌘K)"
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-xs font-medium ${navStyles.btn}`}
+            className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-xs font-medium cursor-pointer ${navStyles.btn}`}
           >
             <Search className={`w-4 h-4 ${navStyles.accentIcon}`} />
-            <span className="hidden sm:inline">Search...</span>
+            <span>Search...</span>
             <div className="hidden lg:flex items-center gap-1">
-              <kbd className={`text-[10px] px-1.5 py-0.5 rounded-full border opacity-75`}>/</kbd>
+              <kbd className="text-[10px] px-1.5 py-0.5 rounded-full border opacity-75 font-mono">/</kbd>
             </div>
           </button>
 
-          {/* Keyboard Shortcuts Cheat Sheet Button */}
-          <button
-            id="btn-keyboard-shortcuts"
-            onClick={() => setIsShortcutsHelpOpen(true)}
-            aria-label="Keyboard shortcuts"
-            title={`Keyboard Shortcuts (?)${keyboardShortcutsEnabled ? ' - Enabled' : ' - Disabled in Settings'}`}
-            className={`p-2 rounded-full border transition-all relative ${
-              !keyboardShortcutsEnabled
-                ? 'opacity-60 bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400'
-                : navStyles.btn
-            }`}
-          >
-            <Keyboard className="w-4 h-4" />
-            {keyboardShortcutsEnabled && (
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-950" />
-            )}
-          </button>
-
-          {/* Privacy Mode (Eye Toggle) */}
+          {/* Privacy Mode (Eye Toggle) - Shown on BOTH Mobile & Desktop */}
           <button
             id="btn-privacy-eye"
             onClick={togglePrivateMode}
             aria-label={isPrivateMode ? 'Show balances' : 'Hide balances'}
             title={isPrivateMode ? 'Privacy Mode Active (Balances hidden)' : 'Privacy Mode Off (Balances visible)'}
-            className={`p-2 rounded-full border transition-all ${
+            className={`p-2 rounded-full border transition-all cursor-pointer ${
               isPrivateMode 
                 ? 'bg-amber-500/15 border-amber-500/40 text-amber-500 shadow-sm' 
                 : navStyles.btn
@@ -306,24 +307,42 @@ export const Navbar: React.FC = () => {
             )}
           </button>
 
-          {/* FinScore Financial Health Launcher */}
+          {/* Desktop-Only: Keyboard Shortcuts Cheat Sheet Button */}
+          <button
+            id="btn-keyboard-shortcuts"
+            onClick={() => setIsShortcutsHelpOpen(true)}
+            aria-label="Keyboard shortcuts"
+            title={`Keyboard Shortcuts (?)${keyboardShortcutsEnabled ? ' - Enabled' : ' - Disabled in Settings'}`}
+            className={`hidden sm:flex p-2 rounded-full border transition-all relative cursor-pointer ${
+              !keyboardShortcutsEnabled
+                ? 'opacity-60 bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400'
+                : navStyles.btn
+            }`}
+          >
+            <Keyboard className="w-4 h-4" />
+            {keyboardShortcutsEnabled && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-950" />
+            )}
+          </button>
+
+          {/* Desktop-Only: FinScore Financial Health Launcher */}
           <button
             id="btn-nav-finscore"
             onClick={() => setActiveTab('finscore')}
             title="Open FinScore™ Financial Health Score & Planner"
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all shadow-sm ${navStyles.finscore}`}
+            className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all shadow-sm cursor-pointer ${navStyles.finscore}`}
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span>FinScore™</span>
           </button>
 
-          {/* Notifications / Alerts */}
-          <div className="relative">
+          {/* Desktop-Only: Notifications / Alerts Dropdown */}
+          <div className="relative hidden sm:block">
             <button
               id="btn-notifications"
               onClick={() => setIsAlertsOpen(prev => !prev)}
               aria-label="Financial notifications"
-              className={`relative p-2 rounded-full border transition-all ${navStyles.btn}`}
+              className={`relative p-2 rounded-full border transition-all cursor-pointer ${navStyles.btn}`}
             >
               <Bell className="w-4 h-4 opacity-80" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-500 ring-2 ring-white"></span>
@@ -334,7 +353,7 @@ export const Navbar: React.FC = () => {
                 className={`absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl border p-3 z-50 animate-in fade-in zoom-in-95 duration-100 ${navStyles.dropdown}`}
                 onMouseLeave={() => setIsAlertsOpen(false)}
               >
-                <div className={`flex items-center justify-between pb-2 mb-2 border-b border-inherit/40`}>
+                <div className="flex items-center justify-between pb-2 mb-2 border-b border-inherit/40">
                   <span className={`text-xs font-bold ${navStyles.title}`}>Financial Vital Signs</span>
                   <span className="text-[10px] text-blue-500 bg-blue-500/15 px-2 py-0.5 rounded-full font-mono font-medium">All Systems Active</span>
                 </div>
@@ -343,7 +362,7 @@ export const Navbar: React.FC = () => {
                     const Icon = a.icon;
                     return (
                       <div key={a.id} className={`p-2.5 rounded-xl border text-xs ${navStyles.dropdownCard}`}>
-                        <div className={`flex items-center gap-1.5 font-medium`}>
+                        <div className="flex items-center gap-1.5 font-medium">
                           <Icon className={`w-3.5 h-3.5 ${
                             a.type === 'success' ? 'text-emerald-500' : a.type === 'warning' ? 'text-amber-500' : 'text-blue-500'
                           }`} />
@@ -355,6 +374,151 @@ export const Navbar: React.FC = () => {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile-Only: Menu Button (sm:hidden) */}
+          <div className="relative sm:hidden">
+            <button
+              id="btn-mobile-more-menu"
+              onClick={() => setIsMobileMenuOpen(prev => !prev)}
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              className={`relative p-2 rounded-full border transition-all cursor-pointer ${
+                isMobileMenuOpen ? navStyles.btnActive : navStyles.btn
+              }`}
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-4 h-4" />
+              ) : (
+                <MoreVertical className="w-4 h-4" />
+              )}
+              {/* Notification dot */}
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-blue-500 ring-2 ring-white dark:ring-slate-900" />
+            </button>
+
+            {/* Mobile Dropdown Backdrop */}
+            {isMobileMenuOpen && (
+              <div 
+                className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+            )}
+
+            {/* Mobile Dropdown Menu: FinScore, Notifications, Keyboard Shortcuts */}
+            {isMobileMenuOpen && (
+              <div 
+                className={`absolute right-0 mt-2 w-72 rounded-2xl border p-3 z-50 shadow-2xl animate-in fade-in zoom-in-95 duration-150 ${navStyles.dropdown}`}
+              >
+                <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-inherit/40">
+                  <span className={`text-xs font-bold uppercase tracking-wider ${navStyles.title}`}>Quick Menu</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 font-mono font-medium">Tools &amp; Alerts</span>
+                </div>
+
+                <div className="space-y-2">
+                  {/* 1. FinScore Launcher Button */}
+                  <button
+                    id="btn-mobile-menu-finscore"
+                    onClick={() => {
+                      setActiveTab('finscore');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                      activeTab === 'finscore'
+                        ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/20'
+                        : navStyles.dropdownCard
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-bold">FinScore™ Health</div>
+                        <div className={`text-[10px] font-normal ${activeTab === 'finscore' ? 'text-blue-100' : navStyles.dropdownText}`}>
+                          Financial health audit &amp; score
+                        </div>
+                      </div>
+                    </div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                      activeTab === 'finscore'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    }`}>
+                      Score
+                    </span>
+                  </button>
+
+                  {/* 2. Notifications & Alerts Section */}
+                  <div className={`rounded-xl border transition-all overflow-hidden ${navStyles.dropdownCard}`}>
+                    <button
+                      id="btn-mobile-menu-notifications"
+                      onClick={() => setMobileAlertsExpanded(prev => !prev)}
+                      className="w-full flex items-center justify-between p-2.5 text-xs font-semibold cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 relative">
+                          <Bell className="w-4 h-4" />
+                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-500" />
+                        </div>
+                        <div className="text-left">
+                          <div className="font-bold">Notifications</div>
+                          <div className={`text-[10px] font-normal ${navStyles.dropdownText}`}>
+                            {alerts.length} active vital alerts
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${mobileAlertsExpanded ? 'rotate-180 text-blue-400' : 'opacity-60'}`} />
+                    </button>
+
+                    {/* Expanded Mobile Alerts List */}
+                    {mobileAlertsExpanded && (
+                      <div className="p-2 pt-0 space-y-1.5 border-t border-inherit/30">
+                        {alerts.map(a => {
+                          const Icon = a.icon;
+                          return (
+                            <div key={a.id} className="p-2 rounded-lg bg-black/10 dark:bg-black/30 border border-inherit/20 text-xs">
+                              <div className="flex items-center gap-1.5 font-medium">
+                                <Icon className={`w-3 h-3 ${
+                                  a.type === 'success' ? 'text-emerald-500' : a.type === 'warning' ? 'text-amber-500' : 'text-blue-500'
+                                }`} />
+                                <span className={`text-[11px] font-bold ${navStyles.title}`}>{a.title}</span>
+                              </div>
+                              <p className={`text-[10px] mt-0.5 pl-4.5 ${navStyles.dropdownText}`}>
+                                {a.message}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 3. Keyboard Shortcuts Cheat Sheet */}
+                  <button
+                    id="btn-mobile-menu-shortcuts"
+                    onClick={() => {
+                      setIsShortcutsHelpOpen(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${navStyles.dropdownCard}`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400">
+                        <Keyboard className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-bold">Keyboard Shortcuts</div>
+                        <div className={`text-[10px] font-normal ${navStyles.dropdownText}`}>
+                          Hotkeys cheat sheet
+                        </div>
+                      </div>
+                    </div>
+                    <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-inherit/40 font-mono opacity-80">
+                      ?
+                    </kbd>
+                  </button>
                 </div>
               </div>
             )}

@@ -1204,57 +1204,75 @@ export const WealthView: React.FC = () => {
   return (
     <div className="space-y-6 pb-24 lg:pb-12 animate-in fade-in duration-200">
       {/* Wealth Sub-Tabs Bar (4 Items: Assets, Liabilities, Net Worth, Allocation) */}
-      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-900/90 border border-zinc-800 text-xs overflow-x-auto no-scrollbar">
+      <div className="grid grid-cols-4 sm:flex sm:items-center gap-1 sm:gap-1.5 p-1 rounded-2xl bg-zinc-900/90 border border-zinc-800 text-xs w-full transition-all">
         <button
           id="tab-wealth-assets"
           onClick={() => setWealthSubTab('assets')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-4 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             wealthSubTab === 'assets'
               ? 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-sm'
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          <Coins className="w-4 h-4" />
-          <span>Assets ({assets.length})</span>
+          <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">Assets</span>
+            <span className="hidden sm:inline">Assets ({assets.length})</span>
+          </span>
+          <span className="sm:hidden text-[10px] px-1 py-0.2 rounded bg-zinc-800/80 font-mono text-zinc-300">
+            {assets.length}
+          </span>
         </button>
 
         <button
           id="tab-wealth-liabilities"
           onClick={() => setWealthSubTab('liabilities')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-4 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             wealthSubTab === 'liabilities'
               ? 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-sm'
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          <ShieldAlert className="w-4 h-4" />
-          <span>Liabilities ({liabilities.length})</span>
+          <ShieldAlert className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">Debts</span>
+            <span className="hidden sm:inline">Liabilities ({liabilities.length})</span>
+          </span>
+          <span className="sm:hidden text-[10px] px-1 py-0.2 rounded bg-zinc-800/80 font-mono text-zinc-300">
+            {liabilities.length}
+          </span>
         </button>
 
         <button
           id="tab-wealth-networth"
           onClick={() => setWealthSubTab('networth')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-4 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             wealthSubTab === 'networth'
               ? 'bg-zinc-800 text-cyan-400 border border-zinc-700 shadow-sm'
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          <TrendingUp className="w-4 h-4" />
-          <span>Net Worth Trend</span>
+          <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">Trend</span>
+            <span className="hidden sm:inline">Net Worth Trend</span>
+          </span>
         </button>
 
         <button
           id="tab-wealth-allocation"
           onClick={() => setWealthSubTab('allocation')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shrink-0 ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-4 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             wealthSubTab === 'allocation'
               ? 'bg-zinc-800 text-purple-400 border border-zinc-700 shadow-sm'
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          <PieIcon className="w-4 h-4" />
-          <span>Allocation & Rebalance</span>
+          <PieIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">Allocate</span>
+            <span className="hidden sm:inline">Allocation & Rebalance</span>
+          </span>
         </button>
       </div>
 

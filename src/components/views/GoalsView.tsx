@@ -481,44 +481,59 @@ export const GoalsView: React.FC = () => {
   return (
     <div className="space-y-6 pb-24 lg:pb-12 animate-in fade-in duration-200">
       {/* 3 Sub-Tabs Bar: Essential, Goals & FIRE Target */}
-      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-900/90 border border-zinc-800 text-xs w-full overflow-x-auto no-scrollbar">
+      <div className="grid grid-cols-3 sm:flex sm:items-center gap-1 sm:gap-1.5 p-1 rounded-2xl bg-zinc-900/90 border border-zinc-800 text-xs w-full transition-all">
         <button
           id="tab-goals-essential"
           onClick={() => setGoalsSubTab('essential')}
-          className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold transition-all shrink-0 justify-center ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             goalsSubTab === 'essential'
               ? 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-sm'
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          <ShieldCheck className="w-4 h-4" />
-          <span>Essential Foundations ({essentialGoals.length})</span>
+          <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">Essential</span>
+            <span className="hidden sm:inline">Essential Foundations ({essentialGoals.length})</span>
+          </span>
+          <span className="sm:hidden text-[10px] px-1 py-0.2 rounded bg-zinc-800/80 font-mono text-zinc-300">
+            {essentialGoals.length}
+          </span>
         </button>
 
         <button
           id="tab-goals-custom"
           onClick={() => setGoalsSubTab('goals')}
-          className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold transition-all shrink-0 justify-center ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             goalsSubTab === 'goals'
               ? 'bg-zinc-800 text-cyan-400 border border-zinc-700 shadow-sm'
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          <Target className="w-4 h-4" />
-          <span>Milestones & Goals ({customGoals.length})</span>
+          <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">Goals</span>
+            <span className="hidden sm:inline">Milestones & Goals ({customGoals.length})</span>
+          </span>
+          <span className="sm:hidden text-[10px] px-1 py-0.2 rounded bg-zinc-800/80 font-mono text-zinc-300">
+            {customGoals.length}
+          </span>
         </button>
 
         <button
           id="tab-goals-fire"
           onClick={() => setGoalsSubTab('fire')}
-          className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold transition-all shrink-0 justify-center ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-5 rounded-xl font-semibold transition-all shrink-0 cursor-pointer text-center ${
             goalsSubTab === 'fire'
               ? 'bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm'
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          <Flame className="w-4 h-4 text-amber-400" />
-          <span>FIRE & Freedom</span>
+          <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">FIRE</span>
+            <span className="hidden sm:inline">FIRE & Freedom</span>
+          </span>
           <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-zinc-700/60 text-zinc-300 font-mono font-semibold">
             {fireCalculations.progressPct}%
           </span>
