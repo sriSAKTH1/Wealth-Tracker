@@ -31,7 +31,7 @@ export const SidebarProfile: React.FC<SidebarProfileProps> = ({ isCollapsed = fa
     formatMoney
   } = useFinance();
 
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   // Persistent user profile state
   const [userName] = useState<string>(() => {

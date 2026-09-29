@@ -30,7 +30,7 @@ export const KeyboardShortcutsModal: React.FC = () => {
 
   if (!isShortcutsHelpOpen) return null;
 
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   const actionShortcuts = SHORTCUT_DEFINITIONS.filter(s => s.category === 'Actions');
   const navigationShortcuts = SHORTCUT_DEFINITIONS.filter(s => s.category === 'Navigation');

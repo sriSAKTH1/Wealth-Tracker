@@ -19,7 +19,7 @@ import { MainTab } from '../types';
 export const BottomNav: React.FC = () => {
   const { activeTab, setActiveTab, openQuickAdd, theme, transactions = [] } = useFinance();
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
   const hasNoTransactions = !transactions || transactions.length === 0;
 
   const navItems: { id: MainTab; label: string; icon: any }[] = [

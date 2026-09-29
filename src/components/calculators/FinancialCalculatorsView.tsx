@@ -102,7 +102,7 @@ const CALCULATORS: CalculatorTabItem[] = [
 
 export const FinancialCalculatorsView: React.FC = () => {
   const { theme } = useFinance();
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   const [activeCalc, setActiveCalc] = useState<CalculatorType>('sip');
   const [calcCategory, setCalcCategory] = useState<string>('all');

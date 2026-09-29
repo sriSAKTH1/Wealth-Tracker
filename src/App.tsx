@@ -8,6 +8,7 @@ import { QuickAddModal } from './components/QuickAddModal';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { GlobalKeyboardShortcuts } from './components/GlobalKeyboardShortcuts';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
+import { QuickAddOnboarding } from './components/QuickAddOnboarding';
 
 // Views
 import { OverviewView } from './components/views/OverviewView';
@@ -65,8 +66,8 @@ const MainLayout: React.FC = () => {
     slate: 'bg-[#0f172a] text-slate-100 slate-theme',
     light: 'bg-[#f8fafc] text-slate-900 light-theme',
     flavorfit: 'bg-[#0B0C14] text-slate-100 flavorfit-theme',
-    nature: 'bg-[#F4F1EA] text-[#283618] nature-theme light-theme',
-    retro: 'bg-[#E8DEC8] text-[#2B2520] retro-theme light-theme',
+    nature: 'bg-[#F4F1EA] text-[#283618] nature-theme',
+    retro: 'bg-[#E8DEC8] text-[#2B2520] retro-theme',
   };
 
   return (
@@ -171,6 +172,9 @@ const MainLayout: React.FC = () => {
 
       {/* Keyboard Shortcuts Reference / Cheat Sheet Modal */}
       <KeyboardShortcutsModal />
+
+      {/* First-Time User Onboarding Guide for Quick Add FAB */}
+      <QuickAddOnboarding />
     </div>
   );
 };

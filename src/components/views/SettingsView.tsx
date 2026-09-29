@@ -20,7 +20,9 @@ import {
   Bell,
   Search,
   Sliders,
-  Save
+  Save,
+  Printer,
+  FileText
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { LanguageRegionSection } from '../settings/LanguageRegionSection';
@@ -28,6 +30,7 @@ import { HelpSupportSection } from '../settings/HelpSupportSection';
 import { SecuritySection } from '../settings/SecuritySection';
 import { AppearanceSection } from '../settings/AppearanceSection';
 import { NotificationsSection } from '../settings/NotificationsSection';
+import { ExportReportModal } from '../settings/ExportReportModal';
 
 type SettingsTab = 'profile' | 'language' | 'help' | 'security' | 'appearance' | 'notifications' | 'shortcuts' | 'data' | 'danger';
 
@@ -36,6 +39,20 @@ export const SettingsView: React.FC = () => {
     theme, 
     formatMoney, 
     netWorth,
+    totalAssets = 0,
+    totalLiabilities = 0,
+    monthlyIncome = 0,
+    monthlyExpenses = 0,
+    netSavings = 0,
+    savingsRate = 0,
+    liquidCash = 0,
+    liquidRunwayMonths = 0,
+    debtToAssetRatio = 0,
+    currency,
+    currencyConfig,
+    assets = [],
+    liabilities = [],
+    healthScore,
     exportDataJSON, 
     exportTransactionsCSV, 
     importData, 
@@ -47,11 +64,12 @@ export const SettingsView: React.FC = () => {
     setIsShortcutsHelpOpen
   } = useFinance();
 
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   // Navigation Filter Tab
   const [activeTab, setActiveSettingsTab] = useState<SettingsTab>('profile');
   const [settingsSearch, setSettingsSearch] = useState('');
+  const [isExportReportOpen, setIsExportReportOpen] = useState(false);
 
   const [areAllSettingsActive, setAreAllSettingsActive] = useState<boolean>(() => {
     return localStorage.getItem('fix_all_settings_active') === 'true';
@@ -209,6 +227,17 @@ export const SettingsView: React.FC = () => {
 
         {/* Global Net Worth Badge, Search & Save / Activate Button */}
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Global Export Report Button (Printable PDF Summary) */}
+          <button
+            id="btn-settings-export-report"
+            onClick={() => setIsExportReportOpen(true)}
+            className="px-3.5 py-1.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm shadow-emerald-600/25 text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+            title="Export printable PDF summary of financial data"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Export Report</span>
+          </button>
+
           {/* Save Button for All settings EXCEPT Profile */}
           {activeTab !== 'profile' && (
             <button
@@ -560,11 +589,31 @@ export const SettingsView: React.FC = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            {/* Printable PDF Report Export */}
+            <button
+              id="btn-settings-export-pdf-card"
+              onClick={() => setIsExportReportOpen(true)}
+              className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                isLight ? 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-800' : 'bg-slate-950/60 border-slate-800 hover:bg-slate-900 text-slate-200'
+              }`}
+            >
+              <div>
+                <div className="flex items-center gap-2 font-bold mb-1 text-slate-900 dark:text-slate-100">
+                  <Printer className="w-4 h-4 text-purple-500" />
+                  <span>Printable PDF Report</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Universal print-ready statement with net worth, assets, debts, budgets, and vital score.
+                </p>
+              </div>
+              <span className="text-[10px] font-mono font-bold text-purple-500 mt-4">Export PDF Report →</span>
+            </button>
+
             {/* JSON Export */}
             <button
               onClick={exportDataJSON}
-              className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all ${
+              className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
                 isLight ? 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-800' : 'bg-slate-950/60 border-slate-800 hover:bg-slate-900 text-slate-200'
               }`}
             >
@@ -583,7 +632,7 @@ export const SettingsView: React.FC = () => {
             {/* CSV Export */}
             <button
               onClick={exportTransactionsCSV}
-              className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all ${
+              className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
                 isLight ? 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-800' : 'bg-slate-950/60 border-slate-800 hover:bg-slate-900 text-slate-200'
               }`}
             >
@@ -600,26 +649,42 @@ export const SettingsView: React.FC = () => {
             </button>
 
             {/* Import Backup */}
-            <label className={`p-4 rounded-2xl border text-left flex flex-col justify-between cursor-pointer transition-all ${
-              isLight ? 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-800' : 'bg-slate-950/60 border-slate-800 hover:bg-slate-900 text-slate-200'
+            <div className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all ${
+              isLight ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-slate-950/60 border-slate-800 text-slate-200'
             }`}>
               <div>
                 <div className="flex items-center gap-2 font-bold mb-1 text-slate-900 dark:text-slate-100">
-                  <FileUp className="w-4 h-4 text-purple-500" />
+                  <FileUp className="w-4 h-4 text-indigo-500" />
                   <span>Restore from JSON</span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Upload a previously saved .json snapshot to restore your financial records.
                 </p>
               </div>
-              <span className="text-[10px] font-mono font-bold text-purple-500 mt-4">Choose File →</span>
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleImportFile}
-                className="hidden"
-              />
-            </label>
+
+              <div className="mt-4 pt-2 border-t border-inherit/40 space-y-2">
+                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] cursor-pointer shadow-sm transition-colors">
+                  <FileUp className="w-3.5 h-3.5" />
+                  <span>Choose File</span>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImportFile}
+                    className="hidden"
+                  />
+                </label>
+                <div className="text-[10px] text-slate-500 flex items-center justify-between">
+                  <span>Preserve report:</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsExportReportOpen(true)}
+                    className="font-bold text-blue-500 hover:underline cursor-pointer"
+                  >
+                    Save PDF First →
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       )}
@@ -788,6 +853,167 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
       )}
+      {/* =========================================================================
+          PRINT-ONLY FINANCIAL STATEMENT & SOLVENCY REPORT
+          Leverages existing @media print styles in index.css:
+          - High-contrast dark ink on pure white background
+          - Clean page margins, crisp borders, repeating table headers
+          - Displays only during window.print()
+          ========================================================================= */}
+      <div className="print-only">
+        <div className="mb-6 pb-4 border-b-2 border-slate-300 flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">AURA WEALTH &amp; FINANCIAL REPORT</h1>
+            <p className="text-xs text-slate-600 mt-0.5">Executive Financial Health, Asset Allocation &amp; Solvency Audit</p>
+          </div>
+          <div className="text-right text-xs text-slate-600">
+            <div>Client: <strong className="text-slate-900">{name || 'Account Holder'}</strong></div>
+            <div>Email: <strong className="text-slate-900">{email || 'Private Portfolio'}</strong></div>
+            <div>Date: <strong className="text-slate-900">{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong></div>
+            <div>Currency: <strong className="text-slate-900">{currency} ({currencyConfig?.symbol || '$'})</strong></div>
+          </div>
+        </div>
+
+        {/* 4 Core KPIs */}
+        <div className="grid grid-cols-4 gap-3 mb-6">
+          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Net Worth (Equity)</div>
+            <div className="text-lg font-mono font-bold text-emerald-600 mt-0.5">{formatMoney(netWorth)}</div>
+            <div className="text-[9px] text-slate-500 mt-1">Total Assets minus Debts</div>
+          </div>
+          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Gross Assets</div>
+            <div className="text-lg font-mono font-bold text-blue-600 mt-0.5">{formatMoney(totalAssets)}</div>
+            <div className="text-[9px] text-slate-500 mt-1">{assets.length} holdings</div>
+          </div>
+          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Total Liabilities</div>
+            <div className="text-lg font-mono font-bold text-rose-600 mt-0.5">{formatMoney(totalLiabilities)}</div>
+            <div className="text-[9px] text-slate-500 mt-1">Debt-to-Asset: {debtToAssetRatio.toFixed(1)}%</div>
+          </div>
+          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Financial Health</div>
+            <div className="text-lg font-mono font-bold text-purple-600 mt-0.5">{healthScore?.score ?? 85}/100</div>
+            <div className="text-[9px] text-slate-500 mt-1">Grade {healthScore?.grade ?? 'A'}</div>
+          </div>
+        </div>
+
+        {/* Cash Flow KPIs */}
+        <div className="grid grid-cols-4 gap-3 mb-6">
+          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Monthly Income</div>
+            <div className="text-base font-mono font-bold text-emerald-600 mt-0.5">{formatMoney(monthlyIncome)}</div>
+          </div>
+          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Monthly Burn</div>
+            <div className="text-base font-mono font-bold text-rose-600 mt-0.5">{formatMoney(monthlyExpenses)}</div>
+          </div>
+          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Net Monthly Savings</div>
+            <div className="text-base font-mono font-bold text-emerald-600 mt-0.5">{formatMoney(netSavings)}</div>
+          </div>
+          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
+            <div className="text-[10px] font-bold text-slate-500 uppercase">Runway Buffer</div>
+            <div className="text-base font-mono font-bold text-slate-800 mt-0.5">{liquidRunwayMonths.toFixed(1)} Months</div>
+          </div>
+        </div>
+
+        {/* Assets Table */}
+        <div className="mb-6">
+          <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 border-b border-slate-300 pb-1 mb-2">
+            1. Asset Holdings &amp; Allocation ({assets.length} Holdings)
+          </h3>
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-100 text-slate-700 border-b border-slate-300">
+                <th className="text-left p-2">Asset Name</th>
+                <th className="text-left p-2">Category</th>
+                <th className="text-left p-2">Institution</th>
+                <th className="text-right p-2">Valuation</th>
+                <th className="text-right p-2">Share %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {assets.map(a => {
+                const pct = totalAssets > 0 ? ((a.value / totalAssets) * 100).toFixed(1) : '0';
+                return (
+                  <tr key={a.id} className="border-b border-slate-200">
+                    <td className="p-2 font-bold text-slate-900">{a.name}</td>
+                    <td className="p-2 text-slate-600">{a.category}</td>
+                    <td className="p-2 text-slate-500">{a.institution || '—'}</td>
+                    <td className="p-2 text-right font-mono font-bold">{formatMoney(a.value)}</td>
+                    <td className="p-2 text-right font-mono text-slate-600">{pct}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="font-bold bg-slate-50 border-t-2 border-slate-300">
+                <td colSpan={3} className="p-2">Total Assets</td>
+                <td className="p-2 text-right font-mono text-emerald-600">{formatMoney(totalAssets)}</td>
+                <td className="p-2 text-right font-mono">100.0%</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        {/* Liabilities Table */}
+        <div className="mb-6">
+          <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 border-b border-slate-300 pb-1 mb-2">
+            2. Liabilities &amp; Outstanding Debt ({liabilities.length} Accounts)
+          </h3>
+          {liabilities.length > 0 ? (
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-100 text-slate-700 border-b border-slate-300">
+                  <th className="text-left p-2">Liability Name</th>
+                  <th className="text-left p-2">Category</th>
+                  <th className="text-left p-2">Institution</th>
+                  <th className="text-center p-2">APR %</th>
+                  <th className="text-right p-2">Monthly EMI</th>
+                  <th className="text-right p-2">Outstanding Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {liabilities.map(l => (
+                  <tr key={l.id} className="border-b border-slate-200">
+                    <td className="p-2 font-bold text-slate-900">{l.name}</td>
+                    <td className="p-2 text-slate-600">{l.category}</td>
+                    <td className="p-2 text-slate-500">{l.institution || '—'}</td>
+                    <td className="p-2 text-center font-mono">{l.interestRate ? `${l.interestRate}%` : '0%'}</td>
+                    <td className="p-2 text-right font-mono">{l.monthlyPayment ? formatMoney(l.monthlyPayment) : '—'}</td>
+                    <td className="p-2 text-right font-mono font-bold text-rose-600">{formatMoney(l.balance)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="font-bold bg-slate-50 border-t-2 border-slate-300">
+                  <td colSpan={5} className="p-2">Total Liabilities</td>
+                  <td className="p-2 text-right font-mono text-rose-600">{formatMoney(totalLiabilities)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          ) : (
+            <div className="p-3 text-xs text-emerald-600 font-semibold border border-emerald-200 rounded-xl bg-emerald-50">
+              Debt-Free: No outstanding liabilities recorded.
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8 pt-4 border-t border-slate-300 text-[10px] text-slate-500 flex justify-between">
+          <span>Aura Private Wealth • End-to-End Client Statement</span>
+          <span>Confidential &amp; Proprietary</span>
+        </div>
+      </div>
+
+      {/* Global Export Report Modal */}
+      <ExportReportModal
+        isOpen={isExportReportOpen}
+        onClose={() => setIsExportReportOpen(false)}
+        userName={name}
+        userEmail={email}
+      />
     </div>
   );
 };
+

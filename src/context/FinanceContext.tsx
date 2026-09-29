@@ -98,6 +98,8 @@ interface FinanceContextType {
   convertCurrency: (amount: number, fromCurrency?: CurrencyCode, toCurrency?: CurrencyCode) => number;
   theme: AppTheme;
   setTheme: (theme: AppTheme) => void;
+  isLight: boolean;
+  isDark: boolean;
   accentColor: string;
   setAccentColor: (color: string) => void;
   isMobileFrameSimulated: boolean;
@@ -107,6 +109,9 @@ interface FinanceContextType {
   quickAddType: 'income' | 'expense' | 'asset' | 'liability';
   openQuickAdd: (type?: 'income' | 'expense' | 'asset' | 'liability') => void;
   closeQuickAdd: () => void;
+  isOnboardingOpen: boolean;
+  setIsOnboardingOpen: (open: boolean) => void;
+  resetOnboarding: () => void;
 
   isSearchOpen: boolean;
   setSearchOpen: (open: boolean) => void;
@@ -258,6 +263,33 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isSearchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // First-time Onboarding Tooltip for Quick Add FAB
+  const [isOnboardingOpen, setIsOnboardingOpenState] = useState<boolean>(() => {
+    try {
+      const onboarded = localStorage.getItem('aura_quick_add_onboarded');
+      // If user hasn't completed onboarding yet, default to true
+      return onboarded !== 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const setIsOnboardingOpen = (open: boolean) => {
+    setIsOnboardingOpenState(open);
+    if (!open) {
+      try {
+        localStorage.setItem('aura_quick_add_onboarded', 'true');
+      } catch {}
+    }
+  };
+
+  const resetOnboarding = () => {
+    try {
+      localStorage.removeItem('aura_quick_add_onboarded');
+    } catch {}
+    setIsOnboardingOpenState(true);
+  };
+
   // Global Keyboard Shortcuts State
   const [keyboardShortcutsEnabled, setKeyboardShortcutsEnabledState] = useState<boolean>(() => {
     const saved = localStorage.getItem('aura_keyboard_shortcuts_enabled');
@@ -401,10 +433,19 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     document.documentElement.classList.add(`${t}-theme`);
     document.body.classList.add(`${t}-theme`);
 
-    // Only dark and midnight get the 'dark' and 'dark-theme' classes for black color themes
+    // Dark color themes (dark, midnight, coolors, emerald, slate, flavorfit) activate Tailwind's dark: utilities
+    const isDark = t !== 'light' && t !== 'nature' && t !== 'retro';
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.body.classList.add('dark');
+    }
     if (t === 'dark' || t === 'midnight') {
-      document.documentElement.classList.add('dark', 'dark-theme');
-      document.body.classList.add('dark', 'dark-theme');
+      document.documentElement.classList.add('dark-theme');
+      document.body.classList.add('dark-theme');
+    }
+    if (t === 'midnight') {
+      document.documentElement.classList.add('midnight-theme');
+      document.body.classList.add('midnight-theme');
     }
   };
 
@@ -456,6 +497,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const openQuickAdd = (type: 'income' | 'expense' | 'asset' | 'liability' = 'income') => {
+    if (isOnboardingOpen) {
+      setIsOnboardingOpen(false);
+    }
     setQuickAddType(type);
     setIsQuickAddOpen(true);
   };
@@ -1104,6 +1148,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         convertCurrency,
         theme,
         setTheme,
+        isLight: theme === 'light' || theme === 'nature' || theme === 'retro',
+        isDark: theme !== 'light' && theme !== 'nature' && theme !== 'retro',
         accentColor,
         setAccentColor,
         isMobileFrameSimulated,
@@ -1112,6 +1158,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         quickAddType,
         openQuickAdd,
         closeQuickAdd,
+        isOnboardingOpen,
+        setIsOnboardingOpen,
+        resetOnboarding,
         isSearchOpen,
         setSearchOpen,
         searchQuery,

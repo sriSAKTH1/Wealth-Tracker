@@ -36,7 +36,9 @@ import {
   Home,
   Car,
   Calculator,
-  ArrowDown
+  ArrowDown,
+  Columns2,
+  Columns3
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -91,6 +93,45 @@ const ALLOCATION_PRESETS: { name: string; description: string; allocations: Reco
   }
 ];
 
+export const getTagColor = (name: string, metaColor?: string): string => {
+  if (metaColor) return metaColor;
+  if (name === 'Untagged Assets') return '#94a3b8';
+  
+  const PALETTE = [
+    '#3b82f6', // Electric Blue
+    '#10b981', // Emerald
+    '#8b5cf6', // Violet
+    '#f59e0b', // Amber
+    '#ec4899', // Pink
+    '#06b6d4', // Cyan
+    '#f97316', // Orange
+    '#14b8a6', // Teal
+    '#6366f1', // Indigo
+    '#e11d48', // Crimson Rose
+    '#84cc16', // Lime
+    '#a855f7', // Purple
+  ];
+  
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % PALETTE.length;
+  return PALETTE[index];
+};
+
+export const getTagPillStyle = (tag: string, metaColor?: string, isLight?: boolean) => {
+  const color = getTagColor(tag, metaColor);
+  return {
+    style: {
+      backgroundColor: isLight ? `${color}18` : `${color}25`,
+      borderColor: `${color}45`,
+      color: color,
+    },
+    className: 'px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all hover:scale-105 cursor-pointer shadow-2xs'
+  };
+};
+
 export const WealthView: React.FC = () => {
   const { 
     wealthSubTab, 
@@ -114,13 +155,30 @@ export const WealthView: React.FC = () => {
     syncLiveMarketPrices,
     isSyncingMarketPrices,
     lastMarketSyncTime,
-    marketSyncStatus
+    marketSyncStatus,
+    theme,
+    isLight
   } = useFinance();
 
   const [assetCategoryFilter, setAssetCategoryFilter] = useState<string>('all');
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>('all');
   const [assetSearchQuery, setAssetSearchQuery] = useState<string>('');
   const [viewLayoutMode, setViewLayoutMode] = useState<'grid' | 'grouped' | 'purpose_breakdown'>('grid');
+  const [gridColumns, setGridColumns] = useState<2 | 3>(() => {
+    try {
+      const saved = localStorage.getItem('aura_wealth_grid_columns');
+      return saved === '3' ? 3 : 2;
+    } catch {
+      return 2;
+    }
+  });
+
+  const handleSetGridColumns = (cols: 2 | 3) => {
+    setGridColumns(cols);
+    try {
+      localStorage.setItem('aura_wealth_grid_columns', String(cols));
+    } catch {}
+  };
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set());
   const [expandedAssetCategories, setExpandedAssetCategories] = useState<Record<string, boolean>>({});
   
@@ -1187,7 +1245,11 @@ export const WealthView: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveDetailLiabilityId(liab.id)}
-          className="w-full mt-3 py-1.5 px-3 rounded-xl bg-zinc-950/80 hover:bg-zinc-800 text-zinc-300 hover:text-rose-400 border border-zinc-800 hover:border-rose-500/40 text-xs font-semibold flex items-center justify-between transition-all cursor-pointer group/history"
+          className={`w-full mt-3 py-1.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer group/history ${
+            isLight 
+              ? 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-rose-600 border-slate-200 hover:border-rose-300 shadow-2xs' 
+              : 'bg-zinc-950/80 hover:bg-zinc-800 text-zinc-300 hover:text-rose-400 border-zinc-800 hover:border-rose-500/40'
+          }`}
         >
           <span className="flex items-center gap-1.5">
             <HistoryIcon className="w-3.5 h-3.5 text-rose-400" />
@@ -1334,9 +1396,11 @@ export const WealthView: React.FC = () => {
               </div>
 
               {/* Stacked Progress Bar */}
-              <div className="w-full h-3 rounded-full bg-zinc-950 overflow-hidden flex p-0.5 gap-0.5 border border-zinc-800">
+              <div className={`w-full h-3 rounded-full overflow-hidden flex p-0.5 gap-0.5 border ${
+                isLight ? 'bg-slate-100 border-slate-200' : 'bg-zinc-950 border-zinc-800'
+              }`}>
                 {tagAllocationStats.map(stat => {
-                  const color = stat.meta?.color || (stat.name === 'Untagged Assets' ? '#71717a' : '#10b981');
+                  const color = getTagColor(stat.name, stat.meta?.color);
                   return (
                     <div
                       key={stat.name}
@@ -1353,22 +1417,31 @@ export const WealthView: React.FC = () => {
               <div className="flex flex-wrap gap-2 pt-1">
                 {tagAllocationStats.map(stat => {
                   const isSelected = (selectedTagFilter === stat.name) || (selectedTagFilter === 'untagged' && stat.name === 'Untagged Assets');
+                  const tagColor = getTagColor(stat.name, stat.meta?.color);
                   return (
                     <button
                       key={stat.name}
                       onClick={() => setSelectedTagFilter(isSelected ? 'all' : (stat.name === 'Untagged Assets' ? 'untagged' : stat.name))}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-2 border cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border cursor-pointer ${
                         isSelected
-                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 ring-1 ring-emerald-500/40 shadow-sm'
-                          : 'bg-zinc-950/80 text-zinc-300 border-zinc-800/90 hover:border-zinc-700 hover:text-white'
+                          ? isLight
+                            ? 'bg-blue-50 text-blue-700 border-blue-300 ring-2 ring-blue-500/30 shadow-xs'
+                            : 'bg-blue-600/25 text-blue-300 border-blue-500/50 ring-2 ring-blue-500/40 shadow-sm'
+                          : isLight
+                            ? 'bg-white hover:bg-slate-50 text-slate-800 hover:text-slate-900 border-slate-200 hover:border-slate-300 shadow-2xs'
+                            : 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border-slate-800 hover:border-slate-700 shadow-2xs'
                       }`}
                     >
                       <span 
-                        className="w-2 h-2 rounded-full" 
-                        style={{ backgroundColor: stat.meta?.color || (stat.name === 'Untagged Assets' ? '#71717a' : '#10b981') }}
+                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs" 
+                        style={{ backgroundColor: tagColor }}
                       />
-                      <span>{stat.name}</span>
-                      <span className="font-mono text-[11px] text-zinc-400 font-semibold">
+                      <span className="font-semibold">{stat.name}</span>
+                      <span className={`font-mono text-[11px] font-semibold ${
+                        isSelected 
+                          ? (isLight ? 'text-blue-600' : 'text-blue-300') 
+                          : (isLight ? 'text-slate-500' : 'text-slate-400')
+                      }`}>
                         {formatMoney(stat.totalVal)} ({(stat.percentage ?? 0).toFixed(0)}%)
                       </span>
                     </button>
@@ -1401,46 +1474,113 @@ export const WealthView: React.FC = () => {
                 )}
               </div>
 
-              {/* View Layout Mode Buttons (Grid vs Grouped by Purpose vs Breakdown) */}
-              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-900 border border-zinc-800 text-xs shrink-0 self-start sm:self-auto">
-                <button
-                  onClick={() => setViewLayoutMode('grid')}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    viewLayoutMode === 'grid'
-                      ? 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                  title="Standard Grid Card View"
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>Grid</span>
-                </button>
+              {/* View Layout Mode Buttons (Grid vs Grouped by Purpose vs Breakdown) + Column 2/3 Switcher */}
+              <div className="flex items-center gap-2 flex-wrap shrink-0 self-start sm:self-auto">
+                <div className={`flex items-center gap-1.5 p-1 rounded-xl border text-xs ${
+                  isLight ? 'bg-slate-100 border-slate-200' : 'bg-zinc-900 border-zinc-800'
+                }`}>
+                  <button
+                    onClick={() => setViewLayoutMode('grid')}
+                    className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      viewLayoutMode === 'grid'
+                        ? isLight
+                          ? 'bg-white text-blue-600 border border-slate-200 shadow-xs'
+                          : 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-xs'
+                        : isLight
+                          ? 'text-slate-500 hover:text-slate-800'
+                          : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                    title="Standard Grid Card View"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Grid</span>
+                  </button>
 
-                <button
-                  onClick={() => setViewLayoutMode('grouped')}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    viewLayoutMode === 'grouped'
-                      ? 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                  title="Group holdings by Tag / Investment Purpose folders"
-                >
-                  <FolderKanban className="w-3.5 h-3.5" />
-                  <span>Group by Tag</span>
-                </button>
+                  <button
+                    onClick={() => setViewLayoutMode('grouped')}
+                    className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      viewLayoutMode === 'grouped'
+                        ? isLight
+                          ? 'bg-white text-blue-600 border border-slate-200 shadow-xs'
+                          : 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-xs'
+                        : isLight
+                          ? 'text-slate-500 hover:text-slate-800'
+                          : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                    title="Group holdings by Tag / Investment Purpose folders"
+                  >
+                    <FolderKanban className="w-3.5 h-3.5" />
+                    <span>Group by Tag</span>
+                  </button>
 
-                <button
-                  onClick={() => setViewLayoutMode('purpose_breakdown')}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    viewLayoutMode === 'purpose_breakdown'
-                      ? 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                  title="Purpose and Goals Analytics"
-                >
-                  <PieIcon className="w-3.5 h-3.5" />
-                  <span>Goals Analytics</span>
-                </button>
+                  <button
+                    onClick={() => setViewLayoutMode('purpose_breakdown')}
+                    className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      viewLayoutMode === 'purpose_breakdown'
+                        ? isLight
+                          ? 'bg-white text-blue-600 border border-slate-200 shadow-xs'
+                          : 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-xs'
+                        : isLight
+                          ? 'text-slate-500 hover:text-slate-800'
+                          : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                    title="Purpose and Goals Analytics"
+                  >
+                    <PieIcon className="w-3.5 h-3.5" />
+                    <span>Goals Analytics</span>
+                  </button>
+                </div>
+
+                {/* 2 and 3 Column Layout Switcher */}
+                {(viewLayoutMode === 'grid' || viewLayoutMode === 'grouped') && (
+                  <div 
+                    id="column-layout-switcher"
+                    className={`flex items-center p-1 rounded-xl border text-xs ${
+                      isLight ? 'bg-slate-100 border-slate-200' : 'bg-zinc-900 border-zinc-800'
+                    }`}
+                    title="Grid columns: 2 columns vs 3 columns"
+                  >
+                    <button
+                      id="btn-cols-2"
+                      type="button"
+                      onClick={() => handleSetGridColumns(2)}
+                      className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                        gridColumns === 2
+                          ? isLight
+                            ? 'bg-white text-blue-600 border border-slate-200 shadow-xs'
+                            : 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-xs'
+                          : isLight
+                            ? 'text-slate-500 hover:text-slate-800'
+                            : 'text-zinc-400 hover:text-zinc-200'
+                      }`}
+                      title="2 Columns Grid"
+                      aria-label="2 Columns Grid"
+                    >
+                      <Columns2 className="w-3.5 h-3.5" />
+                      <span className="font-mono text-xs">2</span>
+                    </button>
+
+                    <button
+                      id="btn-cols-3"
+                      type="button"
+                      onClick={() => handleSetGridColumns(3)}
+                      className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                        gridColumns === 3
+                          ? isLight
+                            ? 'bg-white text-blue-600 border border-slate-200 shadow-xs'
+                            : 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-xs'
+                          : isLight
+                            ? 'text-slate-500 hover:text-slate-800'
+                            : 'text-zinc-400 hover:text-zinc-200'
+                      }`}
+                      title="3 Columns Grid"
+                      aria-label="3 Columns Grid"
+                    >
+                      <Columns3 className="w-3.5 h-3.5" />
+                      <span className="font-mono text-xs">3</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Actions: Sync & Add */}
@@ -1506,41 +1646,94 @@ export const WealthView: React.FC = () => {
               })}
             </div>
 
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs">
-              <span className="text-zinc-500 font-semibold text-[11px] uppercase tracking-wider mr-1 flex items-center gap-1">
-                <Folder className="w-3 h-3 text-zinc-400" />
-                Category:
-              </span>
+            {/* Category Filter Pills & Column Grid Switcher at the end */}
+            <div className="flex items-center justify-between gap-3 overflow-x-auto no-scrollbar pb-1 text-xs">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-zinc-500 font-semibold text-[11px] uppercase tracking-wider mr-1 flex items-center gap-1">
+                  <Folder className="w-3 h-3 text-zinc-400" />
+                  Category:
+                </span>
 
-              <button
-                key="all-cats"
-                onClick={() => setAssetCategoryFilter('all')}
-                className={`px-3 py-1 rounded-xl transition-all shrink-0 cursor-pointer ${
-                  assetCategoryFilter === 'all'
-                    ? 'bg-zinc-800 text-zinc-100 font-semibold border border-zinc-700 shadow-sm'
-                    : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
-                }`}
-              >
-                All ({assets.length})
-              </button>
+                <button
+                  key="all-cats"
+                  onClick={() => setAssetCategoryFilter('all')}
+                  className={`px-3 py-1 rounded-xl transition-all shrink-0 cursor-pointer ${
+                    assetCategoryFilter === 'all'
+                      ? 'bg-zinc-800 text-zinc-100 font-semibold border border-zinc-700 shadow-sm'
+                      : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                  }`}
+                >
+                  All ({assets.length})
+                </button>
 
-              {availableAssetCategories.map(cat => {
-                const count = assets.filter(a => a.category === cat).length;
-                return (
+                {availableAssetCategories.map(cat => {
+                  const count = assets.filter(a => a.category === cat).length;
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setAssetCategoryFilter(cat)}
+                      className={`px-3 py-1 rounded-xl transition-all shrink-0 cursor-pointer ${
+                        assetCategoryFilter === cat
+                          ? 'bg-zinc-800 text-zinc-100 font-semibold border border-zinc-700 shadow-sm'
+                          : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                      }`}
+                    >
+                      {cat} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Column 2 & 3 Switcher at the end of Category Bar */}
+              {(viewLayoutMode === 'grid' || viewLayoutMode === 'grouped') && (
+                <div 
+                  id="category-end-column-switcher"
+                  className={`flex items-center p-0.5 rounded-xl border text-xs shrink-0 ml-auto ${
+                    isLight ? 'bg-slate-100 border-slate-200' : 'bg-zinc-900 border-zinc-800'
+                  }`}
+                  title="Switch grid columns: 2 columns or 3 columns"
+                >
                   <button
-                    key={cat}
-                    onClick={() => setAssetCategoryFilter(cat)}
-                    className={`px-3 py-1 rounded-xl transition-all shrink-0 cursor-pointer ${
-                      assetCategoryFilter === cat
-                        ? 'bg-zinc-800 text-zinc-100 font-semibold border border-zinc-700 shadow-sm'
-                        : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                    id="btn-cat-end-cols-2"
+                    type="button"
+                    onClick={() => handleSetGridColumns(2)}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                      gridColumns === 2
+                        ? isLight
+                          ? 'bg-white text-blue-600 border border-slate-200 shadow-xs'
+                          : 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-xs'
+                        : isLight
+                          ? 'text-slate-500 hover:text-slate-800'
+                          : 'text-zinc-400 hover:text-zinc-200'
                     }`}
+                    title="2 Columns Layout"
+                    aria-label="2 Columns Layout"
                   >
-                    {cat} ({count})
+                    <Columns2 className="w-3.5 h-3.5" />
+                    <span className="font-mono text-xs">2</span>
                   </button>
-                );
-              })}
+
+                  <button
+                    id="btn-cat-end-cols-3"
+                    type="button"
+                    onClick={() => handleSetGridColumns(3)}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                      gridColumns === 3
+                        ? isLight
+                          ? 'bg-white text-blue-600 border border-slate-200 shadow-xs'
+                          : 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-xs'
+                        : isLight
+                          ? 'text-slate-500 hover:text-slate-800'
+                          : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                    title="3 Columns Layout"
+                    aria-label="3 Columns Layout"
+                  >
+                    <Columns3 className="w-3.5 h-3.5" />
+                    <span className="font-mono text-xs">3</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1696,7 +1889,7 @@ export const WealthView: React.FC = () => {
 
                       {/* Group Items Grid */}
                       {!isCollapsed && (
-                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className={`p-4 grid gap-3 ${gridColumns === 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}>
                           {group.items.map(asset => {
                             const isZeroVal = !asset.value || asset.value === 0;
                             const gain = (!isZeroVal && asset.costBasis) ? asset.value - asset.costBasis : 0;
@@ -1773,9 +1966,8 @@ export const WealthView: React.FC = () => {
                                         <span
                                           key={tag}
                                           onClick={() => setSelectedTagFilter(tag)}
-                                          className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer transition-all hover:scale-105 ${
-                                            meta?.badgeClass || 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
-                                          }`}
+                                          style={getTagPillStyle(tag, meta?.color, isLight).style}
+                                          className={getTagPillStyle(tag, meta?.color, isLight).className}
                                           title={`Filter by tag "${tag}"`}
                                         >
                                           🏷️ {tag}
@@ -1884,7 +2076,7 @@ export const WealthView: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className={`grid gap-3 ${gridColumns === 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}>
                   {filteredAssets.map(asset => {
                     const isZeroVal = !asset.value || asset.value === 0;
                     const gain = (!isZeroVal && asset.costBasis) ? asset.value - asset.costBasis : 0;
@@ -1973,9 +2165,8 @@ export const WealthView: React.FC = () => {
                                 <span
                                   key={tag}
                                   onClick={() => setSelectedTagFilter(tag)}
-                                  className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer transition-all hover:scale-105 flex items-center gap-1 ${
-                                    meta?.badgeClass || 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
-                                  }`}
+                                  style={getTagPillStyle(tag, meta?.color, isLight).style}
+                                  className={getTagPillStyle(tag, meta?.color, isLight).className + ' flex items-center gap-1'}
                                   title={`Filter by "${tag}"`}
                                 >
                                   <span>🏷️</span>
@@ -2197,7 +2388,11 @@ export const WealthView: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setActiveDetailAssetId(asset.id)}
-                          className="w-full mt-3 py-1.5 px-3 rounded-xl bg-zinc-950/80 hover:bg-zinc-800 text-zinc-300 hover:text-emerald-400 border border-zinc-800 hover:border-emerald-500/40 text-xs font-semibold flex items-center justify-between transition-all cursor-pointer group/lots"
+                          className={`w-full mt-3 py-1.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer group/lots ${
+                            isLight 
+                              ? 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-emerald-600 border-slate-200 hover:border-emerald-300 shadow-2xs' 
+                              : 'bg-zinc-950/80 hover:bg-zinc-800 text-zinc-300 hover:text-emerald-400 border-zinc-800 hover:border-emerald-500/40'
+                          }`}
                         >
                           <span className="flex items-center gap-1.5">
                             <Layers className="w-3.5 h-3.5 text-emerald-400" />
@@ -2290,7 +2485,9 @@ export const WealthView: React.FC = () => {
               </div>
 
               {/* Stacked Progress Bar */}
-              <div className="w-full h-3 rounded-full bg-zinc-950 overflow-hidden flex p-0.5 gap-0.5 border border-zinc-800">
+              <div className={`w-full h-3 rounded-full overflow-hidden flex p-0.5 gap-0.5 border ${
+                isLight ? 'bg-slate-100 border-slate-200' : 'bg-zinc-950 border-zinc-800'
+              }`}>
                 {liabilityAllocationStats.map(stat => (
                   <div
                     key={stat.name}
@@ -2306,22 +2503,31 @@ export const WealthView: React.FC = () => {
               <div className="flex flex-wrap gap-2 pt-1">
                 {liabilityAllocationStats.map(stat => {
                   const isSelected = liabCategoryFilter === stat.name;
+                  const tagColor = stat.color || getTagColor(stat.name);
                   return (
                     <button
                       key={stat.name}
                       onClick={() => setLiabCategoryFilter(isSelected ? 'all' : stat.name)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-2 border cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border cursor-pointer ${
                         isSelected
-                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 ring-1 ring-rose-500/40 shadow-sm'
-                          : 'bg-zinc-950/80 text-zinc-300 border-zinc-800/90 hover:border-zinc-700 hover:text-white'
+                          ? isLight
+                            ? 'bg-rose-50 text-rose-700 border-rose-300 ring-2 ring-rose-500/30 shadow-xs'
+                            : 'bg-rose-600/25 text-rose-300 border-rose-500/50 ring-2 ring-rose-500/40 shadow-sm'
+                          : isLight
+                            ? 'bg-white hover:bg-slate-50 text-slate-800 hover:text-slate-900 border-slate-200 hover:border-slate-300 shadow-2xs'
+                            : 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border-slate-800 hover:border-slate-700 shadow-2xs'
                       }`}
                     >
                       <span 
-                        className="w-2 h-2 rounded-full" 
-                        style={{ backgroundColor: stat.color }}
+                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs" 
+                        style={{ backgroundColor: tagColor }}
                       />
-                      <span>{stat.name}</span>
-                      <span className="font-mono text-[11px] text-zinc-400 font-semibold">
+                      <span className="font-semibold">{stat.name}</span>
+                      <span className={`font-mono text-[11px] font-semibold ${
+                        isSelected 
+                          ? (isLight ? 'text-rose-600' : 'text-rose-300') 
+                          : (isLight ? 'text-slate-500' : 'text-slate-400')
+                      }`}>
                         {formatMoney(stat.totalVal)} ({stat.percentage.toFixed(0)}%)
                       </span>
                     </button>
@@ -2354,46 +2560,113 @@ export const WealthView: React.FC = () => {
                 )}
               </div>
 
-              {/* View Layout Mode Buttons (Grid vs Grouped vs Payoff Strategy) */}
-              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-900 border border-zinc-800 text-xs shrink-0 self-start sm:self-auto">
-                <button
-                  onClick={() => setLiabViewLayoutMode('grid')}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    liabViewLayoutMode === 'grid'
-                      ? 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                  title="Standard Grid Card View"
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>Grid</span>
-                </button>
+              {/* View Layout Mode Buttons (Grid vs Grouped vs Payoff Strategy) + Column 2/3 Switcher */}
+              <div className="flex items-center gap-2 flex-wrap shrink-0 self-start sm:self-auto">
+                <div className={`flex items-center gap-1.5 p-1 rounded-xl border text-xs ${
+                  isLight ? 'bg-slate-100 border-slate-200' : 'bg-zinc-900 border-zinc-800'
+                }`}>
+                  <button
+                    onClick={() => setLiabViewLayoutMode('grid')}
+                    className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      liabViewLayoutMode === 'grid'
+                        ? isLight
+                          ? 'bg-white text-rose-600 border border-slate-200 shadow-xs'
+                          : 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-xs'
+                        : isLight
+                          ? 'text-slate-500 hover:text-slate-800'
+                          : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                    title="Standard Grid Card View"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Grid</span>
+                  </button>
 
-                <button
-                  onClick={() => setLiabViewLayoutMode('grouped')}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    liabViewLayoutMode === 'grouped'
-                      ? 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                  title="Group liabilities by category folders"
-                >
-                  <FolderKanban className="w-3.5 h-3.5" />
-                  <span>Group by Category</span>
-                </button>
+                  <button
+                    onClick={() => setLiabViewLayoutMode('grouped')}
+                    className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      liabViewLayoutMode === 'grouped'
+                        ? isLight
+                          ? 'bg-white text-rose-600 border border-slate-200 shadow-xs'
+                          : 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-xs'
+                        : isLight
+                          ? 'text-slate-500 hover:text-slate-800'
+                          : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                    title="Group liabilities by category folders"
+                  >
+                    <FolderKanban className="w-3.5 h-3.5" />
+                    <span>Group by Category</span>
+                  </button>
 
-                <button
-                  onClick={() => setLiabViewLayoutMode('payoff_strategy')}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    liabViewLayoutMode === 'payoff_strategy'
-                      ? 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                  title="Payoff Strategy (Avalanche vs Snowball)"
-                >
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  <span>Payoff Strategy</span>
-                </button>
+                  <button
+                    onClick={() => setLiabViewLayoutMode('payoff_strategy')}
+                    className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      liabViewLayoutMode === 'payoff_strategy'
+                        ? isLight
+                          ? 'bg-white text-rose-600 border border-slate-200 shadow-xs'
+                          : 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-xs'
+                        : isLight
+                          ? 'text-slate-500 hover:text-slate-800'
+                          : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                    title="Payoff Strategy (Avalanche vs Snowball)"
+                  >
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span>Payoff Strategy</span>
+                  </button>
+                </div>
+
+                {/* 2 and 3 Column Layout Switcher for Liabilities */}
+                {(liabViewLayoutMode === 'grid' || liabViewLayoutMode === 'grouped') && (
+                  <div 
+                    id="liab-column-layout-switcher"
+                    className={`flex items-center p-1 rounded-xl border text-xs ${
+                      isLight ? 'bg-slate-100 border-slate-200' : 'bg-zinc-900 border-zinc-800'
+                    }`}
+                    title="Grid columns: 2 columns vs 3 columns"
+                  >
+                    <button
+                      id="btn-liab-cols-2"
+                      type="button"
+                      onClick={() => handleSetGridColumns(2)}
+                      className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                        gridColumns === 2
+                          ? isLight
+                            ? 'bg-white text-rose-600 border border-slate-200 shadow-xs'
+                            : 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-xs'
+                          : isLight
+                            ? 'text-slate-500 hover:text-slate-800'
+                            : 'text-zinc-400 hover:text-zinc-200'
+                      }`}
+                      title="2 Columns Grid"
+                      aria-label="2 Columns Grid"
+                    >
+                      <Columns2 className="w-3.5 h-3.5" />
+                      <span className="font-mono text-xs">2</span>
+                    </button>
+
+                    <button
+                      id="btn-liab-cols-3"
+                      type="button"
+                      onClick={() => handleSetGridColumns(3)}
+                      className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                        gridColumns === 3
+                          ? isLight
+                            ? 'bg-white text-rose-600 border border-slate-200 shadow-xs'
+                            : 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-xs'
+                          : isLight
+                            ? 'text-slate-500 hover:text-slate-800'
+                            : 'text-zinc-400 hover:text-zinc-200'
+                      }`}
+                      title="3 Columns Grid"
+                      aria-label="3 Columns Grid"
+                    >
+                      <Columns3 className="w-3.5 h-3.5" />
+                      <span className="font-mono text-xs">3</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Action: Add Liability */}
@@ -2446,41 +2719,94 @@ export const WealthView: React.FC = () => {
               })}
             </div>
 
-            {/* Category Filter Pills (Mirroring Asset Category Filter Pills) */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs">
-              <span className="text-zinc-500 font-semibold text-[11px] uppercase tracking-wider mr-1 flex items-center gap-1">
-                <Folder className="w-3 h-3 text-zinc-400" />
-                Category:
-              </span>
+            {/* Category Filter Pills & End Column Switcher */}
+            <div className="flex items-center justify-between gap-3 overflow-x-auto no-scrollbar pb-1 text-xs">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-zinc-500 font-semibold text-[11px] uppercase tracking-wider mr-1 flex items-center gap-1">
+                  <Folder className="w-3 h-3 text-zinc-400" />
+                  Category:
+                </span>
 
-              <button
-                key="all-liab-cats"
-                onClick={() => setLiabCategoryFilter('all')}
-                className={`px-3 py-1 rounded-xl transition-all shrink-0 cursor-pointer ${
-                  liabCategoryFilter === 'all'
-                    ? 'bg-zinc-800 text-zinc-100 font-semibold border border-zinc-700 shadow-sm'
-                    : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
-                }`}
-              >
-                All ({liabilities.length})
-              </button>
+                <button
+                  key="all-liab-cats"
+                  onClick={() => setLiabCategoryFilter('all')}
+                  className={`px-3 py-1 rounded-xl transition-all shrink-0 cursor-pointer ${
+                    liabCategoryFilter === 'all'
+                      ? 'bg-zinc-800 text-zinc-100 font-semibold border border-zinc-700 shadow-sm'
+                      : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                  }`}
+                >
+                  All ({liabilities.length})
+                </button>
 
-              {availableLiabilityCategories.map(cat => {
-                const count = liabilities.filter(l => l.category === cat).length;
-                return (
+                {availableLiabilityCategories.map(cat => {
+                  const count = liabilities.filter(l => l.category === cat).length;
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setLiabCategoryFilter(cat)}
+                      className={`px-3 py-1 rounded-xl transition-all shrink-0 cursor-pointer ${
+                        liabCategoryFilter === cat
+                          ? 'bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/40 shadow-sm'
+                          : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                      }`}
+                    >
+                      {cat} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Column 2 & 3 Switcher at the end of Liabilities Category Bar */}
+              {(liabViewLayoutMode === 'grid' || liabViewLayoutMode === 'grouped') && (
+                <div 
+                  id="liab-category-end-column-switcher"
+                  className={`flex items-center p-0.5 rounded-xl border text-xs shrink-0 ml-auto ${
+                    isLight ? 'bg-slate-100 border-slate-200' : 'bg-zinc-900 border-zinc-800'
+                  }`}
+                  title="Switch grid columns: 2 columns or 3 columns"
+                >
                   <button
-                    key={cat}
-                    onClick={() => setLiabCategoryFilter(cat)}
-                    className={`px-3 py-1 rounded-xl transition-all shrink-0 cursor-pointer ${
-                      liabCategoryFilter === cat
-                        ? 'bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/40 shadow-sm'
-                        : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                    id="btn-liab-cat-end-cols-2"
+                    type="button"
+                    onClick={() => handleSetGridColumns(2)}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                      gridColumns === 2
+                        ? isLight
+                          ? 'bg-white text-rose-600 border border-slate-200 shadow-xs'
+                          : 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-xs'
+                        : isLight
+                          ? 'text-slate-500 hover:text-slate-800'
+                          : 'text-zinc-400 hover:text-zinc-200'
                     }`}
+                    title="2 Columns Layout"
+                    aria-label="2 Columns Layout"
                   >
-                    {cat} ({count})
+                    <Columns2 className="w-3.5 h-3.5" />
+                    <span className="font-mono text-xs">2</span>
                   </button>
-                );
-              })}
+
+                  <button
+                    id="btn-liab-cat-end-cols-3"
+                    type="button"
+                    onClick={() => handleSetGridColumns(3)}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                      gridColumns === 3
+                        ? isLight
+                          ? 'bg-white text-rose-600 border border-slate-200 shadow-xs'
+                          : 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-xs'
+                        : isLight
+                          ? 'text-slate-500 hover:text-slate-800'
+                          : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                    title="3 Columns Layout"
+                    aria-label="3 Columns Layout"
+                  >
+                    <Columns3 className="w-3.5 h-3.5" />
+                    <span className="font-mono text-xs">3</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -2527,7 +2853,9 @@ export const WealthView: React.FC = () => {
                 </div>
 
                 {/* Strategy Insight Banner */}
-                <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800/80 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className={`p-3.5 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                  isLight ? 'bg-slate-50 border-slate-200/90 text-slate-800' : 'bg-zinc-950/80 border-zinc-800/80 text-zinc-300'
+                }`}>
                   <div className="space-y-0.5">
                     <span className="font-bold text-zinc-200">
                       {payoffStrategyMode === 'avalanche' 
@@ -2641,7 +2969,7 @@ export const WealthView: React.FC = () => {
                     </div>
 
                     {isExpanded && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                      <div className={`grid gap-3 pt-2 ${gridColumns === 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}>
                         {groupItems.map(liab => renderLiabilityCard(liab))}
                       </div>
                     )}
@@ -2653,7 +2981,7 @@ export const WealthView: React.FC = () => {
 
           {/* RENDER VIEW 3: GRID VIEW */}
           {liabViewLayoutMode === 'grid' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className={`grid gap-3 ${gridColumns === 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}>
               {filteredLiabilities.map(liab => renderLiabilityCard(liab))}
 
               {filteredLiabilities.length === 0 && (

@@ -14,20 +14,25 @@ import {
   TrendingUp, 
   Percent, 
   Clock, 
-  Star,
-  FileSpreadsheet,
-  Trash2,
-  Lock,
-  Moon,
-  Sun,
-  ShieldAlert,
-  X,
-  AlertTriangle
+  Star, 
+  FileSpreadsheet, 
+  Trash2, 
+  Lock, 
+  Moon, 
+  Sun, 
+  ShieldAlert, 
+  X, 
+  AlertTriangle,
+  Printer,
+  FileText
 } from 'lucide-react';
 import { useFinance, CURRENCY_CONFIGS } from '../../context/FinanceContext';
 import { MoreSubTab, AppTheme, CurrencyCode } from '../../types';
 import { FinancialCalculatorsView } from '../calculators/FinancialCalculatorsView';
 import { ThankYouFeedbackModal } from '../ThankYouFeedbackModal';
+import { downloadFinancialReportFile, FinancialReportData } from '../../utils/generateFinancialReportHtml';
+import { generateFinancialReportPdf } from '../../utils/generateFinancialReportPdf';
+import { ExportReportModal } from '../settings/ExportReportModal';
 
 export const MoreView: React.FC = () => {
   const { 
@@ -37,6 +42,7 @@ export const MoreView: React.FC = () => {
     setTheme, 
     currency, 
     setCurrency, 
+    currencyConfig,
     formatMoney, 
     isPrivateMode, 
     togglePrivateMode, 
@@ -46,9 +52,21 @@ export const MoreView: React.FC = () => {
     resetToDefaultData,
     resetAllDataToZero,
     liquidCash,
+    liquidRunwayMonths = 0,
+    monthlyIncome = 0,
     monthlyExpenses,
+    netSavings = 0,
+    savingsRate = 0,
     totalAssets,
-    netWorth
+    totalLiabilities = 0,
+    debtToAssetRatio = 0,
+    netWorth,
+    assets = [],
+    liabilities = [],
+    budgets = [],
+    goals = [],
+    essentialGoals = [],
+    healthScore
   } = useFinance();
 
   // Reset confirmation states
@@ -58,6 +76,68 @@ export const MoreView: React.FC = () => {
 
   // Import state
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [isExportReportOpen, setIsExportReportOpen] = useState(false);
+
+  const handleQuickDownloadPdf = () => {
+    const reportData: FinancialReportData = {
+      userName: 'Account Holder',
+      userEmail: 'Private Portfolio',
+      currency,
+      currencySymbol: currencyConfig?.symbol || '$',
+      generatedDate: new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      netWorth,
+      totalAssets,
+      totalLiabilities,
+      monthlyIncome,
+      monthlyExpenses,
+      netSavings,
+      savingsRate,
+      liquidCash,
+      liquidRunwayMonths,
+      debtToAssetRatio,
+      healthScore: healthScore?.score ?? 85,
+      healthGrade: healthScore?.grade ?? 'A',
+      assets: assets.map(a => ({
+        name: a.name,
+        category: a.category,
+        value: a.value,
+        currency: a.currency,
+        institution: a.institution
+      })),
+      liabilities: liabilities.map(l => ({
+        name: l.name,
+        category: l.category,
+        balance: l.balance,
+        interestRate: l.interestRate,
+        monthlyPayment: l.monthlyPayment || l.minimumPayment,
+        institution: l.institution
+      })),
+      budgets: budgets.map(b => ({
+        category: b.category,
+        allocatedAmount: b.allocatedAmount,
+        period: b.period
+      })),
+      goals: [...goals, ...essentialGoals.map(eg => ({
+        name: eg.name,
+        category: 'Emergency Vault',
+        targetAmount: eg.targetAmount,
+        currentAmount: eg.currentAmount,
+        targetDate: eg.lastUpdated
+      }))]
+    };
+    try {
+      generateFinancialReportPdf(reportData);
+      setImportStatus('Financial summary PDF downloaded successfully to your device!');
+      setTimeout(() => setImportStatus(null), 4000);
+    } catch (e) {
+      console.error('PDF generation error, fallback to HTML:', e);
+      downloadFinancialReportFile(reportData);
+    }
+  };
 
   // Calculator states
   const [calcTab, setCalcTab] = useState<'compound' | 'loan' | 'fire' | 'projector'>('compound');
@@ -183,6 +263,59 @@ export const MoreView: React.FC = () => {
     }, 4000);
   };
 
+  const handleDownloadPdfReport = () => {
+    downloadFinancialReportFile({
+      userName: localStorage.getItem('fix_user_name') || 'Account Holder',
+      userEmail: localStorage.getItem('fix_user_email') || 'Private Portfolio',
+      currency,
+      currencySymbol: currencyConfig?.symbol || '$',
+      generatedDate: new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      netWorth,
+      totalAssets,
+      totalLiabilities,
+      monthlyIncome,
+      monthlyExpenses,
+      netSavings,
+      savingsRate,
+      liquidCash,
+      liquidRunwayMonths,
+      debtToAssetRatio,
+      healthScore: healthScore?.score ?? 85,
+      healthGrade: healthScore?.grade ?? 'A',
+      assets: assets.map(a => ({
+        name: a.name,
+        category: a.category,
+        value: a.value,
+        currency: a.currency,
+        institution: a.institution
+      })),
+      liabilities: liabilities.map(l => ({
+        name: l.name,
+        category: l.category,
+        balance: l.balance,
+        interestRate: l.interestRate,
+        monthlyPayment: l.monthlyPayment || l.minimumPayment,
+        institution: l.institution
+      })),
+      budgets: budgets.map(b => ({
+        category: b.category,
+        allocatedAmount: b.allocatedAmount,
+        period: b.period
+      })),
+      goals: [...goals, ...essentialGoals.map(eg => ({
+        name: eg.name,
+        category: 'Emergency Vault',
+        targetAmount: eg.targetAmount,
+        currentAmount: eg.currentAmount,
+        targetDate: eg.lastUpdated
+      }))]
+    });
+  };
+
   const themes: { id: AppTheme; name: string; desc: string; previewBg: string; border: string }[] = [
     { id: 'light', name: 'Day Mode (Pure Light - Default)', desc: 'Clean, high-contrast daylight theme with bright cards and crisp typography', previewBg: 'bg-white', border: 'border-blue-500' },
     { id: 'flavorfit', name: 'FlavorFit Neo-Dark (Cyan & Pastel)', desc: 'Modern dark obsidian canvas with pastel ice cyan, lilac lavender, and apricot cream bento cards', previewBg: 'bg-[#0B0C14]', border: 'border-[#9FE0E8]' },
@@ -268,6 +401,43 @@ export const MoreView: React.FC = () => {
               <p className="text-xs text-zinc-400 mt-0.5">
                 Load past transactions, assets, and net worth snapshots from JSON backups or CSV ledgers.
               </p>
+            </div>
+
+            {/* Direct Export & Download PDF Summary Card */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-zinc-950/70 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs font-bold text-zinc-100">Export Financial Report &amp; PDF Structure</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-mono">
+                    Printable PDF
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-400">
+                  Generate and download a printable PDF summary statement of all financial records, net worth, assets, debts, and budgets to your phone, tablet, or desktop anywhere.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                <button
+                  id="btn-import-download-pdf"
+                  onClick={handleQuickDownloadPdf}
+                  className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/25 transition-all cursor-pointer"
+                  title="Download printable PDF summary to phone, tab, or computer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PDF</span>
+                </button>
+                <button
+                  id="btn-import-customize-report"
+                  onClick={() => setIsExportReportOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  title="Customize report sections and print preview"
+                >
+                  <Printer className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Print View</span>
+                </button>
+              </div>
             </div>
 
             {/* Dropzone */}
@@ -367,28 +537,50 @@ export const MoreView: React.FC = () => {
               <p className="text-xs text-zinc-400">Download offline snapshots of your entire financial universe.</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-zinc-950/60 border border-zinc-800 space-y-2">
-                <div className="text-xs font-bold text-zinc-200">Full JSON Database Snapshot</div>
-                <p className="text-[11px] text-zinc-400">Includes all assets, debts, budgets, goals, and history.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="p-4 rounded-xl bg-zinc-950/60 border border-zinc-800 space-y-2 flex flex-col justify-between">
+                <div>
+                  <div className="text-xs font-bold text-zinc-200">Full JSON Database Snapshot</div>
+                  <p className="text-[11px] text-zinc-400 mt-1">Includes all assets, debts, budgets, goals, and history.</p>
+                </div>
                 <button
                   onClick={exportDataJSON}
-                  className="w-full mt-2 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  className="w-full mt-2 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Download .JSON Backup</span>
                 </button>
               </div>
 
-              <div className="p-4 rounded-xl bg-zinc-950/60 border border-zinc-800 space-y-2">
-                <div className="text-xs font-bold text-zinc-200">Transaction Ledger CSV</div>
-                <p className="text-[11px] text-zinc-400">Universal spreadsheet export for Excel, Google Sheets, or tax filing.</p>
+              <div className="p-4 rounded-xl bg-zinc-950/60 border border-zinc-800 space-y-2 flex flex-col justify-between">
+                <div>
+                  <div className="text-xs font-bold text-zinc-200">Transaction Ledger CSV</div>
+                  <p className="text-[11px] text-zinc-400 mt-1">Universal spreadsheet export for Excel, Google Sheets, or tax filing.</p>
+                </div>
                 <button
                   onClick={exportTransactionsCSV}
-                  className="w-full mt-2 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  className="w-full mt-2 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5" />
                   <span>Export Transactions .CSV</span>
+                </button>
+              </div>
+
+              <div className="p-4 rounded-xl bg-zinc-950/60 border border-blue-500/30 space-y-2 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-zinc-200">Printable Financial PDF Report</span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono">PDF</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-400 mt-1">Executive summary report with assets, debts, and solvency metrics.</p>
+                </div>
+                <button
+                  id="btn-more-backup-download-pdf"
+                  onClick={handleQuickDownloadPdf}
+                  className="w-full mt-2 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/25 transition-colors cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PDF Report</span>
                 </button>
               </div>
             </div>
@@ -715,6 +907,12 @@ export const MoreView: React.FC = () => {
         onClose={() => setIsThankYouOpen(false)}
         rating={feedbackRating}
         category={feedbackType}
+      />
+
+      {/* Global Export Report Modal */}
+      <ExportReportModal
+        isOpen={isExportReportOpen}
+        onClose={() => setIsExportReportOpen(false)}
       />
     </div>
   );

@@ -28,7 +28,7 @@ export const Sidebar: React.FC = () => {
     toggleSidebar
   } = useFinance();
 
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   // Group 1: Core Navigation (Dashboard, Wealth, Goals, Accounts)
   const coreNavItems: { id: MainTab; label: string; icon: any; badge?: string }[] = [

@@ -33,7 +33,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   isDestructive = true,
 }) => {
   const { theme } = useFinance();
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   // Handle escape key
   useEffect(() => {

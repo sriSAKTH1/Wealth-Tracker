@@ -145,7 +145,7 @@ const NOTIFICATION_SETTINGS: NotificationSettingItem[] = [
 
 export const NotificationsSection: React.FC = () => {
   const { theme } = useFinance();
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   // Toggle map loaded from localStorage
   const [toggleState, setToggleState] = useState<Record<string, boolean>>(() => {

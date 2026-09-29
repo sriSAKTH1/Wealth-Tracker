@@ -72,7 +72,7 @@ const RECOVERY_CODES = [
 
 export const SecuritySection: React.FC = () => {
   const { theme } = useFinance();
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   // 1. Password state
   const [currentPassword, setCurrentPassword] = useState('');

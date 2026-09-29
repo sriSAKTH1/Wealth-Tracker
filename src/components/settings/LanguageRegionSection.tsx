@@ -243,7 +243,7 @@ export const NUMBER_FORMATS = [
 
 export const LanguageRegionSection: React.FC = () => {
   const { theme, currency, setCurrency, formatMoney } = useFinance();
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   // Persistent settings state
   const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {

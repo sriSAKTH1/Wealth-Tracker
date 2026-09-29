@@ -174,10 +174,19 @@
   color: #94a3b8 !important;
 }
 
-/* --- Quick Add & Search Modals in Day Mode --- */
-.light-theme .bg-slate-950\/80,
-.light-theme .bg-zinc-950\/80 {
+/* --- Modal Overlays & Backdrops in Day Mode --- */
+.light-theme .fixed.inset-0.bg-slate-950\/80,
+.light-theme .fixed.inset-0.bg-zinc-950\/80,
+.light-theme [class*="fixed"][class*="inset-0"].bg-slate-950\/80,
+.light-theme [class*="fixed"][class*="inset-0"].bg-zinc-950\/80 {
   background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+/* Day Mode / Light theme general surfaces, pills, and badges should be clean white / slate */
+.light-theme .bg-slate-950\/80:not([class*="fixed"]),
+.light-theme .bg-zinc-950\/80:not([class*="fixed"]) {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
 }
 
 .light-theme .bg-slate-950\/60,
@@ -503,14 +512,17 @@
 .coolors-theme .bg-zinc-950,
 .coolors-theme .bg-slate-900,
 .coolors-theme .bg-zinc-900,
-.coolors-theme .bg-black {
+.coolors-theme .bg-black,
+.coolors-theme .bg-white {
   background-color: #111c38 !important;
   box-shadow: 0 4px 20px -2px rgba(11, 19, 41, 0.6) !important;
   border-color: #1e2d54 !important;
 }
 
 .coolors-theme .bg-slate-800,
-.coolors-theme .bg-zinc-800 {
+.coolors-theme .bg-zinc-800,
+.coolors-theme .bg-slate-50,
+.coolors-theme .bg-slate-100 {
   background-color: #172445 !important;
   border-color: #22335e !important;
   color: #e2e8f0 !important;
@@ -529,7 +541,8 @@
 
 .coolors-theme .border-slate-800,
 .coolors-theme .border-zinc-800,
-.coolors-theme .border-slate-700 {
+.coolors-theme .border-slate-700,
+.coolors-theme .border-slate-200 {
   border-color: #1e2d54 !important;
 }
 
@@ -564,14 +577,17 @@
 .emerald-theme .bg-zinc-950,
 .emerald-theme .bg-slate-900,
 .emerald-theme .bg-zinc-900,
-.emerald-theme .bg-black {
+.emerald-theme .bg-black,
+.emerald-theme .bg-white {
   background-color: #062a20 !important;
   box-shadow: 0 4px 20px -2px rgba(2, 26, 19, 0.6) !important;
   border-color: #0e4a39 !important;
 }
 
 .emerald-theme .bg-slate-800,
-.emerald-theme .bg-zinc-800 {
+.emerald-theme .bg-zinc-800,
+.emerald-theme .bg-slate-50,
+.emerald-theme .bg-slate-100 {
   background-color: #09382b !important;
   border-color: #115743 !important;
   color: #ecfdf5 !important;
@@ -590,7 +606,8 @@
 
 .emerald-theme .border-slate-800,
 .emerald-theme .border-zinc-800,
-.emerald-theme .border-slate-700 {
+.emerald-theme .border-slate-700,
+.emerald-theme .border-slate-200 {
   border-color: #0e4a39 !important;
 }
 
@@ -625,14 +642,17 @@
 .slate-theme .bg-zinc-950,
 .slate-theme .bg-slate-900,
 .slate-theme .bg-zinc-900,
-.slate-theme .bg-black {
+.slate-theme .bg-black,
+.slate-theme .bg-white {
   background-color: #1e293b !important;
   box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.6) !important;
   border-color: #334155 !important;
 }
 
 .slate-theme .bg-slate-800,
-.slate-theme .bg-zinc-800 {
+.slate-theme .bg-zinc-800,
+.slate-theme .bg-slate-50,
+.slate-theme .bg-slate-100 {
   background-color: #27354c !important;
   border-color: #3b4b63 !important;
   color: #f1f5f9 !important;
@@ -651,7 +671,8 @@
 
 .slate-theme .border-slate-800,
 .slate-theme .border-zinc-800,
-.slate-theme .border-slate-700 {
+.slate-theme .border-slate-700,
+.slate-theme .border-slate-200 {
   border-color: #334155 !important;
 }
 
@@ -661,6 +682,82 @@
   background-color: #172030 !important;
   border-color: #334155 !important;
   color: #ffffff !important;
+}
+
+/* =========================================================================
+   8. DARK TITANIUM THEME (Zinc 950 Canvas & High-Contrast Neutral Zinc)
+   ========================================================================= */
+.dark-theme, [data-theme="dark"] {
+  color-scheme: dark;
+  background-color: #09090b !important;
+  color: #f4f4f5 !important;
+}
+
+.dark-theme #desktop-sidebar,
+.dark-theme aside,
+.dark-theme header,
+.dark-theme nav {
+  background-color: #121215 !important;
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+.dark-theme .bg-white {
+  background-color: #18181b !important;
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+.dark-theme .bg-slate-50,
+.dark-theme .bg-slate-100 {
+  background-color: #27272a !important;
+  border-color: #3f3f46 !important;
+  color: #f4f4f5 !important;
+}
+
+.dark-theme .border-slate-200 {
+  border-color: #27272a !important;
+}
+
+/* =========================================================================
+   9. MIDNIGHT OBSIDIAN THEME (Pure OLED Black & Emerald Accents)
+   ========================================================================= */
+.midnight-theme, [data-theme="midnight"] {
+  color-scheme: dark;
+  background-color: #000000 !important;
+  color: #fafafa !important;
+}
+
+.midnight-theme #desktop-sidebar,
+.midnight-theme aside,
+.midnight-theme header,
+.midnight-theme nav {
+  background-color: #050505 !important;
+  border-color: #18181b !important;
+  color: #fafafa !important;
+}
+
+.midnight-theme .bg-slate-950,
+.midnight-theme .bg-zinc-950,
+.midnight-theme .bg-slate-900,
+.midnight-theme .bg-zinc-900,
+.midnight-theme .bg-white {
+  background-color: #0d0d11 !important;
+  border-color: #1c1c22 !important;
+  color: #fafafa !important;
+}
+
+.midnight-theme .bg-slate-800,
+.midnight-theme .bg-zinc-800,
+.midnight-theme .bg-slate-50,
+.midnight-theme .bg-slate-100 {
+  background-color: #141418 !important;
+  border-color: #22222a !important;
+  color: #fafafa !important;
+}
+
+.midnight-theme .border-slate-200 {
+  border-color: #1c1c22 !important;
 }
 
 /* =========================================================================

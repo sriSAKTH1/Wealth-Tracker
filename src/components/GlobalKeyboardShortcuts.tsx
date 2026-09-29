@@ -52,7 +52,7 @@ export const GlobalKeyboardShortcuts: React.FC = () => {
     theme
   } = useFinance();
 
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
   const [toastMessage, setToastMessage] = useState<{ title: string; badge: string } | null>(null);
 
   const showToast = (title: string, badge: string) => {

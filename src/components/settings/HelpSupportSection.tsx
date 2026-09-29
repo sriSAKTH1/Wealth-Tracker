@@ -16,7 +16,8 @@ import {
   Terminal, 
   Keyboard, 
   FileText,
-  AlertCircle
+  AlertCircle,
+  Zap
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 
@@ -74,8 +75,8 @@ const FAQS: FAQItem[] = [
 ];
 
 export const HelpSupportSection: React.FC = () => {
-  const { theme, setIsShortcutsHelpOpen, netWorth, totalAssets, totalLiabilities, formatMoney } = useFinance();
-  const isLight = theme === 'light';
+  const { theme, setIsShortcutsHelpOpen, netWorth, totalAssets, totalLiabilities, formatMoney, resetOnboarding } = useFinance();
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   // Search & FAQ state
   const [searchQuery, setSearchQuery] = useState('');
@@ -214,7 +215,23 @@ export const HelpSupportSection: React.FC = () => {
       )}
 
       {/* Quick Interactive Guides Banner */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        <div 
+          onClick={resetOnboarding}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer hover:border-blue-500/60 group ${
+            isLight ? 'bg-blue-50/50 border-blue-200/70 text-blue-950' : 'bg-blue-950/20 border-blue-900/40 text-blue-200'
+          }`}
+        >
+          <div className="flex items-center gap-2 font-bold mb-1">
+            <Zap className="w-4 h-4 text-blue-500 group-hover:scale-110 transition-transform" />
+            <span>Quick Add Tour</span>
+          </div>
+          <p className="text-[11px] opacity-80 mb-2">
+            Replay the onboarding tooltip highlighting the 1-tap (+) action button for logging records.
+          </p>
+          <span className="text-[10px] font-mono font-bold text-blue-500 group-hover:underline">Replay Tooltip Guide →</span>
+        </div>
+
         <div className={`p-4 rounded-2xl border transition-all ${
           isLight ? 'bg-indigo-50/50 border-indigo-200/70 text-indigo-950' : 'bg-indigo-950/20 border-indigo-900/40 text-indigo-200'
         }`}>

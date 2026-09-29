@@ -50,7 +50,7 @@ export const ReportsView: React.FC = () => {
     openQuickAdd
   } = useFinance();
 
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
   const [reportTimeframe, setReportTimeframe] = useState<TimeframeOption>('6M');
 
   // Convert an amount into the active display currency

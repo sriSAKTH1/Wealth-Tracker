@@ -46,7 +46,7 @@ export const FinancialStatementChart: React.FC<FinancialStatementChartProps> = (
     theme,
   } = useFinance();
 
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   // Base values (prefer passed props when supplied)
   const baseIncome = propIncome !== undefined ? propIncome : monthlyIncome;
