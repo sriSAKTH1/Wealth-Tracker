@@ -2205,7 +2205,14 @@ export const WealthView: React.FC = () => {
                                 <div className="flex items-center gap-2 flex-wrap">
                                   {asset.shares && (
                                     <span>
-                                      <strong className="text-white font-bold">{asset.shares}</strong> {asset.assetType === 'mutual_fund' || asset.exchange === 'MF' ? 'units' : 'shares'}
+                                      <strong className="text-white font-bold">{asset.shares}</strong>{' '}
+                                      {asset.category === 'Commodities' || asset.exchange === 'COMMODITY' || asset.ticker?.startsWith('GOLD') || asset.ticker?.startsWith('SILVER')
+                                        ? (asset.ticker?.endsWith('-10G') ? 'x 10g' : asset.ticker?.endsWith('-KG') ? 'kg' : asset.ticker?.endsWith('-OZ') ? 'oz' : 'grams')
+                                        : asset.category === 'Crypto' || asset.exchange === 'CRYPTO' || asset.assetType === 'crypto'
+                                        ? 'coins'
+                                        : asset.assetType === 'mutual_fund' || asset.exchange === 'MF'
+                                        ? 'units'
+                                        : 'shares'}
                                       {asset.buyPrice !== undefined && asset.buyPrice !== null ? (
                                         <span className="text-zinc-400">
                                           {' '}@ {asset.currency === 'INR' || asset.exchange === 'NSE' || asset.exchange === 'BSE' || asset.exchange === 'MF' ? `₹${(Number(asset.buyPrice) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `$${(Number(asset.buyPrice) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
@@ -2223,7 +2230,13 @@ export const WealthView: React.FC = () => {
 
                                 {asset.currentPrice !== undefined && asset.currentPrice !== null && (
                                   <div className="flex items-center gap-1 text-right">
-                                    <span className="text-zinc-400">{asset.assetType === 'mutual_fund' || asset.exchange === 'MF' ? 'NAV:' : 'Live:'}</span>
+                                    <span className="text-zinc-400">
+                                      {asset.category === 'Commodities' || asset.exchange === 'COMMODITY' || asset.ticker?.startsWith('GOLD') || asset.ticker?.startsWith('SILVER')
+                                        ? 'Spot:'
+                                        : asset.assetType === 'mutual_fund' || asset.exchange === 'MF'
+                                        ? 'NAV:'
+                                        : 'Live:'}
+                                    </span>
                                     <span className="text-emerald-400 font-bold">
                                       {asset.currency === 'INR' || asset.exchange === 'NSE' || asset.exchange === 'BSE' || asset.exchange === 'MF' ? `₹${(Number(asset.currentPrice) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `$${(Number(asset.currentPrice) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                                     </span>

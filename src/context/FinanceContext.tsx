@@ -706,7 +706,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           ticker: a.ticker || String(a.schemeCode), 
           exchange: a.exchange, 
           type: a.assetType,
-          schemeCode: a.schemeCode 
+          schemeCode: a.schemeCode,
+          currency: a.currency || currency
         }));
 
       let liveQuotesMap: Record<string, any> = {};
@@ -721,8 +722,16 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (key && (asset.autoSyncMarketPrice !== false || force)) {
           const quote = liveQuotesMap[key] || getMarketQuote(key, asset.exchange);
           if (quote) {
-            const shares = asset.shares || (asset.costBasis && asset.buyPrice ? asset.costBasis / asset.buyPrice : 1);
-            const newPrice = quote.currentPrice;
+            let newPrice = quote.currentPrice;
+
+            // Currency conversion if holding currency differs from quote currency
+            if (quote.currency === 'USD' && asset.currency === 'INR') {
+              newPrice = Math.round(newPrice * 96.06 * 100) / 100;
+            } else if (quote.currency === 'INR' && asset.currency === 'USD') {
+              newPrice = Math.round((newPrice / 96.06) * 100) / 100;
+            }
+
+            const shares = asset.shares || (asset.costBasis && asset.buyPrice ? asset.costBasis / asset.buyPrice : (asset.value / (newPrice || 1)));
             const newValue = Math.round(shares * newPrice * 100) / 100;
             count++;
             return {

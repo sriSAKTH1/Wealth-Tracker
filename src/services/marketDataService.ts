@@ -54,6 +54,218 @@ export interface IMarketDataProvider {
 // CURATED MASTER ASSETS CATALOG (INDIAN STOCKS, ETFS, MUTUAL FUNDS)
 // -------------------------------------------------------------
 export const MOCK_MASTER_ASSETS: MasterAsset[] = [
+  // --- 🪙 Commodities: Live Gold & Silver Spot ---
+  {
+    id: 'COMMODITY_GOLD_GRAM',
+    asset_type: 'commodity',
+    name: 'Gold 24K Spot (per Gram)',
+    symbol: 'GOLD-GRAM',
+    exchange: 'COMMODITY' as any,
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 12839.00,
+    previous_close: 12825.00,
+    price_change: 14.00,
+    price_change_percent: 0.11,
+    currency: 'INR',
+    data_status: 'Real-time',
+    last_updated: 'Live Spot Exchange',
+    sector: 'Precious Metals'
+  },
+  {
+    id: 'COMMODITY_GOLD_10G',
+    asset_type: 'commodity',
+    name: 'Gold 24K Spot (10 Grams)',
+    symbol: 'GOLD-10G',
+    exchange: 'COMMODITY' as any,
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 128390.00,
+    previous_close: 128250.00,
+    price_change: 140.00,
+    price_change_percent: 0.11,
+    currency: 'INR',
+    data_status: 'Real-time',
+    last_updated: 'Live Spot Exchange',
+    sector: 'Precious Metals'
+  },
+  {
+    id: 'COMMODITY_GOLD_OZ',
+    asset_type: 'commodity',
+    name: 'Gold Spot (Troy Ounce - $)',
+    symbol: 'GOLD-OZ',
+    exchange: 'COMMODITY' as any,
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 4165.75,
+    previous_close: 4160.00,
+    price_change: 5.75,
+    price_change_percent: 0.14,
+    currency: 'USD',
+    data_status: 'Real-time',
+    last_updated: 'Live Spot Exchange',
+    sector: 'Precious Metals'
+  },
+  {
+    id: 'COMMODITY_SILVER_GRAM',
+    asset_type: 'commodity',
+    name: 'Silver Spot (per Gram)',
+    symbol: 'SILVER-GRAM',
+    exchange: 'COMMODITY' as any,
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 187.50,
+    previous_close: 189.20,
+    price_change: -1.70,
+    price_change_percent: -0.90,
+    currency: 'INR',
+    data_status: 'Real-time',
+    last_updated: 'Live Spot Exchange',
+    sector: 'Precious Metals'
+  },
+  {
+    id: 'COMMODITY_SILVER_KG',
+    asset_type: 'commodity',
+    name: 'Silver Spot (1 Kilogram)',
+    symbol: 'SILVER-KG',
+    exchange: 'COMMODITY' as any,
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 187500.00,
+    previous_close: 189200.00,
+    price_change: -1700.00,
+    price_change_percent: -0.90,
+    currency: 'INR',
+    data_status: 'Real-time',
+    last_updated: 'Live Spot Exchange',
+    sector: 'Precious Metals'
+  },
+  {
+    id: 'NSE_GOLDBEES',
+    asset_type: 'commodity',
+    name: 'Nippon India Gold BeES ETF',
+    symbol: 'GOLDBEES',
+    exchange: 'NSE',
+    data_source: 'NSE_LIVE',
+    latest_price: 68.45,
+    previous_close: 68.10,
+    price_change: 0.35,
+    price_change_percent: 0.51,
+    currency: 'INR',
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'Physical Gold 99.5%'
+  },
+  {
+    id: 'NSE_SILVERBEES',
+    asset_type: 'commodity',
+    name: 'Nippon India Silver BeES ETF',
+    symbol: 'SILVERBEES',
+    exchange: 'NSE',
+    data_source: 'NSE_LIVE',
+    latest_price: 84.80,
+    previous_close: 84.10,
+    price_change: 0.70,
+    price_change_percent: 0.83,
+    currency: 'INR',
+    data_status: 'Real-time',
+    last_updated: 'Today, 03:30 PM IST',
+    sector: 'Physical Silver 99.9%'
+  },
+
+  // --- ₿ Cryptocurrencies & Digital Assets ---
+  {
+    id: 'CRYPTO_BTC',
+    asset_type: 'crypto',
+    name: 'Bitcoin',
+    symbol: 'BTC',
+    exchange: 'CRYPTO',
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 84140.00,
+    previous_close: 82500.00,
+    price_change: 1640.00,
+    price_change_percent: 1.98,
+    currency: 'USD',
+    data_status: 'Real-time',
+    last_updated: 'Live Binance / Spot',
+    sector: 'Layer 1 Digital Gold'
+  },
+  {
+    id: 'CRYPTO_ETH',
+    asset_type: 'crypto',
+    name: 'Ethereum',
+    symbol: 'ETH',
+    exchange: 'CRYPTO',
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 2683.50,
+    previous_close: 2610.00,
+    price_change: 73.50,
+    price_change_percent: 2.82,
+    currency: 'USD',
+    data_status: 'Real-time',
+    last_updated: 'Live Binance / Spot',
+    sector: 'Smart Contract Platform'
+  },
+  {
+    id: 'CRYPTO_SOL',
+    asset_type: 'crypto',
+    name: 'Solana',
+    symbol: 'SOL',
+    exchange: 'CRYPTO',
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 119.15,
+    previous_close: 113.80,
+    price_change: 5.35,
+    price_change_percent: 4.70,
+    currency: 'USD',
+    data_status: 'Real-time',
+    last_updated: 'Live Binance / Spot',
+    sector: 'High Performance L1'
+  },
+  {
+    id: 'CRYPTO_XRP',
+    asset_type: 'crypto',
+    name: 'Ripple',
+    symbol: 'XRP',
+    exchange: 'CRYPTO',
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 2.15,
+    previous_close: 2.05,
+    price_change: 0.10,
+    price_change_percent: 4.88,
+    currency: 'USD',
+    data_status: 'Real-time',
+    last_updated: 'Live Binance / Spot',
+    sector: 'Cross-Border Payments'
+  },
+  {
+    id: 'CRYPTO_BNB',
+    asset_type: 'crypto',
+    name: 'Binance Coin',
+    symbol: 'BNB',
+    exchange: 'CRYPTO',
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 615.40,
+    previous_close: 605.00,
+    price_change: 10.40,
+    price_change_percent: 1.72,
+    currency: 'USD',
+    data_status: 'Real-time',
+    last_updated: 'Live Binance / Spot',
+    sector: 'Exchange Utility Token'
+  },
+  {
+    id: 'CRYPTO_DOGE',
+    asset_type: 'crypto',
+    name: 'Dogecoin',
+    symbol: 'DOGE',
+    exchange: 'CRYPTO',
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 0.185,
+    previous_close: 0.178,
+    price_change: 0.007,
+    price_change_percent: 3.93,
+    currency: 'USD',
+    data_status: 'Real-time',
+    last_updated: 'Live Binance / Spot',
+    sector: 'Meme & Payment Network'
+  },
+
   // --- Indian Stocks (NSE & BSE) ---
   {
     id: 'NSE_RELIANCE',
@@ -922,6 +1134,15 @@ export const marketDataService = new MarketDataService();
  */
 export function getGoogleFinanceUrl(symbol: string, exchange?: string, name?: string): string {
   const clean = symbol.trim().toUpperCase();
+  if (clean.startsWith('GOLD') || clean === 'XAU' || clean === 'PAXG') {
+    return 'https://www.google.com/finance/quote/GCW00:COMEX';
+  }
+  if (clean.startsWith('SILVER') || clean === 'XAG') {
+    return 'https://www.google.com/finance/quote/SIW00:COMEX';
+  }
+  if (exchange === 'CRYPTO' || ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'BNB', 'ADA', 'AVAX', 'DOT', 'LINK', 'MATIC', 'PEPE', 'SHIB', 'SUI'].includes(clean)) {
+    return `https://www.google.com/finance/quote/${clean}-USD`;
+  }
   if (exchange === 'MF' || exchange === 'mutual_fund' || /^\d{5,7}$/.test(clean)) {
     if (name) {
       return `https://www.google.com/search?q=${encodeURIComponent(name + ' nav google finance')}`;

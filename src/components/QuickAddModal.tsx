@@ -37,7 +37,8 @@ import {
   User,
   ShieldCheck,
   Gem,
-  Building
+  Building,
+  RefreshCw
 } from 'lucide-react';
 import { useFinance, CURRENCY_CONFIGS } from '../context/FinanceContext';
 import { 
@@ -134,6 +135,57 @@ export const QuickAddModal: React.FC = () => {
   const [manualAssetIsLiquid, setManualAssetIsLiquid] = useState(true);
   const [manualTags, setManualTags] = useState<string[]>(['Long-term Savings']);
   const [manualCustomTag, setManualCustomTag] = useState('');
+
+  // Live Price State for Add Asset (Commodities: Gold, Silver, and Crypto)
+  const [isLivePriceActive, setIsLivePriceActive] = useState(false);
+  const [liveAssetType, setLiveAssetType] = useState<'commodity' | 'crypto'>('commodity');
+  const [commodityLiveType, setCommodityLiveType] = useState<'GOLD' | 'SILVER'>('GOLD');
+  const [commodityUnit, setCommodityUnit] = useState<'gram' | '10g' | 'oz' | 'kg'>('gram');
+  const [commodityQty, setCommodityQty] = useState('');
+  const [cryptoSymbol, setCryptoSymbol] = useState('BTC');
+  const [cryptoQty, setCryptoQty] = useState('');
+  const [livePricePerUnit, setLivePricePerUnit] = useState<number | null>(null);
+  const [livePriceCurrency, setLivePriceCurrency] = useState<string>('INR');
+  const [livePriceChange24h, setLivePriceChange24h] = useState<number | null>(null);
+  const [isFetchingLivePrice, setIsFetchingLivePrice] = useState(false);
+  const [livePriceSource, setLivePriceSource] = useState('');
+  const [commodityQuoteDetails, setCommodityQuoteDetails] = useState<any>(null);
+
+  // Fetch live market price for Commodities & Crypto
+  const fetchAndApplyLivePrice = async (targetTicker: string, targetType: string = 'commodity', overrideQty?: string) => {
+    setIsFetchingLivePrice(true);
+    try {
+      const res = await fetch(`/api/market/quote?ticker=${encodeURIComponent(targetTicker)}&type=${targetType}&currency=${currency}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.quote) {
+          const q = data.quote;
+          setLivePricePerUnit(q.currentPrice);
+          setLivePriceCurrency(q.currency || currency);
+          setLivePriceChange24h(q.priceChange24h ?? 0);
+          setLivePriceSource(q.source || 'LIVE_API');
+          if (targetType === 'commodity') {
+            setCommodityQuoteDetails(q);
+          }
+
+          // Auto-calculate total value based on quantity
+          const activeQty = overrideQty !== undefined 
+            ? parseFloat(overrideQty) 
+            : (targetType === 'commodity' ? parseFloat(commodityQty) : parseFloat(cryptoQty));
+
+          if (!isNaN(activeQty) && activeQty > 0 && q.currentPrice > 0) {
+            const calculatedTotal = Math.round(activeQty * q.currentPrice * 100) / 100;
+            setManualAssetValue(calculatedTotal.toString());
+            setManualAssetCostBasis(calculatedTotal.toString());
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch live commodity / crypto price', err);
+    } finally {
+      setIsFetchingLivePrice(false);
+    }
+  };
 
   // Liability state & Flow Modes (Hub first, then Secured/Unsecured menus, Group menus, or Form)
   const [liabilityFlowMode, setLiabilityFlowMode] = useState<
@@ -378,6 +430,32 @@ export const QuickAddModal: React.FC = () => {
     setManualVestingDate('');
     setManualNotes('');
 
+    // Pre-initialize Live Price for Commodities and Crypto
+    const isGold = sub.id.includes('gold') || sub.name.toLowerCase().includes('gold');
+    const isSilver = sub.id.includes('silver') || sub.name.toLowerCase().includes('silver');
+    const isCommodity = categoryName === 'Commodities' || isGold || isSilver;
+    const isCrypto = categoryName === 'Crypto' || sub.id.includes('crypto');
+
+    if (isCommodity) {
+      setIsLivePriceActive(true);
+      setLiveAssetType('commodity');
+      const cType = isSilver ? 'SILVER' : 'GOLD';
+      setCommodityLiveType(cType);
+      setCommodityUnit('gram');
+      setCommodityQty('20');
+      fetchAndApplyLivePrice(isSilver ? 'SILVER-GRAM' : 'GOLD-GRAM', 'commodity', '20');
+    } else if (isCrypto) {
+      setIsLivePriceActive(true);
+      setLiveAssetType('crypto');
+      setCryptoSymbol('BTC');
+      setCryptoQty('0.25');
+      fetchAndApplyLivePrice('BTC', 'crypto', '0.25');
+    } else {
+      setIsLivePriceActive(false);
+      setLiveAssetType('commodity');
+      setLivePricePerUnit(null);
+    }
+
     setAssetFlowMode('manual_form');
   };
 
@@ -487,11 +565,42 @@ export const QuickAddModal: React.FC = () => {
     const val = parseFloat(manualAssetValue) || 0;
     const cost = manualAssetCostBasis ? parseFloat(manualAssetCostBasis) : val;
 
-    const categoryName: AssetCategory = (activeAssetClass as AssetCategory) || (selectedAssetCategory?.id as AssetCategory) || 'Other';
-    const subTypeName = selectedSubTypeInfo?.name || 'Custom Asset';
+    // Live Price derivation for Commodities (Gold, Silver) & Crypto
+    const isCommodity = isLivePriceActive && liveAssetType === 'commodity';
+    const isCrypto = isLivePriceActive && liveAssetType === 'crypto';
+
+    let categoryName: AssetCategory = (activeAssetClass as AssetCategory) || (selectedAssetCategory?.id as AssetCategory) || 'Other';
+    if (isCommodity && categoryName !== 'Commodities') {
+      categoryName = 'Commodities';
+    } else if (isCrypto && categoryName !== 'Crypto') {
+      categoryName = 'Crypto';
+    }
+
+    const subTypeName = selectedSubTypeInfo?.name || (isCommodity ? (commodityLiveType === 'SILVER' ? 'Silver & Precious Metals' : 'Physical Gold') : isCrypto ? 'Crypto Coins & Tokens' : 'Custom Asset');
+
+    const defaultAssetName = isCommodity 
+      ? (commodityLiveType === 'SILVER' ? `Silver Spot (${commodityUnit})` : `Gold 24K Spot (${commodityUnit})`)
+      : isCrypto 
+      ? `${cryptoSymbol} Crypto`
+      : subTypeName;
+
+    const tickerVal = isCommodity 
+      ? (commodityLiveType === 'SILVER' ? `SILVER-${commodityUnit.toUpperCase()}` : `GOLD-${commodityUnit.toUpperCase()}`)
+      : isCrypto 
+      ? cryptoSymbol 
+      : undefined;
+
+    const sharesVal = isCommodity 
+      ? parseFloat(commodityQty) || parseFloat(manualShares) || undefined
+      : isCrypto
+      ? parseFloat(cryptoQty) || parseFloat(manualShares) || undefined
+      : parseFloat(manualShares) || undefined;
+
+    const assetTypeVal = isCommodity ? 'commodity' : isCrypto ? 'crypto' : 'manual';
+    const exchangeVal = isCommodity ? 'COMMODITY' : isCrypto ? 'CRYPTO' : undefined;
 
     addAsset({
-      name: manualAssetName || subTypeName,
+      name: manualAssetName || defaultAssetName,
       category: categoryName,
       subType: subTypeName,
       institution: manualAssetInstitution || (subTypeName === 'Loan Given' ? (manualBorrowerName ? `Borrower: ${manualBorrowerName}` : 'Personal Loan Given') : 'Personal Holding'),
@@ -501,7 +610,13 @@ export const QuickAddModal: React.FC = () => {
       isLiquid: manualAssetIsLiquid,
       tags: manualTags.length > 0 ? manualTags : [selectedSubTypeInfo?.badge || 'Long-term Savings'],
       purpose: manualTags[0] || selectedSubTypeInfo?.badge || 'Long-term Savings',
-      assetType: 'manual',
+      assetType: assetTypeVal,
+      ticker: tickerVal,
+      exchange: exchangeVal,
+      shares: sharesVal,
+      currentPrice: livePricePerUnit || (sharesVal && val > 0 ? val / sharesVal : undefined),
+      autoSyncMarketPrice: isLivePriceActive,
+      priceChange24h: livePriceChange24h || undefined,
       interestRate: manualInterestRate ? parseFloat(manualInterestRate) : undefined,
       maturityDate: manualMaturityDate || undefined,
       tenure: manualTenure || undefined,
@@ -510,7 +625,6 @@ export const QuickAddModal: React.FC = () => {
       annualPremium: manualAnnualPremium ? parseFloat(manualAnnualPremium) : undefined,
       strikePrice: manualStrikePrice ? parseFloat(manualStrikePrice) : undefined,
       fairMarketValue: manualFairMarketValue ? parseFloat(manualFairMarketValue) : undefined,
-      shares: manualShares ? parseFloat(manualShares) : undefined,
       vestingDate: manualVestingDate || undefined,
       accountNumberMasked: manualAccountNumber || undefined,
       borrowerName: manualBorrowerName || undefined,
@@ -1055,7 +1169,9 @@ export const QuickAddModal: React.FC = () => {
                         key={sub.id}
                         type="button"
                         onClick={() => {
-                          if (sub.searchType === 'stock') {
+                          if (selectedAssetCategory.id === 'Crypto' || sub.id.includes('crypto')) {
+                            openManualFormForSubtype(sub, selectedAssetCategory.name);
+                          } else if (sub.searchType === 'stock') {
                             openDedicatedSearch(sub, selectedAssetCategory.name, 'stock');
                           } else {
                             openManualFormForSubtype(sub, selectedAssetCategory.name);
@@ -1629,6 +1745,364 @@ export const QuickAddModal: React.FC = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* ⚡ Live Price Activation Module for Commodities (Gold/Silver) & Crypto */}
+                  <div className={`p-3.5 rounded-2xl border transition-all ${
+                    isLivePriceActive 
+                      ? 'bg-amber-500/10 border-amber-500/40 dark:bg-amber-950/20 dark:border-amber-500/40' 
+                      : 'bg-slate-50 dark:bg-zinc-950/80 border-slate-200 dark:border-zinc-800'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                          isLivePriceActive ? 'bg-amber-500 text-zinc-950 shadow-xs' : 'bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400'
+                        }`}>
+                          ⚡
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="text-xs font-bold text-slate-900 dark:text-zinc-100">
+                              Activate Live Market Price
+                            </h4>
+                            {isLivePriceActive && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span>LIVE FREE API ACTIVE</span>
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                            Real-time spot rate for Commodities (Gold, Silver) & Crypto coins
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Toggle Button */}
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={isLivePriceActive}
+                        onClick={() => {
+                          const next = !isLivePriceActive;
+                          setIsLivePriceActive(next);
+                          if (next) {
+                            if (activeAssetClass === 'Crypto' || selectedSubTypeInfo?.id?.includes('crypto')) {
+                              setLiveAssetType('crypto');
+                              fetchAndApplyLivePrice(cryptoSymbol, 'crypto', cryptoQty || '0.1');
+                            } else {
+                              setLiveAssetType('commodity');
+                              const ticker = commodityLiveType === 'SILVER' ? `SILVER-${commodityUnit.toUpperCase()}` : `GOLD-${commodityUnit.toUpperCase()}`;
+                              fetchAndApplyLivePrice(ticker, 'commodity', commodityQty || '10');
+                            }
+                          }
+                        }}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          isLivePriceActive ? 'bg-amber-500' : 'bg-slate-300 dark:bg-zinc-700'
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                            isLivePriceActive ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Live Controls when Active */}
+                    {isLivePriceActive && (
+                      <div className="mt-3.5 pt-3.5 border-t border-amber-500/25 space-y-3.5 animate-in fade-in duration-150">
+                        {/* Type Switcher: Commodities vs Crypto */}
+                        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-200/70 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 text-xs font-bold">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLiveAssetType('commodity');
+                              const ticker = commodityLiveType === 'SILVER' ? `SILVER-${commodityUnit.toUpperCase()}` : `GOLD-${commodityUnit.toUpperCase()}`;
+                              fetchAndApplyLivePrice(ticker, 'commodity', commodityQty || '10');
+                            }}
+                            className={`py-2 px-2.5 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                              liveAssetType === 'commodity'
+                                ? 'bg-amber-500 text-zinc-950 shadow-sm'
+                                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+                            }`}
+                          >
+                            <span>🪙 Commodities (Gold / Silver)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLiveAssetType('crypto');
+                              fetchAndApplyLivePrice(cryptoSymbol, 'crypto', cryptoQty || '0.1');
+                            }}
+                            className={`py-2 px-2.5 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                              liveAssetType === 'crypto'
+                                ? 'bg-orange-500 text-white shadow-sm'
+                                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+                            }`}
+                          >
+                            <span>⚡ Crypto Coins (BTC, ETH, etc.)</span>
+                          </button>
+                        </div>
+
+                        {/* Commodity Controls */}
+                        {liveAssetType === 'commodity' && (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-600 dark:text-zinc-400 mb-1">
+                                  Precious Metal
+                                </label>
+                                <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs font-bold">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCommodityLiveType('GOLD');
+                                      fetchAndApplyLivePrice(`GOLD-${commodityUnit.toUpperCase()}`, 'commodity');
+                                    }}
+                                    className={`py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                                      commodityLiveType === 'GOLD'
+                                        ? 'bg-amber-500 text-zinc-950 shadow-xs'
+                                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+                                    }`}
+                                  >
+                                    <span>🟡 Gold 24K</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCommodityLiveType('SILVER');
+                                      fetchAndApplyLivePrice(`SILVER-${commodityUnit.toUpperCase()}`, 'commodity');
+                                    }}
+                                    className={`py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                                      commodityLiveType === 'SILVER'
+                                        ? 'bg-zinc-300 dark:bg-zinc-200 text-zinc-950 shadow-xs'
+                                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+                                    }`}
+                                  >
+                                    <span>⚪ Silver</span>
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-600 dark:text-zinc-400 mb-1">
+                                  Weight Unit
+                                </label>
+                                <select
+                                  value={commodityUnit}
+                                  onChange={e => {
+                                    const u = e.target.value as any;
+                                    setCommodityUnit(u);
+                                    const ticker = commodityLiveType === 'SILVER' ? `SILVER-${u.toUpperCase()}` : `GOLD-${u.toUpperCase()}`;
+                                    fetchAndApplyLivePrice(ticker, 'commodity');
+                                  }}
+                                  className="w-full bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-zinc-100"
+                                >
+                                  <option value="gram">Grams (1g) - Standard</option>
+                                  <option value="10g">10 Grams (10g Tola / Bar)</option>
+                                  <option value="oz">Troy Ounces (1 oz = 31.1g)</option>
+                                  <option value="kg">Kilograms (1kg Bar)</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-600 dark:text-zinc-400 mb-1">
+                                  Quantity in {commodityUnit === 'gram' ? 'Grams' : commodityUnit === '10g' ? '10-Gram units' : commodityUnit === 'kg' ? 'Kilograms' : 'Troy Ounces'} *
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.001"
+                                  value={commodityQty}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setCommodityQty(val);
+                                    const q = parseFloat(val) || 0;
+                                    if (livePricePerUnit && q > 0) {
+                                      const totalVal = Math.round(q * livePricePerUnit * 100) / 100;
+                                      setManualAssetValue(totalVal.toString());
+                                      if (!manualAssetCostBasis) setManualAssetCostBasis(totalVal.toString());
+                                    }
+                                  }}
+                                  placeholder="e.g. 20"
+                                  className="w-full bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2 font-mono text-sm font-bold text-slate-900 dark:text-white"
+                                />
+                              </div>
+
+                              {/* Live Price Display Card */}
+                              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex flex-col justify-between">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span>Live {commodityLiveType === 'GOLD' ? 'Gold 24K' : 'Silver'} Spot</span>
+                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    {livePriceChange24h !== null && (
+                                      <span className={`font-mono font-bold ${livePriceChange24h >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                        {livePriceChange24h >= 0 ? '+' : ''}{livePriceChange24h.toFixed(2)}%
+                                      </span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      title="Refresh live rate"
+                                      onClick={() => {
+                                        const ticker = commodityLiveType === 'SILVER' ? `SILVER-${commodityUnit.toUpperCase()}` : `GOLD-${commodityUnit.toUpperCase()}`;
+                                        fetchAndApplyLivePrice(ticker, 'commodity');
+                                      }}
+                                      className="p-1 rounded-md hover:bg-amber-500/20 text-amber-500 cursor-pointer"
+                                    >
+                                      <RefreshCw className={`w-3 h-3 ${isFetchingLivePrice ? 'animate-spin' : ''}`} />
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="mt-1 flex items-baseline justify-between font-mono">
+                                  <span className="text-base font-extrabold text-slate-900 dark:text-white">
+                                    {livePriceCurrency === 'USD' ? '$' : '₹'}{livePricePerUnit ? livePricePerUnit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Loading...'}
+                                  </span>
+                                  <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-sans">
+                                    per {commodityUnit}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Benchmark Multi-Unit Rate Breakdown Strip */}
+                            {commodityQuoteDetails && (
+                              <div className="p-2 rounded-xl bg-slate-100/70 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800 text-[10px] font-mono text-slate-600 dark:text-zinc-400 flex items-center justify-between flex-wrap gap-2">
+                                <span>
+                                  1g: <strong className="text-slate-900 dark:text-white">₹{commodityQuoteDetails.gramPriceInr?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) || '—'}</strong> (${commodityQuoteDetails.gramPriceUsd?.toFixed(2) || '—'})
+                                </span>
+                                <span>
+                                  10g: <strong className="text-slate-900 dark:text-white">₹{commodityQuoteDetails.tenGramPriceInr?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) || '—'}</strong>
+                                </span>
+                                <span>
+                                  1 oz: <strong className="text-slate-900 dark:text-white">${commodityQuoteDetails.ozPriceUsd?.toFixed(2) || '—'}</strong>
+                                </span>
+                                {commodityQuoteDetails.kgPriceInr && (
+                                  <span>
+                                    1kg: <strong className="text-slate-900 dark:text-white">₹{commodityQuoteDetails.kgPriceInr?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) || '—'}</strong>
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Crypto Controls */}
+                        {liveAssetType === 'crypto' && (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-600 dark:text-zinc-400 mb-1">
+                                  Popular Crypto Coins
+                                </label>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'BNB', 'ADA', 'AVAX'].map(sym => (
+                                    <button
+                                      key={sym}
+                                      type="button"
+                                      onClick={() => {
+                                        setCryptoSymbol(sym);
+                                        fetchAndApplyLivePrice(sym, 'crypto');
+                                      }}
+                                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                        cryptoSymbol === sym
+                                          ? 'bg-orange-500 text-white shadow-xs'
+                                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                                      }`}
+                                    >
+                                      {sym}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-600 dark:text-zinc-400 mb-1">
+                                  Or Any Coin Ticker / Symbol
+                                </label>
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="text"
+                                    value={cryptoSymbol}
+                                    onChange={e => setCryptoSymbol(e.target.value.toUpperCase())}
+                                    placeholder="e.g. PEPE, SUI, LINK, SHIB"
+                                    className="w-full bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl px-3 py-1.5 font-mono text-xs font-bold text-slate-900 dark:text-white uppercase"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => fetchAndApplyLivePrice(cryptoSymbol, 'crypto')}
+                                    className="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shrink-0 cursor-pointer shadow-xs transition-all"
+                                  >
+                                    Fetch Live
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-600 dark:text-zinc-400 mb-1">
+                                  Coins / Tokens Held *
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.00000001"
+                                  value={cryptoQty}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setCryptoQty(val);
+                                    const q = parseFloat(val) || 0;
+                                    if (livePricePerUnit && q > 0) {
+                                      const totalVal = Math.round(q * livePricePerUnit * 100) / 100;
+                                      setManualAssetValue(totalVal.toString());
+                                      if (!manualAssetCostBasis) setManualAssetCostBasis(totalVal.toString());
+                                    }
+                                  }}
+                                  placeholder="e.g. 0.5"
+                                  className="w-full bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl px-3.5 py-2 font-mono text-sm font-bold text-slate-900 dark:text-white"
+                                />
+                              </div>
+
+                              {/* Live Price Display Card */}
+                              <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 flex flex-col justify-between">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="text-orange-600 dark:text-orange-400 font-semibold flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span>⚡ Live {cryptoSymbol} Quote</span>
+                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    {livePriceChange24h !== null && (
+                                      <span className={`font-mono font-bold ${livePriceChange24h >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                        {livePriceChange24h >= 0 ? '+' : ''}{livePriceChange24h.toFixed(2)}%
+                                      </span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      title="Refresh live rate"
+                                      onClick={() => fetchAndApplyLivePrice(cryptoSymbol, 'crypto')}
+                                      className="p-1 rounded-md hover:bg-orange-500/20 text-orange-500 cursor-pointer"
+                                    >
+                                      <RefreshCw className={`w-3 h-3 ${isFetchingLivePrice ? 'animate-spin' : ''}`} />
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="mt-1 flex items-baseline justify-between font-mono">
+                                  <span className="text-base font-extrabold text-slate-900 dark:text-white">
+                                    ${livePricePerUnit ? livePricePerUnit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Loading...'}
+                                  </span>
+                                  <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-sans">
+                                    per {cryptoSymbol} ({livePriceSource || 'Free Live API'})
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Valuation / Amount & Cost Basis */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -355,19 +355,24 @@ export const POPULAR_MARKET_SECURITIES: MarketSecurity[] = [
   // ==========================================
   // ₿ CRYPTO & DIGITAL ASSETS
   // ==========================================
-  { ticker: 'BTC', name: 'Bitcoin', exchange: 'CRYPTO', type: 'crypto', currentPrice: 64250.00, currency: 'USD', priceChange24h: 2.85, priceChange24hAmount: 1780.00, sector: 'Layer 1 Digital Gold', country: 'GLOBAL', popular: true },
-  { ticker: 'ETH', name: 'Ethereum', exchange: 'CRYPTO', type: 'crypto', currentPrice: 2750.00, currency: 'USD', priceChange24h: 3.40, priceChange24hAmount: 90.30, sector: 'Smart Contract Platform', country: 'GLOBAL', popular: true },
-  { ticker: 'SOL', name: 'Solana', exchange: 'CRYPTO', type: 'crypto', currentPrice: 154.60, currency: 'USD', priceChange24h: 5.10, priceChange24hAmount: 7.50, sector: 'High Speed L1', country: 'GLOBAL', popular: true },
-  { ticker: 'BNB', name: 'Binance Coin', exchange: 'CRYPTO', type: 'crypto', currentPrice: 575.00, currency: 'USD', priceChange24h: 1.10, priceChange24hAmount: 6.25, sector: 'Exchange Ecosystem', country: 'GLOBAL' },
+  { ticker: 'BTC', name: 'Bitcoin', exchange: 'CRYPTO', type: 'crypto', currentPrice: 84140.00, currency: 'USD', priceChange24h: 2.85, priceChange24hAmount: 2330.00, sector: 'Layer 1 Digital Gold', country: 'GLOBAL', popular: true },
+  { ticker: 'ETH', name: 'Ethereum', exchange: 'CRYPTO', type: 'crypto', currentPrice: 2683.50, currency: 'USD', priceChange24h: 3.40, priceChange24hAmount: 88.30, sector: 'Smart Contract Platform', country: 'GLOBAL', popular: true },
+  { ticker: 'SOL', name: 'Solana', exchange: 'CRYPTO', type: 'crypto', currentPrice: 119.15, currency: 'USD', priceChange24h: 5.10, priceChange24hAmount: 5.75, sector: 'High Speed L1', country: 'GLOBAL', popular: true },
+  { ticker: 'XRP', name: 'Ripple', exchange: 'CRYPTO', type: 'crypto', currentPrice: 2.15, currency: 'USD', priceChange24h: 4.80, priceChange24hAmount: 0.10, sector: 'Cross-Border Payments', country: 'GLOBAL', popular: true },
+  { ticker: 'BNB', name: 'Binance Coin', exchange: 'CRYPTO', type: 'crypto', currentPrice: 615.00, currency: 'USD', priceChange24h: 1.10, priceChange24hAmount: 6.70, sector: 'Exchange Ecosystem', country: 'GLOBAL' },
+  { ticker: 'DOGE', name: 'Dogecoin', exchange: 'CRYPTO', type: 'crypto', currentPrice: 0.185, currency: 'USD', priceChange24h: 3.90, priceChange24hAmount: 0.007, sector: 'Meme & Payment Network', country: 'GLOBAL' },
 
   // ==========================================
-  // 🪙 COMMODITIES
+  // 🪙 COMMODITIES (GOLD & SILVER SPOT)
   // ==========================================
-  { ticker: 'GOLD', name: 'Gold Spot (oz)', exchange: 'COMMODITY', type: 'commodity', currentPrice: 2510.80, currency: 'USD', priceChange24h: 0.65, priceChange24hAmount: 16.20, sector: 'Precious Metals', country: 'GLOBAL', popular: true },
-  { ticker: 'SILVER', name: 'Silver Spot (oz)', exchange: 'COMMODITY', type: 'commodity', currentPrice: 29.85, currency: 'USD', priceChange24h: 1.40, priceChange24hAmount: 0.41, sector: 'Precious Metals', country: 'GLOBAL' },
+  { ticker: 'GOLD', name: 'Gold 24K Spot (Gram)', exchange: 'COMMODITY', type: 'commodity', currentPrice: 12839.00, currency: 'INR', priceChange24h: 0.45, priceChange24hAmount: 57.50, sector: 'Physical Gold 24K', country: 'GLOBAL', popular: true },
+  { ticker: 'GOLD-OZ', name: 'Gold Spot (Troy Ounce)', exchange: 'COMMODITY', type: 'commodity', currentPrice: 4165.75, currency: 'USD', priceChange24h: 0.45, priceChange24hAmount: 18.70, sector: 'Precious Metals', country: 'GLOBAL', popular: true },
+  { ticker: 'SILVER', name: 'Silver Spot (Gram)', exchange: 'COMMODITY', type: 'commodity', currentPrice: 187.50, currency: 'INR', priceChange24h: -0.90, priceChange24hAmount: -1.70, sector: 'Physical Silver 99.9%', country: 'GLOBAL', popular: true },
+  { ticker: 'SILVER-OZ', name: 'Silver Spot (Troy Ounce)', exchange: 'COMMODITY', type: 'commodity', currentPrice: 60.62, currency: 'USD', priceChange24h: -0.90, priceChange24hAmount: -0.55, sector: 'Precious Metals', country: 'GLOBAL' },
+  { ticker: 'SILVER-KG', name: 'Silver Spot (Kilogram)', exchange: 'COMMODITY', type: 'commodity', currentPrice: 187500.00, currency: 'INR', priceChange24h: -0.90, priceChange24hAmount: -1700.00, sector: 'Precious Metals', country: 'GLOBAL' },
 ];
 
-export type MarketRegionFilter = 'all' | 'india' | 'mf' | 'us' | 'crypto' | 'etf';
+export type MarketRegionFilter = 'all' | 'india' | 'mf' | 'us' | 'crypto' | 'commodity' | 'etf';
 
 /**
  * Searches the market securities catalog by query and optional region filter.
@@ -385,6 +390,8 @@ export function searchMarketSecurities(query: string, region: MarketRegionFilter
     list = list.filter(s => s.country === 'US' || s.exchange === 'NASDAQ' || s.exchange === 'NYSE');
   } else if (region === 'crypto') {
     list = list.filter(s => s.type === 'crypto');
+  } else if (region === 'commodity') {
+    list = list.filter(s => s.type === 'commodity');
   } else if (region === 'etf') {
     list = list.filter(s => s.type === 'etf' || s.ticker.includes('BEES'));
   }
