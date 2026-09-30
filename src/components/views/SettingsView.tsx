@@ -260,21 +260,6 @@ export const SettingsView: React.FC = () => {
             </button>
           )}
 
-          {activeTab !== 'profile' && (
-            <button
-              id="btn-settings-activate-all"
-              onClick={handleActivateAllSettings}
-              className="px-3.5 py-1.5 rounded-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white shadow-sm text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-              title="Activate all notification triggers, shortcuts, 2FA, and biometrics"
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-              <span>Activate All</span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/20 font-mono">
-                ALL ON
-              </span>
-            </button>
-          )}
-
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
             <input

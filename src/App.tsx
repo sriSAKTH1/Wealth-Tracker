@@ -22,6 +22,7 @@ import { FinScoreView } from './components/views/FinScoreView';
 import { BalanceSheetView } from './components/views/BalanceSheetView';
 import { SettingsView } from './components/views/SettingsView';
 import { FinancialCalculatorsView } from './components/calculators/FinancialCalculatorsView';
+import { AppFooter } from './components/AppFooter';
 
 const MainLayout: React.FC = () => {
   const { activeTab, theme, accentColor, isMobileFrameSimulated, openQuickAdd, transactions = [] } = useFinance();
@@ -95,8 +96,11 @@ const MainLayout: React.FC = () => {
               </div>
 
               {/* Scrollable View inside phone */}
-              <main className="flex-1 overflow-y-auto p-4 relative no-scrollbar">
-                {renderView()}
+              <main className="flex-1 overflow-y-auto p-4 relative no-scrollbar flex flex-col justify-between">
+                <div>
+                  {renderView()}
+                </div>
+                <AppFooter />
               </main>
 
               {/* Bottom Nav inside phone */}
@@ -104,10 +108,13 @@ const MainLayout: React.FC = () => {
             </div>
           </div>
         ) : (
-          /* Standard Scrollable View */
+          /* Standard Scrollable View across all pages */
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-w-0">
-            <div className="max-w-7xl mx-auto pb-16">
-              {renderView()}
+            <div className="max-w-7xl mx-auto min-h-full flex flex-col justify-between">
+              <div className="flex-1">
+                {renderView()}
+              </div>
+              <AppFooter />
             </div>
           </main>
         )}

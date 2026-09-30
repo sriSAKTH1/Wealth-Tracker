@@ -1032,10 +1032,6 @@
   box-shadow: 0 20px 25px -5px rgba(var(--accent-rgb), 0.35) !important;
 }
 
-[data-accent] #btn-settings-activate-all {
-  background: var(--accent-gradient) !important;
-}
-
 /* Text Selection Glow with Active Accent */
 [data-accent] ::selection {
   background-color: var(--accent-500) !important;

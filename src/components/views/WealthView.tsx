@@ -1530,57 +1530,6 @@ export const WealthView: React.FC = () => {
                     <span>Goals Analytics</span>
                   </button>
                 </div>
-
-                {/* 2 and 3 Column Layout Switcher */}
-                {(viewLayoutMode === 'grid' || viewLayoutMode === 'grouped') && (
-                  <div 
-                    id="column-layout-switcher"
-                    className={`flex items-center p-1 rounded-xl border text-xs ${
-                      isLight ? 'bg-slate-100 border-slate-200' : 'bg-zinc-900 border-zinc-800'
-                    }`}
-                    title="Grid columns: 2 columns vs 3 columns"
-                  >
-                    <button
-                      id="btn-cols-2"
-                      type="button"
-                      onClick={() => handleSetGridColumns(2)}
-                      className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                        gridColumns === 2
-                          ? isLight
-                            ? 'bg-white text-blue-600 border border-slate-200 shadow-xs'
-                            : 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-xs'
-                          : isLight
-                            ? 'text-slate-500 hover:text-slate-800'
-                            : 'text-zinc-400 hover:text-zinc-200'
-                      }`}
-                      title="2 Columns Grid"
-                      aria-label="2 Columns Grid"
-                    >
-                      <Columns2 className="w-3.5 h-3.5" />
-                      <span className="font-mono text-xs">2</span>
-                    </button>
-
-                    <button
-                      id="btn-cols-3"
-                      type="button"
-                      onClick={() => handleSetGridColumns(3)}
-                      className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                        gridColumns === 3
-                          ? isLight
-                            ? 'bg-white text-blue-600 border border-slate-200 shadow-xs'
-                            : 'bg-zinc-800 text-emerald-400 border border-zinc-700 shadow-xs'
-                          : isLight
-                            ? 'text-slate-500 hover:text-slate-800'
-                            : 'text-zinc-400 hover:text-zinc-200'
-                      }`}
-                      title="3 Columns Grid"
-                      aria-label="3 Columns Grid"
-                    >
-                      <Columns3 className="w-3.5 h-3.5" />
-                      <span className="font-mono text-xs">3</span>
-                    </button>
-                  </div>
-                )}
               </div>
 
               {/* Actions: Sync & Add */}
@@ -2616,57 +2565,6 @@ export const WealthView: React.FC = () => {
                     <span>Payoff Strategy</span>
                   </button>
                 </div>
-
-                {/* 2 and 3 Column Layout Switcher for Liabilities */}
-                {(liabViewLayoutMode === 'grid' || liabViewLayoutMode === 'grouped') && (
-                  <div 
-                    id="liab-column-layout-switcher"
-                    className={`flex items-center p-1 rounded-xl border text-xs ${
-                      isLight ? 'bg-slate-100 border-slate-200' : 'bg-zinc-900 border-zinc-800'
-                    }`}
-                    title="Grid columns: 2 columns vs 3 columns"
-                  >
-                    <button
-                      id="btn-liab-cols-2"
-                      type="button"
-                      onClick={() => handleSetGridColumns(2)}
-                      className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                        gridColumns === 2
-                          ? isLight
-                            ? 'bg-white text-rose-600 border border-slate-200 shadow-xs'
-                            : 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-xs'
-                          : isLight
-                            ? 'text-slate-500 hover:text-slate-800'
-                            : 'text-zinc-400 hover:text-zinc-200'
-                      }`}
-                      title="2 Columns Grid"
-                      aria-label="2 Columns Grid"
-                    >
-                      <Columns2 className="w-3.5 h-3.5" />
-                      <span className="font-mono text-xs">2</span>
-                    </button>
-
-                    <button
-                      id="btn-liab-cols-3"
-                      type="button"
-                      onClick={() => handleSetGridColumns(3)}
-                      className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                        gridColumns === 3
-                          ? isLight
-                            ? 'bg-white text-rose-600 border border-slate-200 shadow-xs'
-                            : 'bg-zinc-800 text-rose-400 border border-zinc-700 shadow-xs'
-                          : isLight
-                            ? 'text-slate-500 hover:text-slate-800'
-                            : 'text-zinc-400 hover:text-zinc-200'
-                      }`}
-                      title="3 Columns Grid"
-                      aria-label="3 Columns Grid"
-                    >
-                      <Columns3 className="w-3.5 h-3.5" />
-                      <span className="font-mono text-xs">3</span>
-                    </button>
-                  </div>
-                )}
               </div>
 
               {/* Action: Add Liability */}

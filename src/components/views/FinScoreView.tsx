@@ -26,6 +26,7 @@ import {
   X,
   Plus,
   Trash2,
+  Edit2,
   Sliders,
   PieChart as PieChartIcon,
   Clock,
@@ -312,6 +313,7 @@ export const FinScoreView: React.FC = () => {
   // New Goal / Loan Form States
   const [newGoalName, setNewGoalName] = useState('');
   const [newGoalCategory, setNewGoalCategory] = useState<FinScoreGoal['category']>('Car');
+  const [customGoalCategory, setCustomGoalCategory] = useState('');
   const [newGoalTarget, setNewGoalTarget] = useState('');
   const [newGoalSaved, setNewGoalSaved] = useState('');
   const [newGoalTenureYears, setNewGoalTenureYears] = useState<number>(4);
@@ -319,10 +321,18 @@ export const FinScoreView: React.FC = () => {
   const [newGoalDate, setNewGoalDate] = useState(() => calculateDateFromTenureMonths(4 * 12));
 
   const [newLoanType, setNewLoanType] = useState('Personal Loan');
+  const [customLoanType, setCustomLoanType] = useState('');
   const [newLoanOutstanding, setNewLoanOutstanding] = useState('');
   const [newLoanEmi, setNewLoanEmi] = useState('');
   const [newLoanRate, setNewLoanRate] = useState('11');
   const [newLoanTenure, setNewLoanTenure] = useState('36');
+
+  // Custom Expense Category State
+  const [editingExpenseCatId, setEditingExpenseCatId] = useState<string | null>(null);
+  const [isAddingExpenseCat, setIsAddingExpenseCat] = useState(false);
+  const [newCustomExpenseName, setNewCustomExpenseName] = useState('');
+  const [newCustomExpenseAmount, setNewCustomExpenseAmount] = useState('');
+  const [newCustomExpenseIsEssential, setNewCustomExpenseIsEssential] = useState(false);
 
   // Loan Tenure & Closure Calculator Helper
   const getLoanClosureInfo = (remainingMonths: number) => {
@@ -383,7 +393,8 @@ export const FinScoreView: React.FC = () => {
   const [finScoreInvestments, setFinScoreInvestments] = useState(INITIAL_FINSCORE_INVESTMENTS);
 
   const [newInvName, setNewInvName] = useState('');
-  const [newInvCategory, setNewInvCategory] = useState<'Equity / Stocks' | 'Mutual Funds & SIP' | 'Fixed Deposit / Bonds' | 'Real Estate' | 'Gold & Precious Metals' | 'Retirement (PF/NPS)' | 'Cash & Liquid'>('Mutual Funds & SIP');
+  const [newInvCategory, setNewInvCategory] = useState<'Equity / Stocks' | 'Mutual Funds & SIP' | 'Fixed Deposit / Bonds' | 'Real Estate' | 'Gold & Precious Metals' | 'Retirement (PF/NPS)' | 'Cash & Liquid' | 'Other' | (string & {})>('Mutual Funds & SIP');
+  const [customInvCategory, setCustomInvCategory] = useState('');
   const [newInvValue, setNewInvValue] = useState('');
   const [newInvMonthly, setNewInvMonthly] = useState('');
   const [newInvReturn, setNewInvReturn] = useState('12');
@@ -1188,10 +1199,14 @@ Strategic Focus: ${result.biggestPriority}`;
     const tenure = newGoalTenureYears > 0 ? newGoalTenureYears : Math.max(1, (parseInt(newGoalYear) || 2030) - currentYear);
     const targetYr = currentYear + tenure;
 
+    const finalCategory = (newGoalCategory === 'Other' && customGoalCategory.trim())
+      ? customGoalCategory.trim()
+      : newGoalCategory;
+
     const goal: FinScoreGoal = {
       id: `goal-${Date.now()}`,
       name: newGoalName.trim(),
-      category: newGoalCategory,
+      category: finalCategory as any,
       targetAmount: parseFloat(newGoalTarget) || 0,
       currentSavings: parseFloat(newGoalSaved) || 0,
       targetYear: targetYr,
@@ -1203,10 +1218,12 @@ Strategic Focus: ${result.biggestPriority}`;
     setNewGoalName('');
     setNewGoalTarget('');
     setNewGoalSaved('');
+    setCustomGoalCategory('');
+    setNewGoalCategory('Car');
     setNewGoalTenureYears(4);
     setNewGoalYear(String(currentYear + 4));
     setNewGoalDate(calculateDateFromTenureMonths(4 * 12));
-    showToast(`Added ${goal.name} with ${tenure} yr tenure!`);
+    showToast(`Added ${goal.name} (${finalCategory}) with ${tenure} yr tenure!`);
   };
 
   // Delete a Goal
@@ -1219,9 +1236,13 @@ Strategic Focus: ${result.biggestPriority}`;
     e.preventDefault();
     if (!newLoanOutstanding || !newLoanEmi) return;
 
+    const finalType = (newLoanType === 'Other' && customLoanType.trim())
+      ? customLoanType.trim()
+      : newLoanType;
+
     const loan: FinScoreLoan = {
       id: `loan-${Date.now()}`,
-      type: newLoanType,
+      type: finalType,
       outstandingAmount: parseFloat(newLoanOutstanding) || 0,
       monthlyEmi: parseFloat(newLoanEmi) || 0,
       interestRate: parseFloat(newLoanRate) || 10,
@@ -1231,6 +1252,9 @@ Strategic Focus: ${result.biggestPriority}`;
     setLoans(prev => [...prev, loan]);
     setNewLoanOutstanding('');
     setNewLoanEmi('');
+    setCustomLoanType('');
+    setNewLoanType('Personal Loan');
+    showToast(`Added ${finalType} loan!`);
   };
 
   // Delete a Loan
@@ -1268,10 +1292,14 @@ Strategic Focus: ${result.biggestPriority}`;
       return;
     }
 
+    const finalCategory = (newInvCategory === 'Other' && customInvCategory.trim())
+      ? customInvCategory.trim()
+      : newInvCategory;
+
     const newInv = {
       id: `inv-${Date.now()}`,
       name: newInvName.trim(),
-      category: newInvCategory,
+      category: finalCategory,
       currentValue: computedVal,
       monthlyContribution: parseFloat(newInvMonthly) || 0,
       expectedReturnRate: parseFloat(newInvReturn) || 12,
@@ -1287,7 +1315,9 @@ Strategic Focus: ${result.biggestPriority}`;
     setNewInvNav('');
     setNewInvUnits('');
     setNewInvPurchaseNav('');
-    showToast(`Added ${newInv.name} to portfolio!`);
+    setCustomInvCategory('');
+    setNewInvCategory('Mutual Funds & SIP');
+    showToast(`Added ${newInv.name} (${finalCategory}) to portfolio!`);
   };
 
   const handleDeleteInvestment = (id: string) => {
@@ -3536,8 +3566,36 @@ Strategic Focus: ${result.biggestPriority}`;
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-xs">{exp.category}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                    <div className="flex items-center gap-1.5 flex-1 mr-2 min-w-0">
+                      {editingExpenseCatId === exp.id ? (
+                        <input
+                          type="text"
+                          value={exp.category}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setExpenses(prev => prev.map((item, i) => i === idx ? { ...item, category: val } : item));
+                          }}
+                          onBlur={() => setEditingExpenseCatId(null)}
+                          onKeyDown={e => { if (e.key === 'Enter') setEditingExpenseCatId(null); }}
+                          autoFocus
+                          placeholder="Type Category Name..."
+                          className={`w-full px-2 py-0.5 rounded text-xs font-semibold border ${
+                            isLight ? 'bg-white border-blue-500 text-slate-900' : 'bg-slate-900 border-blue-500 text-white'
+                          }`}
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setEditingExpenseCatId(exp.id)}
+                          className="font-semibold text-xs text-left hover:text-blue-500 transition-colors flex items-center gap-1.5 group/editcat truncate"
+                          title="Click to text / edit category name"
+                        >
+                          <span className="truncate">{exp.category}</span>
+                          <Edit2 className="w-2.5 h-2.5 shrink-0 text-slate-500 opacity-60 group-hover/editcat:opacity-100 group-hover/editcat:text-blue-500" />
+                        </button>
+                      )}
+                    </div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${
                       exp.isEssential ? 'bg-blue-500/15 text-blue-400' : 'bg-slate-800 text-slate-400'
                     }`}>
                       {exp.isEssential ? 'Essential Need' : 'Discretionary'}
@@ -3556,6 +3614,88 @@ Strategic Focus: ${result.biggestPriority}`;
                   />
                 </div>
               ))}
+
+              {/* Add Custom / Other Expense Category Box */}
+              {isAddingExpenseCat ? (
+                <div className={`p-3.5 rounded-2xl border ${isLight ? 'bg-blue-50/50 border-blue-300' : 'bg-blue-950/20 border-blue-800/80'} space-y-2.5 animate-in fade-in duration-150`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-500">Text Custom / Other Category</span>
+                    <button
+                      type="button"
+                      onClick={() => { setIsAddingExpenseCat(false); setNewCustomExpenseName(''); }}
+                      className="text-slate-400 hover:text-slate-200 text-xs cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <input
+                      type="text"
+                      placeholder="e.g. Pet Care, Subscriptions, Fitness..."
+                      value={newCustomExpenseName}
+                      onChange={e => setNewCustomExpenseName(e.target.value)}
+                      autoFocus
+                      className={`px-3 py-2 rounded-xl border ${isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'}`}
+                    />
+                    <FinScoreAmountInput
+                      id="new-custom-expense-amt"
+                      value={parseFloat(newCustomExpenseAmount) || 0}
+                      onChange={val => setNewCustomExpenseAmount(val > 0 ? val.toString() : '')}
+                      currSym={currSym}
+                      isLight={isLight}
+                      placeholder="Amount"
+                      compact
+                    />
+                  </div>
+                  <div className="flex items-center justify-between pt-1">
+                    <label className="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newCustomExpenseIsEssential}
+                        onChange={e => setNewCustomExpenseIsEssential(e.target.checked)}
+                        className="rounded accent-blue-600"
+                      />
+                      <span>Is Essential Need?</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!newCustomExpenseName.trim()) return;
+                        setExpenses(prev => [
+                          ...prev,
+                          {
+                            id: `exp-${Date.now()}`,
+                            category: newCustomExpenseName.trim(),
+                            amount: parseFloat(newCustomExpenseAmount) || 0,
+                            isEssential: newCustomExpenseIsEssential
+                          }
+                        ]);
+                        setNewCustomExpenseName('');
+                        setNewCustomExpenseAmount('');
+                        setIsAddingExpenseCat(false);
+                        showToast(`Added custom category "${newCustomExpenseName.trim()}"!`);
+                      }}
+                      disabled={!newCustomExpenseName.trim()}
+                      className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
+                    >
+                      + Save Category
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsAddingExpenseCat(true)}
+                  className={`p-4 rounded-2xl border border-dashed flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer transition-all ${
+                    isLight 
+                      ? 'border-slate-300 hover:border-blue-400 text-slate-600 hover:text-blue-600 hover:bg-slate-50' 
+                      : 'border-slate-800 hover:border-blue-500/50 text-slate-400 hover:text-blue-400 hover:bg-slate-900/50'
+                  }`}
+                >
+                  <Plus className="w-3.5 h-3.5 text-blue-500" />
+                  <span>+ Add Other / Custom Category</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -3781,7 +3921,26 @@ Strategic Focus: ${result.biggestPriority}`;
                     <option value="Credit Card">Credit Card</option>
                     <option value="Education Loan">Education Loan</option>
                     <option value="Consumer Loan">Consumer Loan</option>
+                    <option value="Other">Other (Text Custom Type)</option>
                   </select>
+                  {newLoanType === 'Other' && (
+                    <div className="mt-2 animate-in fade-in duration-150">
+                      <label className="block text-xs font-semibold text-blue-500 mb-1">
+                        Text Your Custom Loan Type *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Gold Loan, Peer-to-Peer, Medical Loan..."
+                        value={customLoanType}
+                        onChange={e => setCustomLoanType(e.target.value)}
+                        className={`w-full px-2.5 py-1.5 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          isLight ? 'bg-white border-blue-400 text-slate-900' : 'bg-slate-900 border-blue-500 text-white'
+                        }`}
+                        autoFocus
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -4585,7 +4744,26 @@ Strategic Focus: ${result.biggestPriority}`;
                     <option value="Gold & Precious Metals">Gold & Precious Metals</option>
                     <option value="Retirement (PF/NPS)">Retirement (PF/NPS)</option>
                     <option value="Cash & Liquid">Cash & Liquid</option>
+                    <option value="Other">Other (Text Custom Category)</option>
                   </select>
+                  {newInvCategory === 'Other' && (
+                    <div className="mt-2 animate-in fade-in duration-150">
+                      <label className="block text-xs font-semibold text-blue-500 mb-1">
+                        Text Your Custom Category *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Crypto & Web3, Art & Collectibles, Angel Investments..."
+                        value={customInvCategory}
+                        onChange={e => setCustomInvCategory(e.target.value)}
+                        className={`w-full px-2.5 py-2 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          isLight ? 'bg-white border-blue-400 text-slate-900' : 'bg-slate-900 border-blue-500 text-white'
+                        }`}
+                        autoFocus
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* If Mutual Fund: NAV and Units inputs with auto-sync */}
@@ -5134,7 +5312,26 @@ Strategic Focus: ${result.biggestPriority}`;
                   <option value="Children Education">Children's Education</option>
                   <option value="Business">Business Venture</option>
                   <option value="Travel">Travel / Vacation</option>
+                  <option value="Other">Other (Text Custom Category)</option>
                 </select>
+                {newGoalCategory === 'Other' && (
+                  <div className="mt-2 animate-in fade-in duration-150">
+                    <label className="block text-xs font-semibold text-blue-500 mb-1">
+                      Text Your Custom Category *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Dream Studio, Starting Business, Emergency Reserve..."
+                      value={customGoalCategory}
+                      onChange={e => setCustomGoalCategory(e.target.value)}
+                      className={`w-full px-3 py-2 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        isLight ? 'bg-white border-blue-400 text-slate-900' : 'bg-slate-900 border-blue-500 text-white'
+                      }`}
+                      autoFocus
+                    />
+                  </div>
+                )}
               </div>
 
               <div>

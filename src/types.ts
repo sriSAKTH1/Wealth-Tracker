@@ -333,7 +333,7 @@ export interface FinScoreEmergency {
 export interface FinScoreGoal {
   id: string;
   name: string;
-  category: 'Bike' | 'Car' | 'Higher Education' | 'Marriage' | 'House' | 'Retirement' | 'Children Education' | 'Business' | 'Travel' | 'Other';
+  category: 'Bike' | 'Car' | 'Higher Education' | 'Marriage' | 'House' | 'Retirement' | 'Children Education' | 'Business' | 'Travel' | 'Other' | (string & {});
   targetAmount: number;
   currentSavings: number;
   targetYear: number;
