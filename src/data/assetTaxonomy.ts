@@ -5,7 +5,7 @@ export interface AssetSubType {
   description?: string;
   suggestedInstitutions?: string[];
   isDefaultLiquid?: boolean;
-  searchType?: 'stock' | 'mutual_fund' | 'equity_mf' | 'hybrid_mf' | 'arbitrage_mf' | 'debt_mf' | 'liquid_mf' | 'etf' | 'manual';
+  searchType?: 'stock' | 'reit' | 'mutual_fund' | 'equity_mf' | 'hybrid_mf' | 'arbitrage_mf' | 'debt_mf' | 'liquid_mf' | 'etf' | 'manual';
   badge?: string;
 }
 
@@ -390,7 +390,7 @@ export const ASSET_TAXONOMY: AssetCategoryInfo[] = [
       { id: 'residential-prop', name: 'Residential Property', searchType: 'manual', isDefaultLiquid: false },
       { id: 'commercial-prop', name: 'Commercial Property', searchType: 'manual', isDefaultLiquid: false },
       { id: 'land-plot', name: 'Land / Open Plot', searchType: 'manual', isDefaultLiquid: false },
-      { id: 'reit', name: 'REITs (Real Estate Trusts)', searchType: 'stock', suggestedInstitutions: ['Embassy REIT', 'Mindspace REIT', 'Brookfield REIT', 'Nexus Select'], isDefaultLiquid: true },
+      { id: 'reit', name: 'REITs (Real Estate Trusts)', searchType: 'reit', suggestedInstitutions: ['Embassy REIT', 'Mindspace REIT', 'Brookfield REIT', 'Nexus Select', 'Realty Income (O)', 'Prologis (PLD)'], isDefaultLiquid: true },
     ],
   },
   {
@@ -429,7 +429,7 @@ export const ASSET_TAXONOMY: AssetCategoryInfo[] = [
     description: 'Cryptocurrencies, hardware cold wallets, staked tokens',
     color: '#F97316',
     subTypes: [
-      { id: 'crypto-spot', name: 'Crypto Coins & Tokens (BTC, ETH, SOL)', searchType: 'stock', suggestedInstitutions: ['Coinbase', 'Binance', 'Ledger Hardware', 'Kraken', 'CoinDCX'], isDefaultLiquid: true },
+      { id: 'crypto-spot', name: 'Crypto Coins & Tokens (BTC, ETH, SOL)', searchType: 'manual', suggestedInstitutions: ['Coinbase', 'Binance', 'Ledger Hardware', 'Kraken', 'CoinDCX'], isDefaultLiquid: true },
       { id: 'defi-staked', name: 'DeFi Staking & Web3 Protocol Assets', searchType: 'manual', suggestedInstitutions: ['Metamask', 'Phantom', 'Lido Finance', 'Uniswap'], isDefaultLiquid: true },
     ],
   },
@@ -438,24 +438,24 @@ export const ASSET_TAXONOMY: AssetCategoryInfo[] = [
     name: 'Alternatives',
     countLabel: '2 types',
     iconName: 'layers',
-    description: 'Private equity, startup investments, fine art & collectibles',
+    description: 'Private equity, startup angels, P2P lending platforms',
     color: '#EC4899',
     subTypes: [
       { id: 'private-equity', name: 'Private Equity / Startup Angels', searchType: 'manual', suggestedInstitutions: ['AngelList Syndicate', 'LetsVenture', 'Republic', 'SeedInvest'], isDefaultLiquid: false },
-      { id: 'art-collectibles', name: 'Art, Wine & Luxury Collectibles', searchType: 'manual', suggestedInstitutions: ['Masterworks', 'Sotheby’s', 'Private Collection'], isDefaultLiquid: false },
+      { id: 'p2p-lending', name: 'P2P Lending', searchType: 'manual', suggestedInstitutions: ['Faircent', 'LiquiLoans', '12% Club', 'LendingClub', 'Prosper', 'Cred Mint'], isDefaultLiquid: false, badge: 'P2P Lending' },
     ],
   },
   {
     id: 'Other',
     name: 'Other',
-    countLabel: '3 types',
+    countLabel: 'Direct Add',
     iconName: 'plus',
-    description: 'Vehicles, automobiles, jewelry and custom valuable assets',
+    description: 'Direct entry: specify name, currency & total investment',
     color: '#64748B',
     subTypes: [
+      { id: 'custom-asset', name: 'Direct Asset Entry', searchType: 'manual', isDefaultLiquid: false },
       { id: 'vehicles', name: 'Vehicles & Automobiles', searchType: 'manual', isDefaultLiquid: false },
       { id: 'valuables', name: 'Jewelry & High-Value Assets', searchType: 'manual', isDefaultLiquid: false },
-      { id: 'custom-asset', name: 'Custom Asset Holding', searchType: 'manual', isDefaultLiquid: false },
     ],
   },
 ];

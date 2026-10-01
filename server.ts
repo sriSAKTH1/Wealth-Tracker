@@ -1179,14 +1179,18 @@ app.get('/api/market/search', async (req, res) => {
       .map((q: any) => {
         const isIndian = q.symbol.endsWith('.NS') || q.symbol.endsWith('.BO') || q.exchange === 'NSI' || q.exchange === 'BSE';
         const cleanTicker = q.symbol.replace(/\.(NS|BO)$/, '');
+        const fullName = q.shortname || q.longname || cleanTicker;
+        const isReit = /reit|real estate trust|properties trust|realty trust/i.test(fullName) ||
+          ['EMBASSY', 'MINDSPACE', 'BIRET', 'NEXUS', 'O', 'PLD', 'AMT', 'EQIX', 'SPG', 'PSA', 'VICI', 'DLR'].includes(cleanTicker.toUpperCase());
         return {
           ticker: cleanTicker,
           symbol: q.symbol,
-          name: q.shortname || q.longname || cleanTicker,
+          name: fullName,
           exchange: q.symbol.endsWith('.NS') ? 'NSE' : q.symbol.endsWith('.BO') ? 'BSE' : (q.exchange || 'GLOBAL'),
-          type: q.quoteType === 'CRYPTOCURRENCY' ? 'crypto' : q.quoteType === 'ETF' ? 'etf' : 'stock',
+          type: isReit ? 'reit' : (q.quoteType === 'CRYPTOCURRENCY' ? 'crypto' : q.quoteType === 'ETF' ? 'etf' : 'stock'),
           country: isIndian ? 'IN' : 'US',
-          currency: isIndian ? 'INR' : 'USD'
+          currency: isIndian ? 'INR' : 'USD',
+          isReit: isReit
         };
       });
 

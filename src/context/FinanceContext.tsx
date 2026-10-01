@@ -328,12 +328,18 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Primary Data State
   const [assets, setAssets] = useState<Asset[]>(() => {
     const loaded = loadStoredArray<Asset>(`${LOCAL_STORAGE_KEY}_assets`, INITIAL_ASSETS);
-    const hasNippon = loaded.some(a => a.id === 'ast-12' || a.name.includes('Nippon India Growth Mid Cap'));
+    const migrated = loaded.map(a => {
+      if (a.subType === 'Art, Wine & Luxury Collectibles' || a.subType === 'art-wine-luxury') {
+        return { ...a, subType: 'P2P Lending' };
+      }
+      return a;
+    });
+    const hasNippon = migrated.some(a => a.id === 'ast-12' || a.name.includes('Nippon India Growth Mid Cap'));
     if (!hasNippon) {
       const nippon = INITIAL_ASSETS.find(a => a.id === 'ast-12');
-      if (nippon) return [nippon, ...loaded];
+      if (nippon) return [nippon, ...migrated];
     }
-    return loaded;
+    return migrated;
   });
 
   const [liabilities, setLiabilities] = useState<Liability[]>(() => 

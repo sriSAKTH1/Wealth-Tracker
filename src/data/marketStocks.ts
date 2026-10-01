@@ -2,7 +2,7 @@ export interface MarketSecurity {
   ticker: string;
   name: string;
   exchange: 'NSE' | 'BSE' | 'NASDAQ' | 'NYSE' | 'CRYPTO' | 'COMMODITY' | 'INDEX' | 'MF';
-  type: 'stock' | 'etf' | 'crypto' | 'mutual_fund' | 'commodity';
+  type: 'stock' | 'etf' | 'crypto' | 'mutual_fund' | 'commodity' | 'reit';
   currentPrice: number; // in its native currency
   currency: 'INR' | 'USD' | 'EUR' | 'GBP';
   priceChange24h: number; // percentage, e.g. +1.45
@@ -12,9 +12,26 @@ export interface MarketSecurity {
   schemeCode?: number | string;
   country: 'IN' | 'US' | 'GLOBAL';
   popular?: boolean;
+  isReit?: boolean;
 }
 
 export const POPULAR_MARKET_SECURITIES: MarketSecurity[] = [
+  // ==========================================
+  // 🏢 REAL ESTATE INVESTMENT TRUSTS (REITs)
+  // ==========================================
+  { ticker: 'EMBASSY', name: 'Embassy Office Parks REIT', exchange: 'NSE', type: 'reit', currentPrice: 388.50, currency: 'INR', priceChange24h: 0.65, priceChange24hAmount: 2.50, sector: 'Real Estate Investment Trust (Office)', country: 'IN', popular: true, isReit: true },
+  { ticker: 'MINDSPACE', name: 'Mindspace Business Parks REIT', exchange: 'NSE', type: 'reit', currentPrice: 362.00, currency: 'INR', priceChange24h: 0.40, priceChange24hAmount: 1.45, sector: 'Real Estate Investment Trust (Office)', country: 'IN', popular: true, isReit: true },
+  { ticker: 'BIRET', name: 'Brookfield India Real Estate Trust', exchange: 'NSE', type: 'reit', currentPrice: 265.20, currency: 'INR', priceChange24h: 0.85, priceChange24hAmount: 2.25, sector: 'Real Estate Investment Trust (Office)', country: 'IN', popular: true, isReit: true },
+  { ticker: 'NEXUS', name: 'Nexus Select Trust REIT', exchange: 'NSE', type: 'reit', currentPrice: 139.75, currency: 'INR', priceChange24h: 0.55, priceChange24hAmount: 0.75, sector: 'Real Estate Investment Trust (Retail Mall)', country: 'IN', popular: true, isReit: true },
+  { ticker: 'O', name: 'Realty Income Corp. (The Monthly Dividend Co.)', exchange: 'NYSE', type: 'reit', currentPrice: 54.80, currency: 'USD', priceChange24h: 0.35, priceChange24hAmount: 0.19, sector: 'Real Estate Investment Trust (Commercial)', country: 'US', popular: true, isReit: true },
+  { ticker: 'PLD', name: 'Prologis, Inc. (Logistics & Industrial REIT)', exchange: 'NYSE', type: 'reit', currentPrice: 119.50, currency: 'USD', priceChange24h: 1.10, priceChange24hAmount: 1.30, sector: 'Real Estate Investment Trust (Industrial)', country: 'US', popular: true, isReit: true },
+  { ticker: 'AMT', name: 'American Tower Corp. (Telecom Tower REIT)', exchange: 'NYSE', type: 'reit', currentPrice: 196.20, currency: 'USD', priceChange24h: 0.75, priceChange24hAmount: 1.45, sector: 'Real Estate Investment Trust (Infrastructure)', country: 'US', popular: true, isReit: true },
+  { ticker: 'EQIX', name: 'Equinix, Inc. (Data Center REIT)', exchange: 'NASDAQ', type: 'reit', currentPrice: 846.50, currency: 'USD', priceChange24h: 1.40, priceChange24hAmount: 11.60, sector: 'Real Estate Investment Trust (Data Centers)', country: 'US', popular: true, isReit: true },
+  { ticker: 'SPG', name: 'Simon Property Group, Inc. (Mall REIT)', exchange: 'NYSE', type: 'reit', currentPrice: 159.40, currency: 'USD', priceChange24h: 0.90, priceChange24hAmount: 1.40, sector: 'Real Estate Investment Trust (Retail)', country: 'US', isReit: true },
+  { ticker: 'PSA', name: 'Public Storage (Self-Storage REIT)', exchange: 'NYSE', type: 'reit', currentPrice: 288.00, currency: 'USD', priceChange24h: 0.45, priceChange24hAmount: 1.30, sector: 'Real Estate Investment Trust (Storage)', country: 'US', isReit: true },
+  { ticker: 'VICI', name: 'VICI Properties Inc. (Gaming & Hospitality REIT)', exchange: 'NYSE', type: 'reit', currentPrice: 32.80, currency: 'USD', priceChange24h: 0.60, priceChange24hAmount: 0.20, sector: 'Real Estate Investment Trust (Experiential)', country: 'US', isReit: true },
+  { ticker: 'DLR', name: 'Digital Realty Trust, Inc. (Data Center REIT)', exchange: 'NYSE', type: 'reit', currentPrice: 156.40, currency: 'USD', priceChange24h: 1.25, priceChange24hAmount: 1.95, sector: 'Real Estate Investment Trust (Data Centers)', country: 'US', isReit: true },
+
   // ==========================================
   // 🇮🇳 ALL MAJOR INDIAN STOCKS (NSE / BSE)
   // ==========================================

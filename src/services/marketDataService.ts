@@ -1,11 +1,12 @@
 export interface MasterAsset {
   id: string; // Unique Master ID e.g. "NSE_RELIANCE", "MF_118968", "BSE_500325"
-  asset_type: 'stock' | 'mutual_fund' | 'etf' | 'crypto' | 'commodity' | 'manual';
+  asset_type: 'stock' | 'mutual_fund' | 'etf' | 'crypto' | 'commodity' | 'manual' | 'reit';
   name: string;
   symbol: string; // e.g. "RELIANCE", "118968", "TCS"
   isin?: string; // e.g. "INE002A01018"
   exchange: 'NSE' | 'BSE' | 'MF' | 'NASDAQ' | 'NYSE' | 'CRYPTO';
   data_source: 'NSE_LIVE' | 'BSE_FEED' | 'MFAPI_IN' | 'YAHOO_FINANCE' | 'MOCK_PROVIDER';
+  isReit?: boolean;
   
   // Real-time / Daily Pricing
   latest_price: number; // in its native currency (INR/USD)
@@ -54,6 +55,147 @@ export interface IMarketDataProvider {
 // CURATED MASTER ASSETS CATALOG (INDIAN STOCKS, ETFS, MUTUAL FUNDS)
 // -------------------------------------------------------------
 export const MOCK_MASTER_ASSETS: MasterAsset[] = [
+  // --- 🏢 REITs: Real Estate Investment Trusts ---
+  {
+    id: 'NSE_EMBASSY',
+    asset_type: 'reit',
+    name: 'Embassy Office Parks REIT',
+    symbol: 'EMBASSY',
+    isin: 'INE041025011',
+    exchange: 'NSE',
+    data_source: 'NSE_LIVE',
+    latest_price: 388.50,
+    previous_close: 386.00,
+    price_change: 2.50,
+    price_change_percent: 0.65,
+    currency: 'INR',
+    data_status: 'Real-time',
+    last_updated: 'Market Live',
+    sector: 'Real Estate Investment Trust (Office)',
+    isReit: true
+  },
+  {
+    id: 'NSE_MINDSPACE',
+    asset_type: 'reit',
+    name: 'Mindspace Business Parks REIT',
+    symbol: 'MINDSPACE',
+    isin: 'INE0CCU25019',
+    exchange: 'NSE',
+    data_source: 'NSE_LIVE',
+    latest_price: 362.00,
+    previous_close: 360.55,
+    price_change: 1.45,
+    price_change_percent: 0.40,
+    currency: 'INR',
+    data_status: 'Real-time',
+    last_updated: 'Market Live',
+    sector: 'Real Estate Investment Trust (Office)',
+    isReit: true
+  },
+  {
+    id: 'NSE_BIRET',
+    asset_type: 'reit',
+    name: 'Brookfield India Real Estate Trust',
+    symbol: 'BIRET',
+    isin: 'INE0HR325010',
+    exchange: 'NSE',
+    data_source: 'NSE_LIVE',
+    latest_price: 265.20,
+    previous_close: 262.95,
+    price_change: 2.25,
+    price_change_percent: 0.85,
+    currency: 'INR',
+    data_status: 'Real-time',
+    last_updated: 'Market Live',
+    sector: 'Real Estate Investment Trust (Office)',
+    isReit: true
+  },
+  {
+    id: 'NSE_NEXUS',
+    asset_type: 'reit',
+    name: 'Nexus Select Trust REIT',
+    symbol: 'NEXUS',
+    isin: 'INE0NZL25010',
+    exchange: 'NSE',
+    data_source: 'NSE_LIVE',
+    latest_price: 139.75,
+    previous_close: 139.00,
+    price_change: 0.75,
+    price_change_percent: 0.55,
+    currency: 'INR',
+    data_status: 'Real-time',
+    last_updated: 'Market Live',
+    sector: 'Real Estate Investment Trust (Retail Mall)',
+    isReit: true
+  },
+  {
+    id: 'NYSE_O',
+    asset_type: 'reit',
+    name: 'Realty Income Corp. (The Monthly Dividend Co.)',
+    symbol: 'O',
+    exchange: 'NYSE',
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 54.80,
+    previous_close: 54.61,
+    price_change: 0.19,
+    price_change_percent: 0.35,
+    currency: 'USD',
+    data_status: 'Real-time',
+    last_updated: 'Market Live',
+    sector: 'Real Estate Investment Trust (Commercial)',
+    isReit: true
+  },
+  {
+    id: 'NYSE_PLD',
+    asset_type: 'reit',
+    name: 'Prologis, Inc. (Logistics & Industrial REIT)',
+    symbol: 'PLD',
+    exchange: 'NYSE',
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 119.50,
+    previous_close: 118.20,
+    price_change: 1.30,
+    price_change_percent: 1.10,
+    currency: 'USD',
+    data_status: 'Real-time',
+    last_updated: 'Market Live',
+    sector: 'Real Estate Investment Trust (Industrial)',
+    isReit: true
+  },
+  {
+    id: 'NYSE_AMT',
+    asset_type: 'reit',
+    name: 'American Tower Corp. (Telecom Tower REIT)',
+    symbol: 'AMT',
+    exchange: 'NYSE',
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 196.20,
+    previous_close: 194.75,
+    price_change: 1.45,
+    price_change_percent: 0.75,
+    currency: 'USD',
+    data_status: 'Real-time',
+    last_updated: 'Market Live',
+    sector: 'Real Estate Investment Trust (Infrastructure)',
+    isReit: true
+  },
+  {
+    id: 'NASDAQ_EQIX',
+    asset_type: 'reit',
+    name: 'Equinix, Inc. (Data Center REIT)',
+    symbol: 'EQIX',
+    exchange: 'NASDAQ',
+    data_source: 'YAHOO_FINANCE',
+    latest_price: 846.50,
+    previous_close: 834.90,
+    price_change: 11.60,
+    price_change_percent: 1.40,
+    currency: 'USD',
+    data_status: 'Real-time',
+    last_updated: 'Market Live',
+    sector: 'Real Estate Investment Trust (Data Centers)',
+    isReit: true
+  },
   // --- 🪙 Commodities: Live Gold & Silver Spot ---
   {
     id: 'COMMODITY_GOLD_GRAM',
@@ -764,6 +906,8 @@ export class MockMarketDataProvider implements IMarketDataProvider {
 
     if (filter === 'stock') {
       list = list.filter(a => a.asset_type === 'stock');
+    } else if (filter === 'reit') {
+      list = list.filter(a => a.asset_type === 'reit' || (a as any).isReit || /reit|real estate trust/i.test(a.name) || /reit/i.test(a.symbol));
     } else if (filter === 'etf') {
       list = list.filter(a => a.asset_type === 'etf');
     } else if (filter === 'mutual_fund') {
@@ -849,10 +993,11 @@ export class ProductionMarketDataProvider implements IMarketDataProvider {
     try {
       const isStockOnly = filter === 'stock';
       const isEtfOnly = filter === 'etf';
+      const isReitOnly = filter === 'reit';
       const isMfOnly = filter === 'mutual_fund' || filter === 'equity_mf' || filter === 'hybrid_mf' || filter === 'arbitrage_mf' || filter === 'debt_mf' || filter === 'liquid_mf';
 
       // 1. Search Mutual Funds via backend /api/mf/search
-      const mfSearchPromise = (!isStockOnly && !isEtfOnly) 
+      const mfSearchPromise = (!isStockOnly && !isEtfOnly && !isReitOnly) 
         ? fetch(`/api/mf/search?q=${encodeURIComponent(q)}`)
             .then(r => r.ok ? r.json() : { results: [] })
             .catch(() => ({ results: [] }))
@@ -912,24 +1057,34 @@ export class ProductionMarketDataProvider implements IMarketDataProvider {
       if (stockData.status === 'fulfilled' && stockData.value?.results) {
         let stockList = stockData.value.results;
         if (isStockOnly) {
-          stockList = stockList.filter((s: any) => s.type !== 'etf');
+          stockList = stockList.filter((s: any) => s.type !== 'etf' && s.type !== 'reit');
         } else if (isEtfOnly) {
           stockList = stockList.filter((s: any) => s.type === 'etf' || /etf|bees/i.test(s.symbol) || /etf|bees/i.test(s.name));
+        } else if (isReitOnly) {
+          stockList = stockList.filter((s: any) => 
+            s.type === 'reit' || 
+            s.isReit || 
+            /reit|real estate trust/i.test(s.name) || 
+            /reit/i.test(s.ticker || s.symbol) ||
+            ['EMBASSY', 'MINDSPACE', 'BIRET', 'NEXUS', 'O', 'PLD', 'AMT', 'EQIX', 'SPG', 'PSA', 'VICI', 'DLR'].includes(String(s.ticker || s.symbol).toUpperCase())
+          );
         }
 
         stockList.slice(0, 15).forEach((s: any) => {
           const isIndian = s.exchange === 'NSE' || s.exchange === 'BSE' || s.country === 'IN' || s.currency === 'INR';
+          const isReitItem = isReitOnly || s.type === 'reit' || s.isReit || /reit|real estate trust/i.test(s.name);
           liveResults.push({
             id: `${s.exchange || 'NSE'}_${s.ticker}`,
-            asset_type: s.type === 'etf' ? 'etf' : 'stock',
+            asset_type: isReitItem ? 'reit' : (s.type === 'etf' ? 'etf' : 'stock'),
             name: s.name || s.ticker,
             symbol: s.ticker,
             exchange: s.exchange || (isIndian ? 'NSE' : 'NASDAQ'),
             data_source: isIndian ? 'NSE_LIVE' : 'YAHOO_FINANCE',
-            latest_price: s.currency === 'INR' ? 500.0 : 100.0,
+            latest_price: s.currentPrice || (s.currency === 'INR' ? 500.0 : 100.0),
             currency: s.currency || (isIndian ? 'INR' : 'USD'),
             data_status: 'Real-time',
-            last_updated: 'Market Live'
+            last_updated: 'Market Live',
+            isReit: isReitItem
           });
         });
       }

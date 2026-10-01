@@ -760,6 +760,38 @@ export const WealthView: React.FC = () => {
     return { gain: 0, gainPercent: 0 };
   };
 
+  // Only show live / spot price for Gold in Commodities, Crypto Coins & Tokens in Crypto, and listed market instruments
+  // "in gold have gold only live price only show and Crypto Coins & Toke show Crypto Coin live price only otherwise you don't show any price"
+  const isPriceAllowedForAsset = (a: Asset): boolean => {
+    if (a.currentPrice === undefined || a.currentPrice === null || a.currentPrice <= 0) return false;
+    // Listed securities: Stock, ETF, REIT, Mutual Fund
+    if (
+      a.exchange === 'NSE' || 
+      a.exchange === 'BSE' || 
+      a.exchange === 'NYSE' || 
+      a.exchange === 'NASDAQ' || 
+      a.exchange === 'MF' || 
+      (a.assetType as any) === 'mutual_fund' || 
+      (a.assetType as any) === 'reit' || 
+      a.subType?.toLowerCase().includes('reit') ||
+      Boolean(a.schemeCode)
+    ) {
+      return true;
+    }
+    // Gold in Commodities: Gold ONLY! ("in gold have gold only live price only show")
+    if (a.category === 'Commodities' || a.exchange === 'COMMODITY' || a.ticker?.startsWith('GOLD')) {
+      const isGold = (a.ticker?.startsWith('GOLD') || a.name?.toLowerCase().includes('gold') || a.subType?.toLowerCase().includes('gold')) && !a.ticker?.startsWith('SILVER') && !a.name?.toLowerCase().includes('silver');
+      return Boolean(isGold);
+    }
+    // Crypto Coins & Tokens ONLY! ("Crypto Coins & Toke show Crypto Coin live price only")
+    if (a.category === 'Crypto' || a.exchange === 'CRYPTO' || a.assetType === 'crypto') {
+      const isCryptoCoin = (a.subType?.toLowerCase().includes('coin') || a.subType === 'crypto-spot' || a.ticker) && !a.subType?.includes('defi') && !a.name?.toLowerCase().includes('defi');
+      return Boolean(isCryptoCoin);
+    }
+    // Otherwise do not show any price
+    return false;
+  };
+
   // Monthly total minimum debt payment
   const totalMinDebtPayment = liabilities.reduce((s, l) => s + (l.minimumPayment || 0), 0);
 
@@ -2199,14 +2231,14 @@ export const WealthView: React.FC = () => {
                           )}
 
                           {/* Holding Metadata Pill (Units, Purchase Date, Live NAV) */}
-                          {(asset.shares || asset.buyDate || asset.currentPrice || asset.isin) && (
+                          {(asset.shares || asset.buyDate || isPriceAllowedForAsset(asset) || asset.isin) && (
                             <div className="mb-3 p-2 rounded-xl bg-zinc-950/60 border border-zinc-800/80 space-y-1.5 text-[11px] text-zinc-300 font-mono">
                               <div className="flex items-center justify-between flex-wrap gap-1">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   {asset.shares && (
                                     <span>
                                       <strong className="text-white font-bold">{asset.shares}</strong>{' '}
-                                      {asset.category === 'Commodities' || asset.exchange === 'COMMODITY' || asset.ticker?.startsWith('GOLD') || asset.ticker?.startsWith('SILVER')
+                                      {(asset.category === 'Commodities' || asset.exchange === 'COMMODITY' || asset.ticker?.startsWith('GOLD')) && !asset.ticker?.startsWith('SILVER')
                                         ? (asset.ticker?.endsWith('-10G') ? 'x 10g' : asset.ticker?.endsWith('-KG') ? 'kg' : asset.ticker?.endsWith('-OZ') ? 'oz' : 'grams')
                                         : asset.category === 'Crypto' || asset.exchange === 'CRYPTO' || asset.assetType === 'crypto'
                                         ? 'coins'
@@ -2228,10 +2260,10 @@ export const WealthView: React.FC = () => {
                                   )}
                                 </div>
 
-                                {asset.currentPrice !== undefined && asset.currentPrice !== null && (
+                                {isPriceAllowedForAsset(asset) && (
                                   <div className="flex items-center gap-1 text-right">
                                     <span className="text-zinc-400">
-                                      {asset.category === 'Commodities' || asset.exchange === 'COMMODITY' || asset.ticker?.startsWith('GOLD') || asset.ticker?.startsWith('SILVER')
+                                      {(asset.category === 'Commodities' || asset.exchange === 'COMMODITY' || asset.ticker?.startsWith('GOLD'))
                                         ? 'Spot:'
                                         : asset.assetType === 'mutual_fund' || asset.exchange === 'MF'
                                         ? 'NAV:'
