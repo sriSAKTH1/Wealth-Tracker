@@ -467,24 +467,6 @@ export const MoreView: React.FC = () => {
                 <span>{importStatus}</span>
               </div>
             )}
-
-            {/* Reload Demo Data */}
-            <div className="pt-4 border-t border-zinc-800/80 flex items-center justify-between">
-              <div>
-                <div className="text-xs font-semibold text-zinc-200">Sample Financial Portfolio</div>
-                <div className="text-[11px] text-zinc-500">Populate the app with realistic starter assets & cash flow</div>
-              </div>
-              <button
-                onClick={() => {
-                  resetToDefaultData();
-                  setImportStatus('Loaded complete realistic financial portfolio!');
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200 font-semibold transition-colors"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Load Sample Data</span>
-              </button>
-            </div>
           </div>
         </div>
       )}

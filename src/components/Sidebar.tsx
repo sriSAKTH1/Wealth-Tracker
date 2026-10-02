@@ -10,7 +10,6 @@ import {
   Scale,
   Settings,
   PanelLeftClose,
-  PanelLeft,
   Sparkles,
   X
 } from 'lucide-react';
@@ -128,12 +127,12 @@ export const Sidebar: React.FC = () => {
                 </div>
               </div>
 
-              {/* Sidebar Collapse Toggle Button */}
+              {/* Sidebar Close Button */}
               <button
                 id="btn-sidebar-collapse"
-                onClick={toggleSidebar}
-                aria-label="Collapse sidebar"
-                title="Collapse sidebar (⌘B / [ )"
+                onClick={() => setIsSidebarOpen(false)}
+                aria-label="Close sidebar"
+                title="Close sidebar (⌘B / [ )"
                 className={`p-1.5 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
                   isLight 
                     ? 'hover:bg-slate-100 text-slate-500 hover:text-slate-800 border-slate-200' 
@@ -144,29 +143,16 @@ export const Sidebar: React.FC = () => {
               </button>
             </div>
           ) : (
-            /* Collapsed Brand: Centered Logo + Hover / Click to Expand */
-            <div className="flex flex-col items-center pb-3 border-b border-slate-200/80 dark:border-slate-800/80 gap-2">
+            /* Collapsed Brand: Centered Logo only (Click logo to open sidebar) */
+            <div className="flex flex-col items-center pb-3 border-b border-slate-200/80 dark:border-slate-800/80">
               <button
-                onClick={() => handleNavClick('overview')}
-                title="FIX WEALTH Dashboard"
-                className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/25 hover:scale-105 transition-transform ring-1 ring-blue-400/30 cursor-pointer"
+                id="btn-sidebar-logo-expand"
+                onClick={() => setIsSidebarOpen(true)}
+                title="Open sidebar"
+                aria-label="Open sidebar"
+                className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/25 hover:scale-110 active:scale-95 transition-all ring-1 ring-blue-400/30 cursor-pointer group"
               >
-                <Sparkles className="w-5 h-5 text-white" />
-              </button>
-
-              {/* Quick Expand Button */}
-              <button
-                id="btn-sidebar-expand"
-                onClick={toggleSidebar}
-                aria-label="Expand sidebar"
-                title="Expand sidebar (⌘B / [ )"
-                className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
-                  isLight 
-                    ? 'hover:bg-slate-100 text-slate-500 hover:text-slate-800 border-slate-200' 
-                    : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200 border-slate-800'
-                }`}
-              >
-                <PanelLeft className="w-3.5 h-3.5" />
+                <Sparkles className="w-5 h-5 text-white group-hover:rotate-12 transition-transform" />
               </button>
             </div>
           )}

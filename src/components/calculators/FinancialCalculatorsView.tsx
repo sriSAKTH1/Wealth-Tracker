@@ -23,7 +23,13 @@ import {
   ArrowUpRight,
   Star,
   Sliders,
-  ThumbsUp
+  ThumbsUp,
+  Copy,
+  ArrowUpDown,
+  Wand2,
+  ChevronDown,
+  ChevronUp,
+  Layers
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -249,36 +255,303 @@ export const FinancialCalculatorsView: React.FC = () => {
   }, [rdMonthly, rdRate, rdYears, rdFrequency, rdTrigger]);
 
   // -------------------------------------------------------------------------
-  // 9. XIRR State
+  // 9. XIRR State & Recurring Generator
   // -------------------------------------------------------------------------
   const [xirrTransactions, setXirrTransactions] = useState<CashFlowTransaction[]>([
-    { id: '1', date: '2023-01-10', amount: -100000 },
-    { id: '2', date: '2023-07-15', amount: -50000 },
-    { id: '3', date: '2024-01-12', amount: -50000 },
-    { id: '4', date: '2024-09-01', amount: 245000 },
+    { id: '1', date: '2023-01-10', amount: -100000, description: 'Initial Lumpsum', type: 'investment' },
+    { id: '2', date: '2023-07-15', amount: -50000, description: 'Installment #2', type: 'investment' },
+    { id: '3', date: '2024-01-12', amount: -50000, description: 'Installment #3', type: 'investment' },
+    { id: '4', date: '2024-09-01', amount: 245000, description: 'Current Portfolio Value', type: 'redemption' },
   ]);
   const [xirrTrigger, setXirrTrigger] = useState<number>(0);
+
+  // Recurring generator state (Monthly * 12, Quarterly * 4, Yearly * 3, etc.)
+  const [xirrFrequency, setXirrFrequency] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
+  const [xirrCount, setXirrCount] = useState<number>(12); // e.g. 12 for monthly, 4 for quarterly
+  const [xirrInstallmentAmount, setXirrInstallmentAmount] = useState<number>(10000);
+  const [xirrStartDate, setXirrStartDate] = useState<string>(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return d.toISOString().split('T')[0];
+  });
+  const [xirrFinalValuation, setXirrFinalValuation] = useState<number>(145000);
+  const [xirrFinalDate, setXirrFinalDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [showGeneratorPanel, setShowGeneratorPanel] = useState<boolean>(true);
 
   const xirrResult = useMemo(() => {
     return calculateXIRR(xirrTransactions);
   }, [xirrTransactions, xirrTrigger]);
 
   const handleAddXirrRow = () => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const lastRow = xirrTransactions[xirrTransactions.length - 1];
+    let nextDate = new Date().toISOString().split('T')[0];
+    if (lastRow && lastRow.date) {
+      const d = new Date(lastRow.date);
+      if (!isNaN(d.getTime())) {
+        d.setMonth(d.getMonth() + 1);
+        nextDate = d.toISOString().split('T')[0];
+      }
+    }
+    const newId = `custom-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     setXirrTransactions(prev => [
       ...prev,
-      { id: Date.now().toString(), date: todayStr, amount: 0 },
+      {
+        id: newId,
+        date: nextDate,
+        amount: -10000,
+        description: `Installment #${prev.length + 1}`,
+        type: 'investment'
+      },
     ]);
+  };
+
+  const handleDuplicateXirrRow = (id: string) => {
+    const target = xirrTransactions.find(r => r.id === id);
+    if (!target) return;
+    const d = new Date(target.date);
+    if (!isNaN(d.getTime())) {
+      d.setMonth(d.getMonth() + 1);
+    }
+    const newDate = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : target.date;
+    const newId = `dup-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    setXirrTransactions(prev => {
+      const idx = prev.findIndex(r => r.id === id);
+      const copy = [...prev];
+      copy.splice(idx + 1, 0, {
+        ...target,
+        id: newId,
+        date: newDate,
+        description: target.description ? `${target.description} (Copy)` : 'Installment'
+      });
+      return copy;
+    });
   };
 
   const handleDeleteXirrRow = (id: string) => {
     setXirrTransactions(prev => prev.filter(r => r.id !== id));
   };
 
-  const handleUpdateXirrRow = (id: string, field: 'date' | 'amount', value: string | number) => {
+  const handleUpdateXirrRow = (
+    id: string,
+    field: 'date' | 'amount' | 'description' | 'type',
+    value: string | number
+  ) => {
     setXirrTransactions(prev =>
       prev.map(r => (r.id === id ? { ...r, [field]: value } : r))
     );
+  };
+
+  const handleToggleRowDirection = (id: string) => {
+    setXirrTransactions(prev =>
+      prev.map(r => {
+        if (r.id === id) {
+          const currentAmt = r.amount;
+          const nextAmt = -currentAmt;
+          const nextType = nextAmt < 0 ? 'investment' : 'redemption';
+          return { ...r, amount: nextAmt, type: nextType };
+        }
+        return r;
+      })
+    );
+  };
+
+  const handleSortXirrRows = () => {
+    setXirrTransactions(prev =>
+      [...prev].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    );
+  };
+
+  const handleGenerateRecurring = (replace: boolean = true) => {
+    const count = Math.max(1, Math.min(120, xirrCount || 12));
+    const instAmount = -Math.abs(xirrInstallmentAmount || 10000);
+    const start = new Date(xirrStartDate);
+    if (isNaN(start.getTime())) return;
+
+    const newRows: CashFlowTransaction[] = [];
+    for (let i = 0; i < count; i++) {
+      const curDate = new Date(start);
+      if (xirrFrequency === 'monthly') {
+        curDate.setMonth(start.getMonth() + i);
+      } else if (xirrFrequency === 'quarterly') {
+        curDate.setMonth(start.getMonth() + i * 3);
+      } else {
+        curDate.setFullYear(start.getFullYear() + i);
+      }
+      const dateStr = curDate.toISOString().split('T')[0];
+      const freqLabel = xirrFrequency === 'monthly' ? `Month ${i + 1}` : xirrFrequency === 'quarterly' ? `Q${i + 1}` : `Year ${i + 1}`;
+      newRows.push({
+        id: `rec-${Date.now()}-${i}`,
+        date: dateStr,
+        amount: instAmount,
+        description: `${freqLabel} SIP`,
+        type: 'investment'
+      });
+    }
+
+    if (xirrFinalValuation && xirrFinalValuation > 0) {
+      newRows.push({
+        id: `rec-${Date.now()}-final`,
+        date: xirrFinalDate || new Date().toISOString().split('T')[0],
+        amount: Math.abs(xirrFinalValuation),
+        description: 'Current Portfolio Value / Redemption',
+        type: 'redemption'
+      });
+    }
+
+    if (replace) {
+      setXirrTransactions(newRows);
+    } else {
+      setXirrTransactions(prev => [...prev, ...newRows]);
+    }
+    setXirrTrigger(prev => prev + 1);
+  };
+
+  const handleApplyPreset = (freq: 'monthly' | 'quarterly' | 'yearly', count: number, instAmt: number, finalVal: number) => {
+    setXirrFrequency(freq);
+    setXirrCount(count);
+    setXirrInstallmentAmount(instAmt);
+    setXirrFinalValuation(finalVal);
+    const end = new Date();
+    const start = new Date(end);
+    if (freq === 'monthly') {
+      start.setMonth(end.getMonth() - count);
+    } else if (freq === 'quarterly') {
+      start.setMonth(end.getMonth() - count * 3);
+    } else {
+      start.setFullYear(end.getFullYear() - count);
+    }
+    setXirrStartDate(start.toISOString().split('T')[0]);
+    setXirrFinalDate(end.toISOString().split('T')[0]);
+
+    const newRows: CashFlowTransaction[] = [];
+    for (let i = 0; i < count; i++) {
+      const curDate = new Date(start);
+      if (freq === 'monthly') {
+        curDate.setMonth(start.getMonth() + i);
+      } else if (freq === 'quarterly') {
+        curDate.setMonth(start.getMonth() + i * 3);
+      } else {
+        curDate.setFullYear(start.getFullYear() + i);
+      }
+      const freqLabel = freq === 'monthly' ? `Month ${i + 1}` : freq === 'quarterly' ? `Q${i + 1}` : `Year ${i + 1}`;
+      newRows.push({
+        id: `preset-${Date.now()}-${i}`,
+        date: curDate.toISOString().split('T')[0],
+        amount: -Math.abs(instAmt),
+        description: `${freqLabel} SIP`,
+        type: 'investment'
+      });
+    }
+    if (finalVal > 0) {
+      newRows.push({
+        id: `preset-${Date.now()}-final`,
+        date: end.toISOString().split('T')[0],
+        amount: Math.abs(finalVal),
+        description: 'Current Portfolio Value',
+        type: 'redemption'
+      });
+    }
+    setXirrTransactions(newRows);
+    setXirrTrigger(prev => prev + 1);
+  };
+
+  const handleClearAllXirr = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const past = new Date();
+    past.setFullYear(past.getFullYear() - 1);
+    setXirrTransactions([
+      { id: '1', date: past.toISOString().split('T')[0], amount: -50000, description: 'Initial Investment', type: 'investment' },
+      { id: '2', date: today, amount: 62000, description: 'Current Portfolio Value', type: 'redemption' },
+    ]);
+    setXirrTrigger(prev => prev + 1);
+  };
+
+  // Periodic rows adder (+12 Monthly, +4 Quarterly, +1 Yearly, etc.)
+  const handleAddPeriodicRows = (frequency: 'monthly' | 'quarterly' | 'yearly', count: number = 1) => {
+    const lastRow = xirrTransactions[xirrTransactions.length - 1];
+    let baseDate = new Date();
+    if (lastRow && lastRow.date) {
+      const d = new Date(lastRow.date);
+      if (!isNaN(d.getTime())) baseDate = d;
+    }
+    const defaultAmount = -Math.abs(xirrInstallmentAmount || 10000);
+    const newRows: CashFlowTransaction[] = [];
+    for (let i = 1; i <= count; i++) {
+      const curDate = new Date(baseDate);
+      if (frequency === 'monthly') {
+        curDate.setMonth(baseDate.getMonth() + i);
+      } else if (frequency === 'quarterly') {
+        curDate.setMonth(baseDate.getMonth() + i * 3);
+      } else {
+        curDate.setFullYear(baseDate.getFullYear() + i);
+      }
+      const dateStr = curDate.toISOString().split('T')[0];
+      const freqLabel = frequency === 'monthly' ? `Month +${i}` : frequency === 'quarterly' ? `Q +${i}` : `Year +${i}`;
+      newRows.push({
+        id: `add-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
+        date: dateStr,
+        amount: defaultAmount,
+        description: `${freqLabel} SIP`,
+        type: 'investment'
+      });
+    }
+    setXirrTransactions(prev => [...prev, ...newRows]);
+    setXirrTrigger(prev => prev + 1);
+  };
+
+  // Custom row configuration state ("You can customize to add a row")
+  const [showCustomAddRow, setShowCustomAddRow] = useState<boolean>(false);
+  const [customRowDate, setCustomRowDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [customRowAmount, setCustomRowAmount] = useState<number>(10000);
+  const [customRowDirection, setCustomRowDirection] = useState<'investment' | 'redemption'>('investment');
+  const [customRowDescription, setCustomRowDescription] = useState<string>('Custom Cash Flow');
+  const [xirrCopySuccess, setXirrCopySuccess] = useState<boolean>(false);
+
+  const handleAddCustomRowSubmit = () => {
+    const amount = customRowDirection === 'investment' 
+      ? -Math.abs(customRowAmount || 10000) 
+      : Math.abs(customRowAmount || 10000);
+    const newRow: CashFlowTransaction = {
+      id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      date: customRowDate || new Date().toISOString().split('T')[0],
+      amount,
+      description: customRowDescription.trim() || (customRowDirection === 'investment' ? 'Investment Outflow' : 'Redemption Inflow'),
+      type: customRowDirection,
+    };
+    setXirrTransactions(prev => [...prev, newRow]);
+    setXirrTrigger(prev => prev + 1);
+    setShowCustomAddRow(false);
+    // Advance date by 1 month for consecutive additions
+    const d = new Date(customRowDate);
+    if (!isNaN(d.getTime())) {
+      d.setMonth(d.getMonth() + 1);
+      setCustomRowDate(d.toISOString().split('T')[0]);
+    }
+  };
+
+  const xirrDuration = useMemo(() => {
+    if (xirrTransactions.length < 2) return { days: 0, years: '0.00' };
+    const dates = xirrTransactions
+      .map(t => new Date(t.date).getTime())
+      .filter(d => !isNaN(d))
+      .sort((a, b) => a - b);
+    if (dates.length < 2) return { days: 0, years: '0.00' };
+    const diffDays = Math.round((dates[dates.length - 1] - dates[0]) / (1000 * 60 * 60 * 24));
+    const diffYears = (diffDays / 365.0).toFixed(2);
+    return { days: diffDays, years: diffYears };
+  }, [xirrTransactions]);
+
+  const xirrAbsoluteReturn = useMemo(() => {
+    if (!xirrResult.isValid || xirrResult.totalInvested <= 0) return 0;
+    return ((xirrResult.totalReceived - xirrResult.totalInvested) / xirrResult.totalInvested) * 100;
+  }, [xirrResult]);
+
+  const handleCopyXirrTable = () => {
+    const rows = xirrTransactions.map(t => `${t.date}\t${t.description || ''}\t${t.amount}`).join('\n');
+    const header = `Date\tDescription\tAmount (INR)\n`;
+    navigator.clipboard.writeText(header + rows);
+    setXirrCopySuccess(true);
+    setTimeout(() => setXirrCopySuccess(false), 2500);
   };
 
   // -------------------------------------------------------------------------
@@ -1875,68 +2148,460 @@ export const FinancialCalculatorsView: React.FC = () => {
       {/* ------------------------------------------------------------------- */}
       {activeCalc === 'xirr' && (
         <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Recurring Series Generator Builder Panel */}
+          <div className={`p-5 sm:p-6 rounded-3xl border space-y-4 ${
+            isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-zinc-900/80 border-zinc-800 text-white'
+          }`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/60">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                  <Wand2 className="w-4 h-4" />
+                </span>
+                <div>
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                    <span>Periodic Recurring Cash Flows Builder</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono">
+                      Monthly • Quarterly • Yearly * 12
+                    </span>
+                  </h2>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Generate multi-period recurring cash flows automatically or append them to your ledger
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowGeneratorPanel(prev => !prev)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white border border-slate-700/60 bg-zinc-800/40 cursor-pointer self-start sm:self-auto"
+              >
+                <span>{showGeneratorPanel ? 'Collapse Generator' : 'Expand Generator'}</span>
+                {showGeneratorPanel ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+
+            {showGeneratorPanel && (
+              <div className="space-y-4 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Frequency Selection */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                      Compounding / Cadence Frequency
+                    </label>
+                    <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-zinc-950/60 border border-zinc-800">
+                      {(['monthly', 'quarterly', 'yearly'] as const).map(freq => (
+                        <button
+                          key={freq}
+                          type="button"
+                          onClick={() => {
+                            setXirrFrequency(freq);
+                            if (freq === 'monthly' && xirrCount < 12) setXirrCount(12);
+                            if (freq === 'quarterly' && xirrCount > 20) setXirrCount(4);
+                            if (freq === 'yearly' && xirrCount > 10) setXirrCount(3);
+                          }}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${
+                            xirrFrequency === freq
+                              ? 'bg-amber-500 text-slate-950 shadow-sm'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          {freq === 'monthly' ? 'Monthly (*12)' : freq === 'quarterly' ? 'Quarterly (*4)' : 'Yearly (*N)'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Multiplier / Periods Count (* 12, * 4, etc.) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                        Multiplier / Installments (* Count)
+                      </label>
+                      <span className="text-[11px] font-mono text-amber-400 font-bold">
+                        {xirrCount} {xirrFrequency === 'monthly' ? 'Months' : xirrFrequency === 'quarterly' ? 'Quarters' : 'Years'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        min="1"
+                        max="120"
+                        value={xirrCount}
+                        onChange={e => setXirrCount(Math.max(1, Math.min(120, parseInt(e.target.value) || 1)))}
+                        className={`w-20 px-3 py-2 rounded-xl border font-mono font-bold text-xs ${
+                          isLight ? 'bg-slate-50 border-slate-300' : 'bg-zinc-950 border-zinc-800'
+                        }`}
+                      />
+                      <div className="flex items-center gap-1 flex-1 overflow-x-auto no-scrollbar">
+                        {[
+                          { label: '* 12', count: 12 },
+                          { label: '* 24', count: 24 },
+                          { label: '* 36', count: 36 },
+                          { label: '* 4', count: 4 },
+                          { label: '* 8', count: 8 },
+                          { label: '* 3', count: 3 },
+                          { label: '* 5', count: 5 },
+                        ].map(chip => (
+                          <button
+                            key={chip.label}
+                            type="button"
+                            onClick={() => setXirrCount(chip.count)}
+                            className={`px-2 py-1.5 rounded-lg border text-[11px] font-mono font-bold transition-all cursor-pointer shrink-0 ${
+                              xirrCount === chip.count
+                                ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                                : 'bg-zinc-950/40 border-zinc-800 text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {chip.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Installment Amount */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                      Periodic Installment Amount (₹)
+                    </label>
+                    <input
+                      type="number"
+                      step="1000"
+                      value={xirrInstallmentAmount}
+                      onChange={e => setXirrInstallmentAmount(Math.max(100, parseFloat(e.target.value) || 0))}
+                      className={`w-full px-3 py-2 rounded-xl border font-mono font-bold text-xs ${
+                        isLight ? 'bg-slate-50 border-slate-300' : 'bg-zinc-950 border-zinc-800'
+                      }`}
+                    />
+                    <div className="text-[11px] text-slate-400 mt-1 font-mono flex justify-between">
+                      <span className="text-amber-400">{formatINR(xirrInstallmentAmount)} / period</span>
+                      <span>Total: {formatINR(xirrInstallmentAmount * xirrCount)}</span>
+                    </div>
+                  </div>
+
+                  {/* Start Date */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                      First Installment Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={xirrStartDate}
+                      onChange={e => setXirrStartDate(e.target.value)}
+                      className={`w-full px-3 py-2 rounded-xl border font-mono text-xs ${
+                        isLight ? 'bg-slate-50 border-slate-300' : 'bg-zinc-950 border-zinc-800'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end pt-2 border-t border-slate-800/40">
+                  <div className="lg:col-span-4">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                      Current Portfolio Value / Final Redemption (₹)
+                    </label>
+                    <input
+                      type="number"
+                      step="5000"
+                      value={xirrFinalValuation}
+                      onChange={e => setXirrFinalValuation(Math.max(0, parseFloat(e.target.value) || 0))}
+                      placeholder="e.g. 145000"
+                      className={`w-full px-3 py-2 rounded-xl border font-mono font-bold text-xs text-emerald-400 ${
+                        isLight ? 'bg-slate-50 border-slate-300' : 'bg-zinc-950 border-zinc-800'
+                      }`}
+                    />
+                    <div className="text-[11px] text-emerald-400/80 mt-1 font-mono">
+                      Expected return / current value: {formatINR(xirrFinalValuation)}
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-3">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                      Valuation Date
+                    </label>
+                    <input
+                      type="date"
+                      value={xirrFinalDate}
+                      onChange={e => setXirrFinalDate(e.target.value)}
+                      className={`w-full px-3 py-2 rounded-xl border font-mono text-xs ${
+                        isLight ? 'bg-slate-50 border-slate-300' : 'bg-zinc-950 border-zinc-800'
+                      }`}
+                    />
+                  </div>
+
+                  <div className="lg:col-span-5 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateRecurring(true)}
+                      className="flex-1 py-2.5 px-3.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <Wand2 className="w-3.5 h-3.5" />
+                      <span>Generate & Replace Ledger ({xirrCount} Rows)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateRecurring(false)}
+                      className="py-2.5 px-3 rounded-xl border border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-xs font-semibold text-slate-200 transition-all cursor-pointer flex items-center gap-1"
+                      title="Append these recurring rows to the current table without overwriting"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Append</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Main 2-Column Split: Ledger Table vs Results */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Dynamic Cash Flow Table */}
             <div className={`lg:col-span-7 p-5 sm:p-6 rounded-3xl border space-y-4 ${
               isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-zinc-900/80 border-zinc-800 text-white'
             }`}>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                    <FileSpreadsheet className="w-4 h-4 text-amber-400" />
-                    <span>Cash Flows Ledger</span>
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                      <FileSpreadsheet className="w-4 h-4 text-amber-400" />
+                      <span>Cash Flows Ledger</span>
+                    </h2>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono font-bold">
+                      {xirrTransactions.length} Flows
+                    </span>
+                  </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     Negative amount (-₹) = Investment/Outflow • Positive amount (+₹) = Redemption/Return
                   </p>
                 </div>
-                <button
-                  id="btn-add-xirr-row"
-                  onClick={handleAddXirrRow}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold cursor-pointer transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Row</span>
-                </button>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    id="btn-add-xirr-row"
+                    type="button"
+                    onClick={() => setShowCustomAddRow(prev => !prev)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold cursor-pointer transition-all shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Customize & Add Row</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleAddXirrRow}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-slate-200 text-xs font-semibold cursor-pointer border border-zinc-700"
+                    title="Quick add single empty row"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>+1</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleAddPeriodicRows('monthly', 12)}
+                    className="px-2.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-bold cursor-pointer"
+                    title="Add 12 Monthly rows continuing from last row"
+                  >
+                    +12 Monthly (*12)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleAddPeriodicRows('quarterly', 4)}
+                    className="px-2.5 py-1.5 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 text-xs font-bold cursor-pointer"
+                    title="Add 4 Quarterly rows continuing from last row"
+                  >
+                    +4 Quarterly (*4)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSortXirrRows}
+                    className="p-1.5 rounded-xl border border-zinc-700 text-slate-400 hover:text-white bg-zinc-800/40 cursor-pointer"
+                    title="Sort Chronologically by Date"
+                  >
+                    <ArrowUpDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
+
+              {/* Customizable Add Row Card ("You can customize to add a row") */}
+              {showCustomAddRow && (
+                <div className={`p-4 rounded-2xl border space-y-3 animate-in fade-in slide-in-from-top-2 duration-150 ${
+                  isLight ? 'bg-blue-50/70 border-blue-200 text-slate-900' : 'bg-blue-950/20 border-blue-800/50 text-white'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                      <Sliders className="w-3.5 h-3.5" />
+                      <span>Customize New Cash Flow Row</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomAddRow(false)}
+                      className="text-xs text-slate-400 hover:text-white cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                    <div className="sm:col-span-3">
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">Date</label>
+                      <input
+                        type="date"
+                        value={customRowDate}
+                        onChange={e => setCustomRowDate(e.target.value)}
+                        className={`w-full px-2.5 py-1.5 rounded-lg border font-mono text-xs ${
+                          isLight ? 'bg-white border-slate-300' : 'bg-zinc-950 border-zinc-800'
+                        }`}
+                      />
+                    </div>
+
+                    <div className="sm:col-span-3">
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">Flow Direction</label>
+                      <div className="grid grid-cols-2 gap-1 p-0.5 rounded-lg bg-zinc-950/80 border border-zinc-800">
+                        <button
+                          type="button"
+                          onClick={() => setCustomRowDirection('investment')}
+                          className={`py-1 text-[11px] font-bold rounded cursor-pointer transition-all ${
+                            customRowDirection === 'investment'
+                              ? 'bg-rose-500 text-white'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          - Outflow
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCustomRowDirection('redemption')}
+                          className={`py-1 text-[11px] font-bold rounded cursor-pointer transition-all ${
+                            customRowDirection === 'redemption'
+                              ? 'bg-emerald-500 text-white'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          + Inflow
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="sm:col-span-3">
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">Amount (₹)</label>
+                      <input
+                        type="number"
+                        placeholder="10000"
+                        value={customRowAmount}
+                        onChange={e => setCustomRowAmount(parseFloat(e.target.value) || 0)}
+                        className={`w-full px-2.5 py-1.5 rounded-lg border font-mono font-bold text-xs ${
+                          customRowDirection === 'investment' ? 'text-rose-400' : 'text-emerald-400'
+                        } ${isLight ? 'bg-white border-slate-300' : 'bg-zinc-950 border-zinc-800'}`}
+                      />
+                    </div>
+
+                    <div className="sm:col-span-3">
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">Custom Note / Label</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Monthly SIP #13"
+                        value={customRowDescription}
+                        onChange={e => setCustomRowDescription(e.target.value)}
+                        className={`w-full px-2.5 py-1.5 rounded-lg border text-xs ${
+                          isLight ? 'bg-white border-slate-300' : 'bg-zinc-950 border-zinc-800'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={handleAddCustomRowSubmit}
+                      className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Row to Ledger</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Transactions Table */}
               <div className="border border-slate-800 rounded-2xl overflow-hidden text-xs">
                 <div className="grid grid-cols-12 gap-2 p-2.5 bg-black/40 font-semibold text-slate-400 border-b border-slate-800">
-                  <div className="col-span-5">Date</div>
-                  <div className="col-span-5">Cash Flow Amount (₹)</div>
-                  <div className="col-span-2 text-center">Action</div>
+                  <div className="col-span-3">Date</div>
+                  <div className="col-span-4">Custom Note / Purpose</div>
+                  <div className="col-span-3">Amount (₹)</div>
+                  <div className="col-span-2 text-center">Actions</div>
                 </div>
 
-                <div className="divide-y divide-slate-800 max-h-72 overflow-y-auto">
+                <div className="divide-y divide-slate-800 max-h-80 overflow-y-auto">
                   {xirrTransactions.map((tx, idx) => (
-                    <div key={tx.id} className="grid grid-cols-12 gap-2 p-2.5 items-center">
-                      <div className="col-span-5">
+                    <div key={tx.id} className="grid grid-cols-12 gap-2 p-2 items-center hover:bg-white/[0.02] transition-colors">
+                      {/* Date Input */}
+                      <div className="col-span-3">
                         <input
                           type="date"
                           value={tx.date}
                           onChange={e => handleUpdateXirrRow(tx.id, 'date', e.target.value)}
-                          className={`w-full px-2.5 py-1.5 rounded-lg border font-mono text-xs ${
+                          className={`w-full px-2 py-1.5 rounded-lg border font-mono text-[11px] ${
                             isLight ? 'bg-slate-50 border-slate-300' : 'bg-zinc-950 border-zinc-800'
                           }`}
                         />
                       </div>
-                      <div className="col-span-5">
+
+                      {/* Custom Description / Label */}
+                      <div className="col-span-4">
+                        <input
+                          type="text"
+                          placeholder={tx.amount < 0 ? `Installment #${idx + 1}` : 'Portfolio Value'}
+                          value={tx.description || ''}
+                          onChange={e => handleUpdateXirrRow(tx.id, 'description', e.target.value)}
+                          className={`w-full px-2 py-1.5 rounded-lg border text-[11px] ${
+                            isLight ? 'bg-slate-50 border-slate-300' : 'bg-zinc-950 border-zinc-800'
+                          }`}
+                        />
+                      </div>
+
+                      {/* Amount with Direction Toggle */}
+                      <div className="col-span-3 flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleRowDirection(tx.id)}
+                          className={`px-1.5 py-1 rounded text-[10px] font-mono font-bold cursor-pointer transition-all ${
+                            tx.amount < 0
+                              ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30'
+                              : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                          }`}
+                          title="Click to toggle between Outflow (-) and Inflow (+)"
+                        >
+                          {tx.amount < 0 ? '-' : '+'}
+                        </button>
                         <input
                           type="number"
                           placeholder="-10000 or 15000"
                           value={tx.amount}
                           onChange={e => handleUpdateXirrRow(tx.id, 'amount', parseFloat(e.target.value) || 0)}
-                          className={`w-full px-2.5 py-1.5 rounded-lg border font-mono font-bold text-xs ${
+                          className={`w-full px-2 py-1.5 rounded-lg border font-mono font-bold text-[11px] ${
                             tx.amount < 0 ? 'text-rose-400' : tx.amount > 0 ? 'text-emerald-400' : 'text-slate-400'
                           } ${isLight ? 'bg-slate-50 border-slate-300' : 'bg-zinc-950 border-zinc-800'}`}
                         />
                       </div>
-                      <div className="col-span-2 flex justify-center">
+
+                      {/* Actions: Duplicate & Delete */}
+                      <div className="col-span-2 flex items-center justify-center gap-1">
                         <button
+                          type="button"
+                          onClick={() => handleDuplicateXirrRow(tx.id)}
+                          className="p-1 text-slate-400 hover:text-blue-400 cursor-pointer transition-colors"
+                          title="Duplicate Row (+1 Month)"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => handleDeleteXirrRow(tx.id)}
                           disabled={xirrTransactions.length <= 2}
-                          className="p-1.5 text-slate-400 hover:text-rose-400 disabled:opacity-30 cursor-pointer"
+                          className="p-1 text-slate-400 hover:text-rose-400 disabled:opacity-20 cursor-pointer transition-colors"
                           title="Delete Row"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1945,76 +2610,173 @@ export const FinancialCalculatorsView: React.FC = () => {
                     </div>
                   ))}
                 </div>
+
+                {/* Ledger Summary Sub-bar */}
+                <div className="p-2.5 bg-black/40 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono">
+                  <div className="flex items-center gap-3">
+                    <span className="text-slate-400">
+                      Invested: <strong className="text-rose-400">{formatINR(xirrResult.totalInvested)}</strong>
+                    </span>
+                    <span className="text-slate-400">
+                      Returns: <strong className="text-emerald-400">{formatINR(xirrResult.totalReceived)}</strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCopyXirrTable}
+                      className="text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      {xirrCopySuccess ? (
+                        <>
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                          <span className="text-emerald-400">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Copy Ledger</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
 
+              {/* Action Buttons */}
               <div className="flex items-center gap-3 pt-2">
                 <button
                   id="btn-calc-xirr"
+                  type="button"
                   onClick={() => handleCalculate('xirr')}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow cursor-pointer"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow cursor-pointer transition-all flex items-center justify-center gap-1.5"
                 >
-                  Calculate XIRR
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span>Re-Calculate XIRR Return</span>
                 </button>
                 <button
                   id="btn-reset-xirr"
+                  type="button"
                   onClick={() => handleReset('xirr')}
-                  className="py-2.5 px-4 rounded-xl border border-zinc-700 text-xs font-semibold text-slate-300 cursor-pointer"
+                  className="py-2.5 px-4 rounded-xl border border-zinc-700 text-xs font-semibold text-slate-300 hover:bg-zinc-800/80 cursor-pointer transition-all"
                 >
                   Reset Ledger
                 </button>
               </div>
             </div>
 
-            {/* Results */}
+            {/* Results Column */}
             <div className={`lg:col-span-5 p-5 sm:p-6 rounded-3xl border flex flex-col justify-between space-y-4 ${
               isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-zinc-900/80 border-zinc-800 text-white'
             }`}>
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Annualized XIRR Return</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Annualized XIRR Return
+                  </span>
+                  {xirrResult.isValid && xirrResult.xirr !== null && (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                      xirrResult.xirr >= 12
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : xirrResult.xirr > 0
+                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                        : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                    }`}>
+                      {xirrResult.xirr >= 15 ? 'High Alpha' : xirrResult.xirr >= 10 ? 'Market Beating' : xirrResult.xirr > 0 ? 'Positive Return' : 'Capital Loss'}
+                    </span>
+                  )}
+                </div>
+
                 {xirrResult.isValid && xirrResult.xirr !== null ? (
-                  <div className="text-4xl font-black font-mono text-amber-400 mt-1">
-                    {formatPercent(xirrResult.xirr, 2)}
+                  <div className="mt-2">
+                    <div className="text-4xl sm:text-5xl font-black font-mono text-amber-400 tracking-tight">
+                      {formatPercent(xirrResult.xirr, 2)}
+                    </div>
+                    <div className="text-xs text-slate-400 mt-1">
+                      Compounded annualized rate accounting for exact dates and cash flow intervals.
+                    </div>
                   </div>
                 ) : (
-                  <div className="text-xl font-bold font-mono text-rose-400 mt-2">
-                    {xirrResult.errorMessage || 'Invalid Cash Flows'}
+                  <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-mono mt-3">
+                    <AlertTriangle className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+                    <span>{xirrResult.errorMessage || 'Invalid Cash Flows. Ensure both negative (outflow) and positive (inflow) flows exist.'}</span>
                   </div>
                 )}
-                <div className="text-xs text-slate-400 mt-1">
-                  Accurately factors time-weighted irregularly timed investments and returns.
-                </div>
               </div>
 
+              {/* Detailed Breakdown Cards */}
               <div className="space-y-2.5 pt-4 border-t border-slate-800 text-xs">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2.5 rounded-xl bg-black/20 border border-white/5">
+                    <span className="text-[11px] text-slate-400 block">Absolute ROI</span>
+                    <span className={`font-mono font-bold text-sm ${xirrAbsoluteReturn >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {xirrAbsoluteReturn >= 0 ? '+' : ''}{formatPercent(xirrAbsoluteReturn, 2)}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-black/20 border border-white/5">
+                    <span className="text-[11px] text-slate-400 block">Horizon / Duration</span>
+                    <span className="font-mono font-bold text-sm text-slate-200">
+                      {xirrDuration.years} Yrs ({xirrDuration.days}d)
+                    </span>
+                  </div>
+                </div>
+
                 <div className="flex justify-between p-2.5 rounded-xl bg-black/20 border border-white/5">
                   <span className="text-slate-400">Total Invested (Outflow):</span>
                   <span className="font-mono font-bold text-rose-400">{formatINR(xirrResult.totalInvested)}</span>
                 </div>
                 <div className="flex justify-between p-2.5 rounded-xl bg-black/20 border border-white/5">
-                  <span className="text-slate-400">Total Received (Inflow):</span>
+                  <span className="text-slate-400">Total Received / Value (Inflow):</span>
                   <span className="font-mono font-bold text-emerald-400">{formatINR(xirrResult.totalReceived)}</span>
                 </div>
                 <div className="flex justify-between p-2.5 rounded-xl bg-black/20 border border-white/5">
-                  <span className="text-slate-400">Net Gain / Loss:</span>
+                  <span className="text-slate-400">Net Profit / Gain:</span>
                   <span className={`font-mono font-bold ${xirrResult.netGain >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {xirrResult.netGain >= 0 ? '+' : ''}{formatINR(xirrResult.netGain)}
                   </span>
                 </div>
               </div>
+
+              {/* Ratio Bar */}
+              {xirrResult.totalInvested > 0 && (
+                <div className="pt-2">
+                  <div className="flex justify-between text-[10px] font-mono text-slate-400 mb-1">
+                    <span>Invested ({Math.round((xirrResult.totalInvested / Math.max(1, xirrResult.totalInvested + Math.max(0, xirrResult.netGain))) * 100)}%)</span>
+                    <span>Gain ({Math.max(0, Math.round((Math.max(0, xirrResult.netGain) / Math.max(1, xirrResult.totalInvested + Math.max(0, xirrResult.netGain))) * 100))}%)</span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden flex">
+                    <div
+                      className="bg-rose-500 h-full"
+                      style={{
+                        width: `${Math.min(100, Math.round((xirrResult.totalInvested / Math.max(1, xirrResult.totalInvested + Math.max(0, xirrResult.netGain))) * 100))}%`
+                      }}
+                    />
+                    <div
+                      className="bg-emerald-500 h-full"
+                      style={{
+                        width: `${Math.max(0, Math.round((Math.max(0, xirrResult.netGain) / Math.max(1, xirrResult.totalInvested + Math.max(0, xirrResult.netGain))) * 100))}%`
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-5 rounded-2xl bg-zinc-950/60 border border-zinc-800 text-xs space-y-1.5 font-mono text-slate-300">
-              <h4 className="font-bold uppercase text-amber-400 mb-2">How It Is Calculated</h4>
+              <h4 className="font-bold uppercase text-amber-400 mb-2">How XIRR Is Calculated</h4>
               <p>Solves for rate &apos;r&apos; in the Net Present Value equation:</p>
-              <p className="text-amber-400">Σ [ C_i / (1 + r)^((d_i - d_0)/365) ] = 0</p>
-              <p>Uses Newton-Raphson numerical root-finding algorithm.</p>
+              <p className="text-amber-400 font-bold">Σ [ C_i / (1 + r)^((d_i - d_0)/365) ] = 0</p>
+              <p>Where C_i are cash flow amounts and d_i are respective dates. Solved deterministically using the Newton-Raphson numerical root-finding algorithm with bisection fallback.</p>
             </div>
             <div className="p-5 rounded-2xl bg-zinc-950/60 border border-zinc-800 text-xs space-y-1.5 text-slate-300">
-              <h4 className="font-bold uppercase text-emerald-400 mb-2">Simple Explanation</h4>
+              <h4 className="font-bold uppercase text-emerald-400 mb-2">Monthly, Quarterly & Yearly Cadences</h4>
               <p>
-                XIRR (Extended Internal Rate of Return) is the gold standard for calculating annualized return on mutual funds or stock portfolios where investments and withdrawals happen at irregular intervals.
+                <strong>Monthly (*12):</strong> Perfect for monthly SIPs. 12 recurring installments per calendar year.<br />
+                <strong>Quarterly (*4):</strong> Ideal for advance tax, quarterly mutual fund reinvestments, or corporate dividends.<br />
+                <strong>Yearly (*N):</strong> Best for annual bonuses, PPF deposits, insurance premiums, or lump-sum rebalancings.<br />
+                <strong>Custom rows:</strong> Easily add any irregular dates or dividend payouts anytime using &quot;Customize &amp; Add Row&quot;.
               </p>
             </div>
           </div>

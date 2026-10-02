@@ -7,6 +7,8 @@ export interface CashFlowTransaction {
   id: string;
   date: string; // YYYY-MM-DD
   amount: number; // Negative for investment, positive for returns/redemption
+  description?: string; // Optional label e.g. "Monthly SIP #1", "Dividend", "Current Portfolio Value"
+  type?: 'investment' | 'redemption' | 'custom';
 }
 
 export interface XIRRResult {
