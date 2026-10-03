@@ -1221,7 +1221,7 @@ function getGeminiClient(): GoogleGenAI | null {
 
 app.post('/api/finscore/ai-advisor', async (req, res) => {
   try {
-    const { profile, result, question, history, model, rolePreset } = req.body || {};
+    const { profile, result, question, history, model, rolePreset, language } = req.body || {};
 
     const profileName = profile?.name || 'Friend';
     const income = profile?.monthlyIncome || 50000;
@@ -1248,6 +1248,40 @@ app.post('/api/finscore/ai-advisor', async (req, res) => {
       rolePersona = 'You are FinScore Wealth Accelerator AI, an aggressive growth and early financial independence (FIRE) strategist focused on index investing, SIP compounding, asset allocation, and milestone acceleration.';
     }
 
+    // AI Chat language configuration (Language chosen in settings applies specifically to AI chat while website remains English)
+    const langCode = (language || 'en-US').toLowerCase();
+    const langMap: Record<string, string> = {
+      ta: 'Tamil (தமிழ்)',
+      hi: 'Hindi (हिन्दी)',
+      te: 'Telugu (తెలుగు)',
+      kn: 'Kannada (ಕನ್ನಡ)',
+      ml: 'Malayalam (മലയാളം)',
+      bn: 'Bengali (বাংলা)',
+      mr: 'Marathi (मराठी)',
+      gu: 'Gujarati (ગુજરાતી)',
+      pa: 'Punjabi (ਪੰਜਾਬੀ)',
+      or: 'Odia (ଓଡ଼ିଆ)',
+      ur: 'Urdu (اردو)',
+      as: 'Assamese (অসমীয়া)',
+      es: 'Spanish (Español)',
+      fr: 'French (Français)',
+      de: 'German (Deutsch)',
+      ja: 'Japanese (日本語)',
+      zh: 'Mandarin Chinese (简体中文)',
+      ar: 'Arabic (العربية)',
+      pt: 'Portuguese (Português)',
+      ru: 'Russian (Русский)',
+      it: 'Italian (Italiano)',
+      ko: 'Korean (한국어)',
+    };
+    const targetLang = langMap[langCode] || (langCode.startsWith('ta') ? 'Tamil (தமிழ்)' : langCode.startsWith('hi') ? 'Hindi (हिन्दी)' : null);
+    const languageInstruction = targetLang
+      ? `\n\nCRITICAL USER LANGUAGE REQUIREMENT:
+The user has configured their AI Assistant Language to: ${targetLang}.
+While the entire website dashboard and interface remain in English, you MUST provide your response, explanations, guidance, and recommendations completely in ${targetLang}.
+Write naturally and fluently in ${targetLang}, ensuring financial terms (e.g. SIP, EMI, Emergency Fund, FinScore) are clearly explained.`
+      : '';
+
     const systemInstruction = `${rolePersona}
 The user is viewing their comprehensive FinScore™ Financial Health Dashboard.
 Verified Profile Data:
@@ -1266,7 +1300,7 @@ Instructions:
 3. Use formatted markdown with bold highlights, clear bullet points, or concise numbered action steps.
 4. Maintain full multi-turn conversational context when answering follow-up queries.
 5. Conclude responses with an empowering, constructive takeaway or 1 suggested high-impact next question.
-6. Clearly clarify that all insights are for financial health education and planning, not formal SEBI/SEC regulated security solicitations.`;
+6. Clearly clarify that all insights are for financial health education and planning, not formal SEBI/SEC regulated security solicitations.${languageInstruction}`;
 
     const ai = getGeminiClient();
 
@@ -1379,8 +1413,36 @@ To optimize your question regarding "${question}":
 // -------------------------------------------------------------
 app.post('/api/fire/ai-advisor', async (req, res) => {
   try {
-    const { calculationResults, userQuestion } = req.body || {};
+    const { calculationResults, userQuestion, language } = req.body || {};
     const cr = calculationResults || {};
+
+    const langCode = (language || 'en-US').toLowerCase();
+    const langMap: Record<string, string> = {
+      ta: 'Tamil (தமிழ்)',
+      hi: 'Hindi (हिन्दी)',
+      te: 'Telugu (తెలుగు)',
+      kn: 'Kannada (ಕನ್ನಡ)',
+      ml: 'Malayalam (മലയാളം)',
+      bn: 'Bengali (বাংলা)',
+      mr: 'Marathi (मराठी)',
+      gu: 'Gujarati (ગુજરાતી)',
+      pa: 'Punjabi (ਪੰਜਾਬੀ)',
+      or: 'Odia (ଓଡ଼ିଆ)',
+      ur: 'Urdu (اردو)',
+      as: 'Assamese (অসমীয়া)',
+      es: 'Spanish (Español)',
+      fr: 'French (Français)',
+      de: 'German (Deutsch)',
+      ja: 'Japanese (日本語)',
+      zh: 'Mandarin Chinese (简体中文)',
+      ar: 'Arabic (العربية)',
+      pt: 'Portuguese (Português)',
+      ru: 'Russian (Русский)',
+      it: 'Italian (Italiano)',
+      ko: 'Korean (한국어)',
+    };
+    const targetLang = langMap[langCode] || (langCode.startsWith('ta') ? 'Tamil (தமிழ்)' : langCode.startsWith('hi') ? 'Hindi (हिन्दी)' : null);
+    const langRule = targetLang ? `\n6. CRITICAL LANGUAGE: The user has selected ${targetLang} for AI chat. Generate your entire explanation response in ${targetLang}.` : '';
 
     const fireNum = cr.fireNumber ? `₹${cr.fireNumber.toLocaleString('en-IN')}` : '₹1,50,00,000';
     const fireWords = cr.displayPhrases?.fireNumberWords || '₹1.5 Crore';
@@ -1423,7 +1485,7 @@ STRICT RULES:
    - Estimated Years to achieve FIRE: ~${estYearsToFire} years
 3. Keep the language simple, encouraging, beginner-friendly, and concise (under 250 words).
 4. Use Indian Rupees (₹), Lakhs, and Crores.
-5. Emphasize that these are estimated projections based on assumptions, not guarantees.`
+5. Emphasize that these are estimated projections based on assumptions, not guarantees.${langRule}`
         : `You are an AI Personal Finance Adviser for Indian investors.
 Provide a clear, encouraging, and beginner-friendly explanation of the user's calculated FIRE (Financial Independence, Retire Early) and Financial Freedom results.
 
@@ -1447,7 +1509,7 @@ STRICT RULES:
    - Explain how their ${monthlyInv}/month compounding at ${retRate}% will grow into ${projPortWords}.
    - Provide 2-3 practical, beginner-friendly tips (e.g., maintaining an emergency fund, staying consistent with SIPs, step-up SIP with salary increases).
 4. Use simple Indian financial terminology (₹, Lakhs, Crores, SIP).
-5. Tone: Warm, empowering, and objective.`;
+5. Tone: Warm, empowering, and objective.${langRule}`;
 
       try {
         const response = await ai.models.generateContent({

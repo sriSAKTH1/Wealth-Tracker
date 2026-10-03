@@ -50,7 +50,8 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   FileSpreadsheet,
-  ExternalLink
+  ExternalLink,
+  Tag
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -75,7 +76,9 @@ import {
 import { useFinance } from '../../context/FinanceContext';
 import {
   FinScoreProfile,
+  FinScoreIncomeSource,
   FinScoreExpenseCategory,
+  FinancialPriorityLevel,
   FinScoreLoan,
   FinScoreInsurance,
   FinScoreEmergency,
@@ -86,6 +89,7 @@ import {
 } from '../../types';
 import {
   INITIAL_FINSCORE_PROFILE,
+  INITIAL_FINSCORE_INCOMES,
   INITIAL_FINSCORE_EXPENSES,
   INITIAL_FINSCORE_LOANS,
   INITIAL_FINSCORE_INSURANCE,
@@ -93,6 +97,7 @@ import {
   INITIAL_FINSCORE_GOALS,
   INITIAL_FINSCORE_HISTORY,
   EMPTY_FINSCORE_PROFILE,
+  EMPTY_FINSCORE_INCOMES,
   EMPTY_FINSCORE_EXPENSES,
   EMPTY_FINSCORE_LOANS,
   EMPTY_FINSCORE_INSURANCE,
@@ -302,6 +307,7 @@ export const FinScoreView: React.FC = () => {
 
   // Core Financial State
   const [profile, setProfile] = useState<FinScoreProfile>(INITIAL_FINSCORE_PROFILE);
+  const [incomeSources, setIncomeSources] = useState<FinScoreIncomeSource[]>(INITIAL_FINSCORE_INCOMES);
   const [expenses, setExpenses] = useState<FinScoreExpenseCategory[]>(INITIAL_FINSCORE_EXPENSES);
   const [loans, setLoans] = useState<FinScoreLoan[]>(INITIAL_FINSCORE_LOANS);
   const [insurance, setInsurance] = useState<FinScoreInsurance>(INITIAL_FINSCORE_INSURANCE);
@@ -309,6 +315,13 @@ export const FinScoreView: React.FC = () => {
   const [goals, setGoals] = useState<FinScoreGoal[]>(INITIAL_FINSCORE_GOALS);
   const [adminConfig, setAdminConfig] = useState<FinScoreAdminRuleConfig>(DEFAULT_ADMIN_CONFIG);
   const [scoreHistory, setScoreHistory] = useState<FinScoreHistoryPoint[]>(INITIAL_FINSCORE_HISTORY);
+
+  // Custom Income Source State (Step 2)
+  const [editingIncomeId, setEditingIncomeId] = useState<string | null>(null);
+  const [isAddingIncome, setIsAddingIncome] = useState(false);
+  const [newIncomeSource, setNewIncomeSource] = useState('');
+  const [newIncomeAmount, setNewIncomeAmount] = useState('');
+  const [newIncomePriority, setNewIncomePriority] = useState<FinancialPriorityLevel>('essential');
 
   // New Goal / Loan Form States
   const [newGoalName, setNewGoalName] = useState('');
@@ -332,7 +345,7 @@ export const FinScoreView: React.FC = () => {
   const [isAddingExpenseCat, setIsAddingExpenseCat] = useState(false);
   const [newCustomExpenseName, setNewCustomExpenseName] = useState('');
   const [newCustomExpenseAmount, setNewCustomExpenseAmount] = useState('');
-  const [newCustomExpenseIsEssential, setNewCustomExpenseIsEssential] = useState(false);
+  const [newCustomExpensePriority, setNewCustomExpensePriority] = useState<FinancialPriorityLevel>('essential');
 
   // Loan Tenure & Closure Calculator Helper
   const getLoanClosureInfo = (remainingMonths: number) => {
@@ -353,10 +366,11 @@ export const FinScoreView: React.FC = () => {
   const INITIAL_FINSCORE_INVESTMENTS: Array<{
     id: string;
     name: string;
-    category: 'Equity / Stocks' | 'Mutual Funds & SIP' | 'Fixed Deposit / Bonds' | 'Real Estate' | 'Gold & Precious Metals' | 'Retirement (PF/NPS)' | 'Cash & Liquid';
+    category: 'Equity / Stocks' | 'Mutual Funds & SIP' | 'Fixed Deposit / Bonds' | 'Real Estate' | 'Gold & Precious Metals' | 'Retirement (PF/NPS)' | 'Cash & Liquid' | 'Other' | (string & {});
     currentValue: number;
     monthlyContribution: number;
     expectedReturnRate: number;
+    priority?: FinancialPriorityLevel;
     nav?: number;
     units?: number;
     purchaseNav?: number;
@@ -368,6 +382,7 @@ export const FinScoreView: React.FC = () => {
       currentValue: 450000, 
       monthlyContribution: 15000, 
       expectedReturnRate: 12.5,
+      priority: 'moderate',
       nav: 142.50,
       units: 3157.89,
       purchaseNav: 118.20
@@ -379,14 +394,15 @@ export const FinScoreView: React.FC = () => {
       currentValue: 240000, 
       monthlyContribution: 8000, 
       expectedReturnRate: 14.5,
+      priority: 'moderate',
       nav: 82.45,
       units: 2910.85,
       purchaseNav: 64.10
     },
-    { id: 'inv-3', name: 'Direct Bluechip Stocks', category: 'Equity / Stocks', currentValue: 280000, monthlyContribution: 5000, expectedReturnRate: 13 },
-    { id: 'inv-4', name: 'Corporate & Bank Fixed Deposits', category: 'Fixed Deposit / Bonds', currentValue: 200000, monthlyContribution: 0, expectedReturnRate: 7.2 },
-    { id: 'inv-5', name: 'Employee Provident Fund (EPF/PPF)', category: 'Retirement (PF/NPS)', currentValue: 520000, monthlyContribution: 7500, expectedReturnRate: 8.1 },
-    { id: 'inv-6', name: 'Digital Gold / Sovereign Gold Bonds', category: 'Gold & Precious Metals', currentValue: 120000, monthlyContribution: 2500, expectedReturnRate: 9 },
+    { id: 'inv-3', name: 'Direct Bluechip Stocks', category: 'Equity / Stocks', currentValue: 280000, monthlyContribution: 5000, expectedReturnRate: 13, priority: 'discretionary' },
+    { id: 'inv-4', name: 'Corporate & Bank Fixed Deposits', category: 'Fixed Deposit / Bonds', currentValue: 200000, monthlyContribution: 0, expectedReturnRate: 7.2, priority: 'essential' },
+    { id: 'inv-5', name: 'Employee Provident Fund (EPF/PPF)', category: 'Retirement (PF/NPS)', currentValue: 520000, monthlyContribution: 7500, expectedReturnRate: 8.1, priority: 'essential' },
+    { id: 'inv-6', name: 'Digital Gold / Sovereign Gold Bonds', category: 'Gold & Precious Metals', currentValue: 120000, monthlyContribution: 2500, expectedReturnRate: 9, priority: 'moderate' },
   ];
 
   // Investments & Assets state (Step 6 before Future Goals)
@@ -398,6 +414,7 @@ export const FinScoreView: React.FC = () => {
   const [newInvValue, setNewInvValue] = useState('');
   const [newInvMonthly, setNewInvMonthly] = useState('');
   const [newInvReturn, setNewInvReturn] = useState('12');
+  const [newInvPriority, setNewInvPriority] = useState<FinancialPriorityLevel>('moderate');
   const [newInvNav, setNewInvNav] = useState('');
   const [newInvUnits, setNewInvUnits] = useState('');
   const [newInvPurchaseNav, setNewInvPurchaseNav] = useState('');
@@ -1133,6 +1150,7 @@ Strategic Focus: ${result.biggestPriority}`;
   // Reset FinScore: Completely clear ALL information across profile, expenses, loans, insurance, emergency, investments, and goals
   const handleResetData = () => {
     setProfile(EMPTY_FINSCORE_PROFILE);
+    setIncomeSources(EMPTY_FINSCORE_INCOMES);
     setExpenses(EMPTY_FINSCORE_EXPENSES);
     setLoans([]);
     setInsurance(EMPTY_FINSCORE_INSURANCE);
@@ -1156,6 +1174,7 @@ Strategic Focus: ${result.biggestPriority}`;
   // Load benchmark sample profile & data for demo / testing
   const handleLoadSampleData = () => {
     setProfile(INITIAL_FINSCORE_PROFILE);
+    setIncomeSources(INITIAL_FINSCORE_INCOMES);
     setExpenses(INITIAL_FINSCORE_EXPENSES);
     setLoans(INITIAL_FINSCORE_LOANS);
     setInsurance(INITIAL_FINSCORE_INSURANCE);
@@ -1183,6 +1202,16 @@ Strategic Focus: ${result.biggestPriority}`;
   // Save profile from modal
   const handleSaveProfileData = (targetTab?: FinScoreTab) => {
     setProfile(tempProfile);
+    if (tempProfile.monthlyIncome !== profile.monthlyIncome) {
+      setIncomeSources(prev => {
+        if (prev.length === 0) {
+          return [{ id: 'inc-1', source: 'Primary Job / Salary', amount: tempProfile.monthlyIncome, priority: 'essential', isEssential: true }];
+        }
+        const otherTotal = prev.slice(1).reduce((s, i) => s + (Number(i.amount) || 0), 0);
+        const primaryAmt = Math.max(0, tempProfile.monthlyIncome - otherTotal);
+        return prev.map((item, idx) => idx === 0 ? { ...item, amount: primaryAmt } : item);
+      });
+    }
     setShowAddProfileModal(false);
     showToast(`Profile updated for ${tempProfile.name || 'User'}!`);
     if (targetTab) {
@@ -1303,6 +1332,7 @@ Strategic Focus: ${result.biggestPriority}`;
       currentValue: computedVal,
       monthlyContribution: parseFloat(newInvMonthly) || 0,
       expectedReturnRate: parseFloat(newInvReturn) || 12,
+      priority: newInvPriority,
       nav: navNum,
       units: unitsNum,
       purchaseNav: purchaseNavNum,
@@ -1316,9 +1346,144 @@ Strategic Focus: ${result.biggestPriority}`;
     setNewInvUnits('');
     setNewInvPurchaseNav('');
     setCustomInvCategory('');
+    setNewInvPriority('moderate');
     setNewInvCategory('Mutual Funds & SIP');
     showToast(`Added ${newInv.name} (${finalCategory}) to portfolio!`);
   };
+
+  const handleUpdateInvestmentPriority = (id: string, newPriority: FinancialPriorityLevel) => {
+    setFinScoreInvestments(prev => prev.map(item => item.id === id ? { ...item, priority: newPriority } : item));
+  };
+
+  // Income Sources Handlers
+  const handleUpdateIncomeAmount = (id: string, newAmount: number) => {
+    setIncomeSources(prev => {
+      const updated = prev.map(item => item.id === id ? { ...item, amount: newAmount } : item);
+      const total = updated.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      setProfile(p => ({ ...p, monthlyIncome: total }));
+      return updated;
+    });
+  };
+
+  const handleUpdateIncomePriority = (id: string, newPriority: FinancialPriorityLevel) => {
+    setIncomeSources(prev => prev.map(item => item.id === id ? {
+      ...item,
+      priority: newPriority,
+      isEssential: newPriority === 'essential'
+    } : item));
+  };
+
+  const handleUpdateIncomeName = (id: string, newName: string) => {
+    setIncomeSources(prev => prev.map(item => item.id === id ? { ...item, source: newName } : item));
+  };
+
+  const handleDeleteIncomeSource = (id: string) => {
+    if (incomeSources.length <= 1) {
+      showToast('At least one income source must be maintained.');
+      return;
+    }
+    setIncomeSources(prev => {
+      const updated = prev.filter(item => item.id !== id);
+      const total = updated.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      setProfile(p => ({ ...p, monthlyIncome: total }));
+      return updated;
+    });
+  };
+
+  const handleAddIncomeSource = () => {
+    if (!newIncomeSource.trim()) return;
+    const amt = parseFloat(newIncomeAmount) || 0;
+    const newInc: FinScoreIncomeSource = {
+      id: `inc-${Date.now()}`,
+      source: newIncomeSource.trim(),
+      amount: amt,
+      priority: newIncomePriority,
+      isEssential: newIncomePriority === 'essential',
+    };
+    setIncomeSources(prev => {
+      const updated = [...prev, newInc];
+      const total = updated.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      setProfile(p => ({ ...p, monthlyIncome: total }));
+      return updated;
+    });
+    setNewIncomeSource('');
+    setNewIncomeAmount('');
+    setNewIncomePriority('essential');
+    setIsAddingIncome(false);
+    showToast(`Added income source "${newInc.source}" (${newInc.priority})!`);
+  };
+
+  // Expense Handlers
+  const handleUpdateExpensePriority = (id: string, newPriority: FinancialPriorityLevel) => {
+    setExpenses(prev => prev.map(item => item.id === id ? {
+      ...item,
+      priority: newPriority,
+      isEssential: newPriority === 'essential'
+    } : item));
+  };
+
+  const handleDeleteExpenseCategory = (id: string) => {
+    if (expenses.length <= 1) {
+      showToast('At least one expense category must be maintained.');
+      return;
+    }
+    setExpenses(prev => prev.filter(item => item.id !== id));
+  };
+
+  // Memoized Income and Expense Breakdown Tiers
+  const essentialIncome = useMemo(() => {
+    return incomeSources
+      .filter(i => i.priority === 'essential' || (i.priority === undefined && i.isEssential))
+      .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+  }, [incomeSources]);
+
+  const moderateIncome = useMemo(() => {
+    return incomeSources
+      .filter(i => i.priority === 'moderate')
+      .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+  }, [incomeSources]);
+
+  const discretionaryIncome = useMemo(() => {
+    return incomeSources
+      .filter(i => i.priority === 'discretionary' || (!i.priority && !i.isEssential))
+      .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+  }, [incomeSources]);
+
+  const essentialExpenses = useMemo(() => {
+    return expenses
+      .filter(e => e.priority === 'essential' || (e.priority === undefined && e.isEssential))
+      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  }, [expenses]);
+
+  const moderateExpenses = useMemo(() => {
+    return expenses
+      .filter(e => e.priority === 'moderate')
+      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  }, [expenses]);
+
+  const discretionaryExpenses = useMemo(() => {
+    return expenses
+      .filter(e => e.priority === 'discretionary' || (!e.priority && !e.isEssential))
+      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  }, [expenses]);
+
+  const essentialAssets = useMemo(() => {
+    return finScoreInvestments
+      .filter(item => item.priority === 'essential')
+      .reduce((sum, item) => sum + (Number(item.currentValue) || 0), 0);
+  }, [finScoreInvestments]);
+
+  const moderateAssets = useMemo(() => {
+    return finScoreInvestments
+      .filter(item => item.priority === 'moderate' || item.priority === undefined)
+      .reduce((sum, item) => sum + (Number(item.currentValue) || 0), 0);
+  }, [finScoreInvestments]);
+
+  const discretionaryAssets = useMemo(() => {
+    return finScoreInvestments
+      .filter(item => item.priority === 'discretionary')
+      .reduce((sum, item) => sum + (Number(item.currentValue) || 0), 0);
+  }, [finScoreInvestments]);
 
   const handleDeleteInvestment = (id: string) => {
     setFinScoreInvestments(prev => prev.filter(item => item.id !== id));
@@ -1391,6 +1556,7 @@ Strategic Focus: ${result.biggestPriority}`;
           history: updatedHistory,
           model: selectedAiModel,
           rolePreset: selectedRolePreset,
+          language: localStorage.getItem('fix_settings_language') || 'en-US',
         }),
       });
 
@@ -3442,7 +3608,17 @@ Strategic Focus: ${result.biggestPriority}`;
                 id="profile-monthly-income"
                 label={`Monthly Net Income / Salary (${currSym})`}
                 value={profile.monthlyIncome}
-                onChange={val => setProfile({ ...profile, monthlyIncome: val })}
+                onChange={val => {
+                  setProfile(prev => ({ ...prev, monthlyIncome: val }));
+                  setIncomeSources(prev => {
+                    if (prev.length === 0) {
+                      return [{ id: 'inc-1', source: 'Primary Job / Salary', amount: val, priority: 'essential', isEssential: true }];
+                    }
+                    const otherTotal = prev.slice(1).reduce((s, i) => s + (Number(i.amount) || 0), 0);
+                    const primaryAmt = Math.max(0, val - otherTotal);
+                    return prev.map((item, idx) => idx === 0 ? { ...item, amount: primaryAmt } : item);
+                  });
+                }}
                 currSym={currSym}
                 isLight={isLight}
                 placeholder="50000"
@@ -3532,11 +3708,17 @@ Strategic Focus: ${result.biggestPriority}`;
               <div className="text-xl font-extrabold font-mono mt-1 text-blue-400">
                 {currSym}{(profile.monthlyIncome ?? 0).toLocaleString()}
               </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">
+                {incomeSources.length} Active Stream{incomeSources.length !== 1 ? 's' : ''}
+              </div>
             </div>
             <div className={`p-4 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
               <span className="text-[11px] font-bold text-slate-400 uppercase">Total Expenses</span>
               <div className="text-xl font-extrabold font-mono mt-1 text-rose-400">
                 {currSym}{(result.metrics.totalExpenses ?? 0).toLocaleString()}
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">
+                {expenses.length} Categories Tracked
               </div>
             </div>
             <div className={`p-4 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
@@ -3544,94 +3726,458 @@ Strategic Focus: ${result.biggestPriority}`;
               <div className="text-xl font-extrabold font-mono mt-1 text-emerald-400">
                 {currSym}{(result.metrics.monthlySavings ?? 0).toLocaleString()}
               </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">
+                {result.metrics.savingsRatio}% of income saved
+              </div>
             </div>
           </div>
 
-          {/* Expense Category Inputs */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Monthly Category Expense Breakdown
-              </h4>
-              <span className="text-[11px] text-slate-500">
-                Type amount to see formatted word value below
-              </span>
+          {/* ESSENTIAL CASH FLOW RESILIENCE & PRIORITY SHIELD MATRIX */}
+          <div className={`p-5 rounded-2xl border space-y-3 ${
+            isLight ? 'bg-gradient-to-r from-emerald-50/60 via-blue-50/40 to-slate-50 border-emerald-200 text-slate-900' : 'bg-gradient-to-r from-emerald-950/30 via-blue-950/20 to-slate-900 border-emerald-500/30 text-white'
+          }`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  Essential Cash Flow Resilience Shield
+                </h4>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full border ${
+                  essentialIncome >= essentialExpenses
+                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                    : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                }`}>
+                  Essential Coverage: {essentialExpenses > 0 ? Math.round((essentialIncome / essentialExpenses) * 100) : 100}%
+                </span>
+              </div>
             </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300">
+              Comparing your guaranteed base income against mandatory living costs (rent, food, utilities, loan EMIs). If secondary income drops, this buffer keeps you fully solvent:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-xs">
+                <div className="text-[10px] font-bold uppercase text-slate-400">Essential Inflows (Base)</div>
+                <div className="text-base font-extrabold font-mono text-emerald-500 mt-0.5">
+                  {currSym}{essentialIncome.toLocaleString()}/mo
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5">
+                  {profile.monthlyIncome > 0 ? Math.round((essentialIncome / profile.monthlyIncome) * 100) : 0}% of total income
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-xs">
+                <div className="text-[10px] font-bold uppercase text-slate-400">Essential Outflows (Needs)</div>
+                <div className="text-base font-extrabold font-mono text-rose-400 mt-0.5">
+                  {currSym}{essentialExpenses.toLocaleString()}/mo
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5">
+                  {result.metrics.totalExpenses > 0 ? Math.round((essentialExpenses / result.metrics.totalExpenses) * 100) : 0}% of total expenses
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-xs">
+                <div className="text-[10px] font-bold uppercase text-slate-400">Core Safety Margin</div>
+                <div className={`text-base font-extrabold font-mono mt-0.5 ${
+                  essentialIncome >= essentialExpenses ? 'text-emerald-500' : 'text-amber-500'
+                }`}>
+                  {essentialIncome >= essentialExpenses ? '+' : ''}{currSym}{(essentialIncome - essentialExpenses).toLocaleString()}/mo
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5">
+                  {essentialIncome >= essentialExpenses ? 'Safe even if side incomes halt' : 'Under-covered by base salary'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* STEP 2A: MONTHLY INCOME SOURCES & PRIORITY TAGGING */}
+          <div className="space-y-3 pt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <ArrowDownLeft className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Monthly Income Streams & Priority Tagging ({incomeSources.length})</span>
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Tag each income stream as <strong>Essential</strong> (guaranteed salary), <strong>Moderate</strong> (freelance / rental), or <strong>Discretionary</strong> (bonus / dividends).
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                  Essential: {currSym}{essentialIncome.toLocaleString()}
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                  Moderate: {currSym}{moderateIncome.toLocaleString()}
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                  Discretionary: {currSym}{discretionaryIncome.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {expenses.map((exp, idx) => (
-                <div
-                  key={exp.id}
-                  className={`p-3.5 rounded-2xl border transition-all ${
-                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/50 border-slate-800/80'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1.5 flex-1 mr-2 min-w-0">
-                      {editingExpenseCatId === exp.id ? (
-                        <input
-                          type="text"
-                          value={exp.category}
-                          onChange={e => {
-                            const val = e.target.value;
-                            setExpenses(prev => prev.map((item, i) => i === idx ? { ...item, category: val } : item));
-                          }}
-                          onBlur={() => setEditingExpenseCatId(null)}
-                          onKeyDown={e => { if (e.key === 'Enter') setEditingExpenseCatId(null); }}
-                          autoFocus
-                          placeholder="Type Category Name..."
-                          className={`w-full px-2 py-0.5 rounded text-xs font-semibold border ${
-                            isLight ? 'bg-white border-blue-500 text-slate-900' : 'bg-slate-900 border-blue-500 text-white'
-                          }`}
-                        />
-                      ) : (
+              {incomeSources.map((inc, idx) => {
+                const priority = inc.priority || (inc.isEssential ? 'essential' : 'moderate');
+                return (
+                  <div
+                    key={inc.id}
+                    className={`p-3.5 rounded-2xl border transition-all ${
+                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/50 border-slate-800/80'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5 flex-1 mr-2 min-w-0">
+                        {editingIncomeId === inc.id ? (
+                          <input
+                            type="text"
+                            value={inc.source}
+                            onChange={e => handleUpdateIncomeName(inc.id, e.target.value)}
+                            onBlur={() => setEditingIncomeId(null)}
+                            onKeyDown={e => { if (e.key === 'Enter') setEditingIncomeId(null); }}
+                            autoFocus
+                            placeholder="Type Income Name..."
+                            className={`w-full px-2 py-0.5 rounded text-xs font-semibold border ${
+                              isLight ? 'bg-white border-blue-500 text-slate-900' : 'bg-slate-900 border-blue-500 text-white'
+                            }`}
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setEditingIncomeId(inc.id)}
+                            className="font-semibold text-xs text-left hover:text-blue-500 transition-colors flex items-center gap-1.5 group/editinc truncate cursor-pointer"
+                            title="Click to rename income source"
+                          >
+                            <span className="truncate">{inc.source}</span>
+                            <Edit2 className="w-2.5 h-2.5 shrink-0 text-slate-500 opacity-60 group-hover/editinc:opacity-100 group-hover/editinc:text-blue-500" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Delete button if more than 1 income source */}
+                      {incomeSources.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => setEditingExpenseCatId(exp.id)}
-                          className="font-semibold text-xs text-left hover:text-blue-500 transition-colors flex items-center gap-1.5 group/editcat truncate"
-                          title="Click to text / edit category name"
+                          onClick={() => handleDeleteIncomeSource(inc.id)}
+                          className="text-slate-400 hover:text-rose-500 p-1 rounded-md transition-colors cursor-pointer"
+                          title="Delete income stream"
                         >
-                          <span className="truncate">{exp.category}</span>
-                          <Edit2 className="w-2.5 h-2.5 shrink-0 text-slate-500 opacity-60 group-hover/editcat:opacity-100 group-hover/editcat:text-blue-500" />
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       )}
                     </div>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                      exp.isEssential ? 'bg-blue-500/15 text-blue-400' : 'bg-slate-800 text-slate-400'
-                    }`}>
-                      {exp.isEssential ? 'Essential Need' : 'Discretionary'}
-                    </span>
-                  </div>
-                  <FinScoreAmountInput
-                    id={`expense-${exp.id}`}
-                    value={exp.amount}
-                    onChange={val => {
-                      setExpenses(prev => prev.map((item, i) => i === idx ? { ...item, amount: val } : item));
-                    }}
-                    currSym={currSym}
-                    isLight={isLight}
-                    placeholder="0"
-                    compact
-                  />
-                </div>
-              ))}
 
-              {/* Add Custom / Other Expense Category Box */}
-              {isAddingExpenseCat ? (
+                    {/* Interactive 3-way Priority Tagging */}
+                    <div className="flex items-center gap-1.5 mb-2.5">
+                      <span className="text-[10px] text-slate-400 font-medium mr-1">Tag:</span>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateIncomePriority(inc.id, 'essential')}
+                        title="Essential (Stable / Guaranteed Salary / Core)"
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                          priority === 'essential'
+                            ? 'bg-emerald-500 text-white shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-emerald-500'
+                        }`}
+                      >
+                        🛡️ Essential
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateIncomePriority(inc.id, 'moderate')}
+                        title="Moderate (Semi-stable / Freelance / Rental)"
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                          priority === 'moderate'
+                            ? 'bg-amber-500 text-slate-950 shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-amber-500'
+                        }`}
+                      >
+                        ⚖️ Moderate
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateIncomePriority(inc.id, 'discretionary')}
+                        title="Discretionary (Variable / Bonus / Dividends / Trading)"
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                          priority === 'discretionary'
+                            ? 'bg-purple-600 text-white shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-purple-400'
+                        }`}
+                      >
+                        🎯 Discretionary
+                      </button>
+                    </div>
+
+                    <FinScoreAmountInput
+                      id={`income-${inc.id}`}
+                      value={inc.amount}
+                      onChange={val => handleUpdateIncomeAmount(inc.id, val)}
+                      currSym={currSym}
+                      isLight={isLight}
+                      placeholder="0"
+                      compact
+                    />
+                  </div>
+                );
+              })}
+
+              {/* Add Custom / Other Income Stream Box */}
+              {isAddingIncome ? (
                 <div className={`p-3.5 rounded-2xl border ${isLight ? 'bg-blue-50/50 border-blue-300' : 'bg-blue-950/20 border-blue-800/80'} space-y-2.5 animate-in fade-in duration-150`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-blue-500">Text Custom / Other Category</span>
+                    <span className="text-xs font-bold text-blue-500">Add New Income Stream</span>
                     <button
                       type="button"
-                      onClick={() => { setIsAddingExpenseCat(false); setNewCustomExpenseName(''); }}
+                      onClick={() => { setIsAddingIncome(false); setNewIncomeSource(''); setNewIncomeAmount(''); }}
                       className="text-slate-400 hover:text-slate-200 text-xs cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <input
                       type="text"
-                      placeholder="e.g. Pet Care, Subscriptions, Fitness..."
+                      placeholder="e.g. Freelance Consulting, Rental Flat, Dividends..."
+                      value={newIncomeSource}
+                      onChange={e => setNewIncomeSource(e.target.value)}
+                      autoFocus
+                      className={`px-3 py-2 rounded-xl border ${isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'}`}
+                    />
+                    <FinScoreAmountInput
+                      id="new-income-amt"
+                      value={parseFloat(newIncomeAmount) || 0}
+                      onChange={val => setNewIncomeAmount(val > 0 ? val.toString() : '')}
+                      currSym={currSym}
+                      isLight={isLight}
+                      placeholder="Monthly Amount"
+                      compact
+                    />
+                  </div>
+
+                  {/* Priority Tag Selection for New Income */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <span className="text-slate-400 font-medium">Tag Income As:</span>
+                      <button
+                        type="button"
+                        onClick={() => setNewIncomePriority('essential')}
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                          newIncomePriority === 'essential'
+                            ? 'bg-emerald-500 text-white shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        🛡️ Essential
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewIncomePriority('moderate')}
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                          newIncomePriority === 'moderate'
+                            ? 'bg-amber-500 text-slate-950 shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        ⚖️ Moderate
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewIncomePriority('discretionary')}
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                          newIncomePriority === 'discretionary'
+                            ? 'bg-purple-600 text-white shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        🎯 Discretionary
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleAddIncomeSource}
+                      disabled={!newIncomeSource.trim()}
+                      className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
+                    >
+                      + Save Income Stream
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsAddingIncome(true)}
+                  className={`p-4 rounded-2xl border border-dashed flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer transition-all ${
+                    isLight 
+                      ? 'border-slate-300 hover:border-blue-400 text-slate-600 hover:text-blue-600 hover:bg-slate-50' 
+                      : 'border-slate-800 hover:border-blue-500/50 text-slate-400 hover:text-blue-400 hover:bg-slate-900/50'
+                  }`}
+                >
+                  <Plus className="w-3.5 h-3.5 text-blue-500" />
+                  <span>+ Add Other Income Stream (Freelance, Rental, Dividends)</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* STEP 2B: MONTHLY CATEGORY EXPENSE BREAKDOWN & PRIORITY TAGGING */}
+          <div className="space-y-3 pt-3 border-t border-slate-200/60 dark:border-slate-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <ArrowUpRight className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Monthly Category Expense Breakdown ({expenses.length})</span>
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Tag each expense to track <strong>Essential</strong> (Needs: Rent, Food, Utilities, EMI), <strong>Moderate</strong> (Commute, basic tech), or <strong>Discretionary</strong> (Wants: Dining, luxury).
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                  Needs: {currSym}{essentialExpenses.toLocaleString()}
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                  Moderate: {currSym}{moderateExpenses.toLocaleString()}
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                  Wants: {currSym}{discretionaryExpenses.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {expenses.map((exp, idx) => {
+                const priority = exp.priority || (exp.isEssential ? 'essential' : 'moderate');
+                return (
+                  <div
+                    key={exp.id}
+                    className={`p-3.5 rounded-2xl border transition-all ${
+                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/50 border-slate-800/80'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5 flex-1 mr-2 min-w-0">
+                        {editingExpenseCatId === exp.id ? (
+                          <input
+                            type="text"
+                            value={exp.category}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setExpenses(prev => prev.map((item, i) => i === idx ? { ...item, category: val } : item));
+                            }}
+                            onBlur={() => setEditingExpenseCatId(null)}
+                            onKeyDown={e => { if (e.key === 'Enter') setEditingExpenseCatId(null); }}
+                            autoFocus
+                            placeholder="Type Category Name..."
+                            className={`w-full px-2 py-0.5 rounded text-xs font-semibold border ${
+                              isLight ? 'bg-white border-blue-500 text-slate-900' : 'bg-slate-900 border-blue-500 text-white'
+                            }`}
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setEditingExpenseCatId(exp.id)}
+                            className="font-semibold text-xs text-left hover:text-blue-500 transition-colors flex items-center gap-1.5 group/editcat truncate cursor-pointer"
+                            title="Click to text / edit category name"
+                          >
+                            <span className="truncate">{exp.category}</span>
+                            <Edit2 className="w-2.5 h-2.5 shrink-0 text-slate-500 opacity-60 group-hover/editcat:opacity-100 group-hover/editcat:text-blue-500" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Delete button if more than 1 category */}
+                      {expenses.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExpenseCategory(exp.id)}
+                          className="text-slate-400 hover:text-rose-500 p-1 rounded-md transition-colors cursor-pointer"
+                          title="Delete expense category"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Interactive 3-way Priority Tagging */}
+                    <div className="flex items-center gap-1.5 mb-2.5">
+                      <span className="text-[10px] text-slate-400 font-medium mr-1">Tag:</span>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateExpensePriority(exp.id, 'essential')}
+                        title="Essential Need (Rent, Food, EMI, Healthcare)"
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                          priority === 'essential'
+                            ? 'bg-emerald-500 text-white shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-emerald-500'
+                        }`}
+                      >
+                        🛡️ Essential (Need)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateExpensePriority(exp.id, 'moderate')}
+                        title="Moderate (Commute, basic internet, fitness)"
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                          priority === 'moderate'
+                            ? 'bg-amber-500 text-slate-950 shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-amber-500'
+                        }`}
+                      >
+                        ⚖️ Moderate
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateExpensePriority(exp.id, 'discretionary')}
+                        title="Discretionary Want (Dining out, shopping, luxury, travel)"
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                          priority === 'discretionary'
+                            ? 'bg-purple-600 text-white shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-purple-400'
+                        }`}
+                      >
+                        🎯 Discretionary (Want)
+                      </button>
+                    </div>
+
+                    <FinScoreAmountInput
+                      id={`expense-${exp.id}`}
+                      value={exp.amount}
+                      onChange={val => {
+                        setExpenses(prev => prev.map((item, i) => i === idx ? { ...item, amount: val } : item));
+                      }}
+                      currSym={currSym}
+                      isLight={isLight}
+                      placeholder="0"
+                      compact
+                    />
+                  </div>
+                );
+              })}
+
+              {/* Add Custom / Other Expense Category Box */}
+              {isAddingExpenseCat ? (
+                <div className={`p-3.5 rounded-2xl border ${isLight ? 'bg-blue-50/50 border-blue-300' : 'bg-blue-950/20 border-blue-800/80'} space-y-2.5 animate-in fade-in duration-150`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-500">Add Custom / Other Expense Category</span>
+                    <button
+                      type="button"
+                      onClick={() => { setIsAddingExpenseCat(false); setNewCustomExpenseName(''); setNewCustomExpenseAmount(''); }}
+                      className="text-slate-400 hover:text-slate-200 text-xs cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <input
+                      type="text"
+                      placeholder="e.g. Pet Care, Subscriptions, Fitness, OTT..."
                       value={newCustomExpenseName}
                       onChange={e => setNewCustomExpenseName(e.target.value)}
                       autoFocus
@@ -3643,20 +4189,50 @@ Strategic Focus: ${result.biggestPriority}`;
                       onChange={val => setNewCustomExpenseAmount(val > 0 ? val.toString() : '')}
                       currSym={currSym}
                       isLight={isLight}
-                      placeholder="Amount"
+                      placeholder="Monthly Amount"
                       compact
                     />
                   </div>
-                  <div className="flex items-center justify-between pt-1">
-                    <label className="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newCustomExpenseIsEssential}
-                        onChange={e => setNewCustomExpenseIsEssential(e.target.checked)}
-                        className="rounded accent-blue-600"
-                      />
-                      <span>Is Essential Need?</span>
-                    </label>
+
+                  {/* Priority Tag Selection for New Expense */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <span className="text-slate-400 font-medium">Tag As:</span>
+                      <button
+                        type="button"
+                        onClick={() => setNewCustomExpensePriority('essential')}
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                          newCustomExpensePriority === 'essential'
+                            ? 'bg-emerald-500 text-white shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        🛡️ Essential (Need)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewCustomExpensePriority('moderate')}
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                          newCustomExpensePriority === 'moderate'
+                            ? 'bg-amber-500 text-slate-950 shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        ⚖️ Moderate
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewCustomExpensePriority('discretionary')}
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                          newCustomExpensePriority === 'discretionary'
+                            ? 'bg-purple-600 text-white shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        🎯 Discretionary (Want)
+                      </button>
+                    </div>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -3667,13 +4243,14 @@ Strategic Focus: ${result.biggestPriority}`;
                             id: `exp-${Date.now()}`,
                             category: newCustomExpenseName.trim(),
                             amount: parseFloat(newCustomExpenseAmount) || 0,
-                            isEssential: newCustomExpenseIsEssential
+                            priority: newCustomExpensePriority,
+                            isEssential: newCustomExpensePriority === 'essential'
                           }
                         ]);
                         setNewCustomExpenseName('');
                         setNewCustomExpenseAmount('');
                         setIsAddingExpenseCat(false);
-                        showToast(`Added custom category "${newCustomExpenseName.trim()}"!`);
+                        showToast(`Added category "${newCustomExpenseName.trim()}" (${newCustomExpensePriority})!`);
                       }}
                       disabled={!newCustomExpenseName.trim()}
                       className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
@@ -3693,7 +4270,7 @@ Strategic Focus: ${result.biggestPriority}`;
                   }`}
                 >
                   <Plus className="w-3.5 h-3.5 text-blue-500" />
-                  <span>+ Add Other / Custom Category</span>
+                  <span>+ Add Other / Custom Expense Category</span>
                 </button>
               )}
             </div>
@@ -4517,41 +5094,112 @@ Strategic Focus: ${result.biggestPriority}`;
               </div>
             )}
 
-            {/* Asset Allocation Breakdown */}
-            <div className={`p-5 rounded-2xl border space-y-3 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Asset Class Distribution</span>
-                <span className="text-xs font-mono font-bold text-slate-400">{Object.keys(categoryMap).length} Categories</span>
+            {/* Asset Allocation Breakdown & Priority Allocation */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Asset Class Distribution */}
+              <div className={`p-5 rounded-2xl border space-y-3 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Asset Class Distribution</span>
+                  <span className="text-xs font-mono font-bold text-slate-400">{Object.keys(categoryMap).length} Categories</span>
+                </div>
+
+                {/* Visual Distribution Bar */}
+                <div className="w-full bg-slate-200 dark:bg-slate-800 h-3 rounded-full overflow-hidden flex">
+                  {Object.entries(categoryMap).map(([category, val], idx) => {
+                    const pct = totalInvestedCorpus > 0 ? (val / totalInvestedCorpus) * 100 : 0;
+                    const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500'];
+                    return (
+                      <div
+                        key={category}
+                        style={{ width: `${pct}%` }}
+                        className={`${colors[idx % colors.length]} h-full transition-all`}
+                        title={`${category}: ${pct.toFixed(1)}%`}
+                      />
+                    );
+                  })}
+                </div>
+
+                <div className="flex flex-wrap gap-2.5 pt-1 text-xs">
+                  {Object.entries(categoryMap).map(([category, val], idx) => {
+                    const pct = totalInvestedCorpus > 0 ? (val / totalInvestedCorpus) * 100 : 0;
+                    const dotColors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500'];
+                    return (
+                      <div key={category} className="flex items-center gap-1.5">
+                        <div className={`w-2 h-2 rounded-full ${dotColors[idx % dotColors.length]}`} />
+                        <span className="text-slate-600 dark:text-slate-400">{category}:</span>
+                        <strong className="font-mono text-slate-800 dark:text-slate-200">{currSym}{val.toLocaleString()} ({pct.toFixed(1)}%)</strong>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Visual Distribution Bar */}
-              <div className="w-full bg-slate-200 dark:bg-slate-800 h-3 rounded-full overflow-hidden flex">
-                {Object.entries(categoryMap).map(([category, val], idx) => {
-                  const pct = totalInvestedCorpus > 0 ? (val / totalInvestedCorpus) * 100 : 0;
-                  const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500'];
-                  return (
-                    <div
-                      key={category}
-                      style={{ width: `${pct}%` }}
-                      className={`${colors[idx % colors.length]} h-full transition-all`}
-                      title={`${category}: ${pct.toFixed(1)}%`}
-                    />
-                  );
-                })}
-              </div>
+              {/* Asset Priority Tier Breakdown */}
+              <div className={`p-5 rounded-2xl border space-y-3 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Asset Priority Risk Tiers</span>
+                  <span className="text-xs font-mono font-bold text-slate-400">Essential / Moderate / Growth</span>
+                </div>
 
-              <div className="flex flex-wrap gap-3 pt-1 text-xs">
-                {Object.entries(categoryMap).map(([category, val], idx) => {
-                  const pct = totalInvestedCorpus > 0 ? (val / totalInvestedCorpus) * 100 : 0;
-                  const dotColors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500'];
-                  return (
-                    <div key={category} className="flex items-center gap-1.5">
-                      <div className={`w-2 h-2 rounded-full ${dotColors[idx % dotColors.length]}`} />
-                      <span className="text-slate-600 dark:text-slate-400">{category}:</span>
-                      <strong className="font-mono text-slate-800 dark:text-slate-200">{currSym}{val.toLocaleString()} ({pct.toFixed(1)}%)</strong>
+                {/* Visual Priority Bar */}
+                <div className="w-full bg-slate-200 dark:bg-slate-800 h-3 rounded-full overflow-hidden flex">
+                  <div
+                    style={{ width: `${totalInvestedCorpus > 0 ? (essentialAssets / totalInvestedCorpus) * 100 : 0}%` }}
+                    className="bg-emerald-500 h-full transition-all"
+                    title={`Essential: ${totalInvestedCorpus > 0 ? ((essentialAssets / totalInvestedCorpus) * 100).toFixed(1) : 0}%`}
+                  />
+                  <div
+                    style={{ width: `${totalInvestedCorpus > 0 ? (moderateAssets / totalInvestedCorpus) * 100 : 0}%` }}
+                    className="bg-amber-500 h-full transition-all"
+                    title={`Moderate: ${totalInvestedCorpus > 0 ? ((moderateAssets / totalInvestedCorpus) * 100).toFixed(1) : 0}%`}
+                  />
+                  <div
+                    style={{ width: `${totalInvestedCorpus > 0 ? (discretionaryAssets / totalInvestedCorpus) * 100 : 0}%` }}
+                    className="bg-purple-600 h-full transition-all"
+                    title={`Discretionary / Growth: ${totalInvestedCorpus > 0 ? ((discretionaryAssets / totalInvestedCorpus) * 100).toFixed(1) : 0}%`}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 pt-1 text-xs">
+                  <div className="p-2 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
+                    <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-500">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span>Essential</span>
                     </div>
-                  );
-                })}
+                    <div className="font-mono font-bold text-xs mt-0.5 text-slate-800 dark:text-slate-200">
+                      {currSym}{essentialAssets.toLocaleString()}
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      {totalInvestedCorpus > 0 ? Math.round((essentialAssets / totalInvestedCorpus) * 100) : 0}% (Capital shield)
+                    </div>
+                  </div>
+
+                  <div className="p-2 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
+                    <div className="flex items-center gap-1 text-[11px] font-bold text-amber-500">
+                      <div className="w-2 h-2 rounded-full bg-amber-500" />
+                      <span>Moderate</span>
+                    </div>
+                    <div className="font-mono font-bold text-xs mt-0.5 text-slate-800 dark:text-slate-200">
+                      {currSym}{moderateAssets.toLocaleString()}
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      {totalInvestedCorpus > 0 ? Math.round((moderateAssets / totalInvestedCorpus) * 100) : 0}% (Core index)
+                    </div>
+                  </div>
+
+                  <div className="p-2 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
+                    <div className="flex items-center gap-1 text-[11px] font-bold text-purple-500">
+                      <div className="w-2 h-2 rounded-full bg-purple-500" />
+                      <span>Growth</span>
+                    </div>
+                    <div className="font-mono font-bold text-xs mt-0.5 text-slate-800 dark:text-slate-200">
+                      {currSym}{discretionaryAssets.toLocaleString()}
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      {totalInvestedCorpus > 0 ? Math.round((discretionaryAssets / totalInvestedCorpus) * 100) : 0}% (Discretionary)
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -4641,6 +5289,47 @@ Strategic Focus: ${result.biggestPriority}`;
                             )}
                           </div>
                         )}
+
+                        {/* Interactive 3-way Priority Tagging */}
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <span className="text-[10px] text-slate-400 font-medium mr-1">Tag:</span>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateInvestmentPriority(item.id, 'essential')}
+                            title="Essential Asset (Safety / Debt / EPF / Liquid Reserve)"
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                              item.priority === 'essential'
+                                ? 'bg-emerald-500 text-white shadow-xs'
+                                : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-emerald-500'
+                            }`}
+                          >
+                            🛡️ Essential
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateInvestmentPriority(item.id, 'moderate')}
+                            title="Moderate Asset (Core Market / Mutual Funds / Index / Gold)"
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                              item.priority === 'moderate' || item.priority === undefined
+                                ? 'bg-amber-500 text-slate-950 shadow-xs'
+                                : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-amber-500'
+                            }`}
+                          >
+                            ⚖️ Moderate
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateInvestmentPriority(item.id, 'discretionary')}
+                            title="Discretionary / Growth (High Beta / Direct Stocks / Crypto)"
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-all cursor-pointer ${
+                              item.priority === 'discretionary'
+                                ? 'bg-purple-600 text-white shadow-xs'
+                                : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-purple-400'
+                            }`}
+                          >
+                            🎯 Discretionary
+                          </button>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-4 justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200 dark:border-slate-800">
@@ -4915,7 +5604,45 @@ Strategic Focus: ${result.biggestPriority}`;
                 </div>
               )}
 
-              <div className="flex justify-end pt-1">
+              {/* Asset Priority Selector */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-slate-400 font-medium">Tag Asset Holding As:</span>
+                  <button
+                    type="button"
+                    onClick={() => setNewInvPriority('essential')}
+                    className={`text-[10px] px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer ${
+                      newInvPriority === 'essential'
+                        ? 'bg-emerald-500 text-white shadow-xs'
+                        : 'bg-slate-200 dark:bg-slate-800 text-slate-400 hover:text-emerald-500'
+                    }`}
+                  >
+                    🛡️ Essential (Capital Shield / Debt / PF)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewInvPriority('moderate')}
+                    className={`text-[10px] px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer ${
+                      newInvPriority === 'moderate'
+                        ? 'bg-amber-500 text-slate-950 shadow-xs'
+                        : 'bg-slate-200 dark:bg-slate-800 text-slate-400 hover:text-amber-500'
+                    }`}
+                  >
+                    ⚖️ Moderate (Core Index / Balanced / Gold)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewInvPriority('discretionary')}
+                    className={`text-[10px] px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer ${
+                      newInvPriority === 'discretionary'
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'bg-slate-200 dark:bg-slate-800 text-slate-400 hover:text-purple-400'
+                    }`}
+                  >
+                    🎯 Discretionary (Alpha / Equity / Crypto)
+                  </button>
+                </div>
+
                 <button
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center justify-center gap-1.5 shadow-md transition-colors cursor-pointer text-xs"

@@ -297,11 +297,22 @@ export interface FinScoreProfile {
   currency: CurrencyCode;
 }
 
+export type FinancialPriorityLevel = 'essential' | 'moderate' | 'discretionary';
+
+export interface FinScoreIncomeSource {
+  id: string;
+  source: string;
+  amount: number;
+  priority: FinancialPriorityLevel;
+  isEssential?: boolean;
+}
+
 export interface FinScoreExpenseCategory {
   id: string;
   category: string;
   amount: number;
   isEssential: boolean; // Rent, food, utilities, loan EMIs are essential
+  priority?: FinancialPriorityLevel;
 }
 
 export interface FinScoreLoan {

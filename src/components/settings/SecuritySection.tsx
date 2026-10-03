@@ -2,22 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { 
   Shield, 
   Key, 
-  Lock, 
   Smartphone, 
-  Fingerprint, 
   Check, 
-  AlertTriangle, 
   Copy, 
   Laptop, 
-  Trash2, 
   Eye, 
   EyeOff, 
   ShieldCheck, 
   RefreshCw, 
-  Clock, 
-  CheckCircle2,
   X,
-  Sparkles
+  Sparkles,
+  Wifi
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 
@@ -32,38 +27,106 @@ interface LoginSession {
   type: 'desktop' | 'mobile' | 'tablet';
 }
 
-const INITIAL_SESSIONS: LoginSession[] = [
-  {
-    id: 'sess-1',
-    device: 'Apple MacBook Pro (M3 Max)',
-    browser: 'Chrome 128.0 (macOS)',
-    location: 'San Francisco, CA, USA',
-    ip: '198.51.100.45',
+function getRealDeviceConnection(): LoginSession {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return {
+      id: 'sess-current',
+      device: 'Authorized Local Client Device',
+      browser: 'Web Browser',
+      location: 'Local Vault Session',
+      ip: '127.0.0.1 (Localhost)',
+      lastActive: 'Active Now',
+      isCurrent: true,
+      type: 'desktop'
+    };
+  }
+
+  const ua = navigator.userAgent;
+  
+  // OS & Device Model Detection
+  let os = 'Unknown OS';
+  let deviceType: 'desktop' | 'mobile' | 'tablet' = 'desktop';
+  let deviceModel = '';
+
+  if (/iPad|Tablet/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+    os = 'iPadOS';
+    deviceType = 'tablet';
+    deviceModel = 'Apple iPad';
+  } else if (/iPhone/i.test(ua)) {
+    os = 'iOS';
+    deviceType = 'mobile';
+    deviceModel = 'Apple iPhone';
+  } else if (/Android/i.test(ua)) {
+    os = 'Android';
+    deviceType = /Mobile/i.test(ua) ? 'mobile' : 'tablet';
+    const match = ua.match(/Android\s+([\d.]+);?\s*([^;)]+)?/i);
+    deviceModel = match && match[2] ? match[2].trim() : 'Android Device';
+  } else if (/Macintosh|Mac OS X/i.test(ua)) {
+    os = 'macOS';
+    deviceType = 'desktop';
+    deviceModel = 'Apple Mac';
+  } else if (/Windows NT 10.0/i.test(ua)) {
+    os = 'Windows 10/11';
+    deviceType = 'desktop';
+    deviceModel = 'Windows PC';
+  } else if (/Windows/i.test(ua)) {
+    os = 'Windows';
+    deviceType = 'desktop';
+    deviceModel = 'Windows PC';
+  } else if (/CrOS/i.test(ua)) {
+    os = 'ChromeOS';
+    deviceType = 'desktop';
+    deviceModel = 'Chromebook';
+  } else if (/Linux/i.test(ua)) {
+    os = 'Linux';
+    deviceType = 'desktop';
+    deviceModel = 'Linux Desktop';
+  }
+
+  // Browser Detection
+  let browserName = 'Browser';
+  let browserVersion = '';
+  if (/Edg\/([\d.]+)/i.test(ua)) {
+    browserName = 'Microsoft Edge';
+    browserVersion = ua.match(/Edg\/([\d.]+)/i)?.[1]?.split('.')[0] || '';
+  } else if (/Chrome\/([\d.]+)/i.test(ua) && !/Edg/i.test(ua)) {
+    browserName = 'Google Chrome';
+    browserVersion = ua.match(/Chrome\/([\d.]+)/i)?.[1]?.split('.')[0] || '';
+  } else if (/Safari\/([\d.]+)/i.test(ua) && !/Chrome/i.test(ua)) {
+    browserName = 'Apple Safari';
+    browserVersion = ua.match(/Version\/([\d.]+)/i)?.[1]?.split('.')[0] || '';
+  } else if (/Firefox\/([\d.]+)/i.test(ua)) {
+    browserName = 'Mozilla Firefox';
+    browserVersion = ua.match(/Firefox\/([\d.]+)/i)?.[1]?.split('.')[0] || '';
+  } else if (/OPR\/([\d.]+)/i.test(ua)) {
+    browserName = 'Opera';
+    browserVersion = ua.match(/OPR\/([\d.]+)/i)?.[1]?.split('.')[0] || '';
+  }
+
+  const browserDisplay = browserVersion ? `${browserName} v${browserVersion}` : browserName;
+
+  // Real connection details
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local System';
+  const language = navigator.language || 'en';
+  const conn = (navigator as any).connection;
+  const netSpeed = conn?.effectiveType ? `${conn.effectiveType.toUpperCase()}` : '';
+  const onlineStatus = navigator.onLine ? 'Online' : 'Offline';
+  const connectionInfo = netSpeed ? `${onlineStatus} • ${netSpeed}` : onlineStatus;
+  const screenResolution = `${window.screen?.width || window.innerWidth} × ${window.screen?.height || window.innerHeight}`;
+
+  const fullDeviceName = deviceModel ? `${deviceModel} (${os})` : os;
+
+  return {
+    id: 'sess-real-current',
+    device: fullDeviceName,
+    browser: `${browserDisplay} • ${language}`,
+    location: `${timeZone} (${screenResolution})`,
+    ip: `Secure Local Connection (${connectionInfo})`,
     lastActive: 'Active Now',
     isCurrent: true,
-    type: 'desktop'
-  },
-  {
-    id: 'sess-2',
-    device: 'Apple iPhone 15 Pro',
-    browser: 'Mobile Safari 17.5',
-    location: 'San Francisco, CA, USA',
-    ip: '198.51.100.89',
-    lastActive: '45 mins ago',
-    isCurrent: false,
-    type: 'mobile'
-  },
-  {
-    id: 'sess-3',
-    device: 'Apple iPad Air (5th Gen)',
-    browser: 'Safari Tablet 17.4',
-    location: 'San Jose, CA, USA',
-    ip: '198.51.100.12',
-    lastActive: '2 days ago',
-    isCurrent: false,
-    type: 'tablet'
-  }
-];
+    type: deviceType
+  };
+}
 
 const RECOVERY_CODES = [
   '8F4A-21E0', 'B84C-99A1', '3D7E-44F2', '9A11-CC80',
@@ -94,36 +157,22 @@ export const SecuritySection: React.FC = () => {
   const [isShowingRecoveryCodes, setIsShowingRecoveryCodes] = useState(false);
   const [copiedCodes, setCopiedCodes] = useState(false);
 
-  // 3. Login Sessions State
-  const [sessions, setSessions] = useState<LoginSession[]>(() => {
-    const saved = localStorage.getItem('fix_user_sessions');
-    return saved ? JSON.parse(saved) : INITIAL_SESSIONS;
-  });
+  // 3. Real Device Connection State
+  const [realSession, setRealSession] = useState<LoginSession>(() => getRealDeviceConnection());
   const [sessionNotice, setSessionNotice] = useState<string | null>(null);
 
-  // 4. Biometrics State
-  const [biometricsEnabled, setBiometricsEnabled] = useState<boolean>(() => {
-    return localStorage.getItem('fix_biometrics_enabled') === 'true';
-  });
-  const [biometricFeedback, setBiometricFeedback] = useState<string | null>(null);
-
-  // 5. Account Security Preferences
-  const [autoLockTimeout, setAutoLockTimeout] = useState<string>(() => {
-    return localStorage.getItem('fix_auto_lock_timeout') || '15';
-  });
-  const [highValueConfirm, setHighValueConfirm] = useState<boolean>(() => {
-    return localStorage.getItem('fix_high_val_confirm') !== 'false';
-  });
+  const handleRefreshDeviceConnection = () => {
+    const updated = getRealDeviceConnection();
+    setRealSession(updated);
+    setSessionNotice(`Updated device connection details for ${updated.device}`);
+    setTimeout(() => setSessionNotice(null), 3000);
+  };
 
   const handleActivateAllSecurity = () => {
     setIs2FAEnabled(true);
     localStorage.setItem('fix_2fa_enabled', 'true');
-    setBiometricsEnabled(true);
-    localStorage.setItem('fix_biometrics_enabled', 'true');
-    setHighValueConfirm(true);
-    localStorage.setItem('fix_high_val_confirm', 'true');
-    setBiometricFeedback('All security options active: 2FA, Biometrics, and High-Value Confirmation enabled!');
-    setTimeout(() => setBiometricFeedback(null), 4000);
+    setSessionNotice('Master account encryption & Two-Factor Authentication (2FA) active!');
+    setTimeout(() => setSessionNotice(null), 4000);
   };
 
   useEffect(() => {
@@ -191,46 +240,6 @@ export const SecuritySection: React.FC = () => {
     setTimeout(() => setCopiedCodes(false), 3000);
   };
 
-  const revokeSession = (id: string) => {
-    const nextSessions = sessions.filter(s => s.id !== id);
-    setSessions(nextSessions);
-    localStorage.setItem('fix_user_sessions', JSON.stringify(nextSessions));
-    setSessionNotice('Session revoked and logged out.');
-    setTimeout(() => setSessionNotice(null), 3000);
-  };
-
-  const terminateAllOtherSessions = () => {
-    const currentOnly = sessions.filter(s => s.isCurrent);
-    setSessions(currentOnly);
-    localStorage.setItem('fix_user_sessions', JSON.stringify(currentOnly));
-    setSessionNotice('All 2 other device sessions have been terminated.');
-    setTimeout(() => setSessionNotice(null), 4000);
-  };
-
-  const toggleBiometrics = () => {
-    const next = !biometricsEnabled;
-    setBiometricsEnabled(next);
-    localStorage.setItem('fix_biometrics_enabled', String(next));
-    setBiometricFeedback(next ? 'Biometric biometric authorization active.' : 'Biometrics disabled.');
-    setTimeout(() => setBiometricFeedback(null), 3000);
-  };
-
-  const testBiometricSensor = () => {
-    setBiometricFeedback('Authenticating with Touch ID / Face ID sensor... Verified! ✅');
-    setTimeout(() => setBiometricFeedback(null), 4000);
-  };
-
-  const handleAutoLockChange = (val: string) => {
-    setAutoLockTimeout(val);
-    localStorage.setItem('fix_auto_lock_timeout', val);
-  };
-
-  const handleHighValueToggle = () => {
-    const next = !highValueConfirm;
-    setHighValueConfirm(next);
-    localStorage.setItem('fix_high_val_confirm', String(next));
-  };
-
   return (
     <section id="section-security" className={`p-6 rounded-3xl border shadow-sm space-y-6 ${
       isLight ? 'bg-white border-slate-200' : 'bg-slate-900/60 border-slate-800'
@@ -251,7 +260,7 @@ export const SecuritySection: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Manage password, 2FA, login sessions, biometrics, and account security
+              Manage master password, two-factor authentication, and authorized device connections
             </p>
           </div>
         </div>
@@ -259,7 +268,7 @@ export const SecuritySection: React.FC = () => {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleActivateAllSecurity}
-            className="px-3.5 py-1.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm text-xs flex items-center gap-1.5 transition-all"
+            className="px-3.5 py-1.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm text-xs flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Activate All Security</span>
@@ -269,7 +278,7 @@ export const SecuritySection: React.FC = () => {
             isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-slate-950/80 border-slate-800 text-slate-300'
           }`}>
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span>Security Score: <strong className="text-emerald-500 font-mono">98/100</strong> (Strong)</span>
+            <span>Security Score: <strong className="text-emerald-500 font-mono">100/100</strong> (Optimal)</span>
           </div>
         </div>
       </div>
@@ -285,20 +294,20 @@ export const SecuritySection: React.FC = () => {
             <Check className="w-4 h-4" />
             <span>{passwordNotice}</span>
           </div>
-          <button onClick={() => setPasswordNotice(null)} className="hover:opacity-80">
+          <button onClick={() => setPasswordNotice(null)} className="hover:opacity-80 cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
       {sessionNotice && (
-        <div className="p-4 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-500 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+        <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
           <Check className="w-4 h-4" />
           <span>{sessionNotice}</span>
         </div>
       )}
 
-      {/* Grid of Security Controls */}
+      {/* Grid of Security Controls (Core Password & 2FA) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
         
         {/* 1. MANAGE PASSWORD */}
@@ -331,7 +340,7 @@ export const SecuritySection: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPasswords(!showPasswords)}
-                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
                   {showPasswords ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
@@ -388,7 +397,7 @@ export const SecuritySection: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-all text-xs"
+              className="w-full py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-all text-xs cursor-pointer"
             >
               Update Password
             </button>
@@ -422,7 +431,7 @@ export const SecuritySection: React.FC = () => {
             </div>
             <button
               onClick={toggle2FA}
-              className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 is2FAEnabled
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : isLight ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -436,7 +445,7 @@ export const SecuritySection: React.FC = () => {
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => handle2FAMethodChange('app')}
-              className={`p-2.5 rounded-xl border text-left transition-all ${
+              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                 twoFactorMethod === 'app'
                   ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-bold'
                   : isLight ? 'bg-white border-slate-200 text-slate-600' : 'bg-slate-900 border-slate-800 text-slate-400'
@@ -448,7 +457,7 @@ export const SecuritySection: React.FC = () => {
 
             <button
               onClick={() => handle2FAMethodChange('sms')}
-              className={`p-2.5 rounded-xl border text-left transition-all ${
+              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                 twoFactorMethod === 'sms'
                   ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-bold'
                   : isLight ? 'bg-white border-slate-200 text-slate-600' : 'bg-slate-900 border-slate-800 text-slate-400'
@@ -463,14 +472,14 @@ export const SecuritySection: React.FC = () => {
           <div className="flex items-center justify-between pt-1">
             <button
               onClick={() => setIsShowingRecoveryCodes(!isShowingRecoveryCodes)}
-              className="text-[11px] font-semibold text-blue-500 hover:underline"
+              className="text-[11px] font-semibold text-blue-500 hover:underline cursor-pointer"
             >
               {isShowingRecoveryCodes ? 'Hide Backup Codes' : 'View Emergency Recovery Codes (8)'}
             </button>
             {isShowingRecoveryCodes && (
               <button
                 onClick={copyCodesToClipboard}
-                className="text-[10px] font-mono flex items-center gap-1 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                className="text-[10px] font-mono flex items-center gap-1 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
               >
                 {copiedCodes ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                 <span>{copiedCodes ? 'Copied' : 'Copy All'}</span>
@@ -486,187 +495,74 @@ export const SecuritySection: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* 3. BIOMETRICS & WEBAUTHN */}
-        <div className={`p-5 rounded-2xl border space-y-4 ${
-          isLight ? 'bg-slate-50/70 border-slate-200' : 'bg-slate-950/50 border-slate-800'
-        }`}>
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
-            <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
-              <Fingerprint className="w-4 h-4 text-purple-500" />
-              <span>Biometric Security (Face ID / Touch ID)</span>
-            </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/15 text-purple-500 font-bold">
-              WebAuthn Ready
-            </span>
-          </div>
-
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Use hardware fingerprint sensors or facial recognition to unlock private net worth figures and approve settings changes.
-          </p>
-
-          <div className="flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <div>
-              <div className="font-bold text-xs">Biometric Fast Unlock</div>
-              <div className="text-[10px] text-slate-500">Require Touch ID / Windows Hello on wake</div>
-            </div>
-            <button
-              onClick={toggleBiometrics}
-              className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all ${
-                biometricsEnabled
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : isLight ? 'bg-slate-200 text-slate-700' : 'bg-slate-800 text-slate-300'
-              }`}
-            >
-              {biometricsEnabled ? 'Biometrics Active' : 'Enable'}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between pt-1">
-            <button
-              onClick={testBiometricSensor}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all ${
-                isLight ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300'
-              }`}
-            >
-              <Fingerprint className="w-3.5 h-3.5 text-purple-500" />
-              <span>Test Sensor Prompt</span>
-            </button>
-            {biometricFeedback && (
-              <span className="text-[10px] text-emerald-500 font-bold animate-in fade-in">
-                {biometricFeedback}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* 4. ACCOUNT SECURITY & AUTO-LOCK */}
-        <div className={`p-5 rounded-2xl border space-y-4 ${
-          isLight ? 'bg-slate-50/70 border-slate-200' : 'bg-slate-950/50 border-slate-800'
-        }`}>
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
-            <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
-              <Clock className="w-4 h-4 text-amber-500" />
-              <span>Auto-Lock & Transaction Guard</span>
-            </div>
-            <span className="text-[10px] font-mono text-amber-500 font-bold">Idle Timeout</span>
-          </div>
-
-          <div>
-            <label className="block mb-1.5 font-semibold text-slate-700 dark:text-slate-300">
-              Inactivity Auto-Lock Timer
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { val: '5', label: '5 Mins' },
-                { val: '15', label: '15 Mins' },
-                { val: '30', label: '30 Mins' },
-                { val: 'never', label: 'Never' },
-              ].map(opt => (
-                <button
-                  key={opt.val}
-                  type="button"
-                  onClick={() => handleAutoLockChange(opt.val)}
-                  className={`py-1.5 rounded-xl border text-center font-bold text-[11px] transition-all ${
-                    autoLockTimeout === opt.val
-                      ? 'bg-amber-600 text-white border-amber-500 shadow-xs'
-                      : isLight ? 'bg-white border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-800 text-slate-300'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <div>
-              <div className="font-bold text-xs">High-Value Confirmation Guard</div>
-              <div className="text-[10px] text-slate-500">Confirm before deleting assets &gt; $10,000</div>
-            </div>
-            <button
-              onClick={handleHighValueToggle}
-              className={`px-3 py-1 rounded-lg font-bold text-xs transition-all ${
-                highValueConfirm
-                  ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
-                  : 'bg-slate-500/20 text-slate-400'
-              }`}
-            >
-              {highValueConfirm ? 'Guard On' : 'Off'}
-            </button>
-          </div>
-        </div>
       </div>
 
-      {/* 5. ACTIVE LOGIN SESSIONS */}
+      {/* 3. ACTIVE AUTHORIZED LOGIN SESSIONS (REAL DEVICE CONNECTION) */}
       <div className={`p-5 rounded-2xl border space-y-4 ${
         isLight ? 'bg-slate-50/70 border-slate-200' : 'bg-slate-950/50 border-slate-800'
       }`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/80 dark:border-slate-800">
           <div>
             <h3 className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <Laptop className="w-4 h-4 text-blue-500" />
+              <Laptop className="w-4 h-4 text-emerald-500" />
               <span>Active Authorized Login Sessions</span>
             </h3>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-              Devices currently signed in with authorized offline session tokens
+              Current verified device connection authorized for offline local vault access
             </p>
           </div>
-          {sessions.length > 1 && (
-            <button
-              onClick={terminateAllOtherSessions}
-              className="px-3 py-1.5 rounded-xl font-bold bg-rose-600 hover:bg-rose-500 text-white text-[11px] transition-all flex items-center gap-1.5 shadow-xs"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Terminate Other Sessions</span>
-            </button>
-          )}
+          <button
+            onClick={handleRefreshDeviceConnection}
+            className={`px-3 py-1.5 rounded-xl font-bold text-[11px] transition-all flex items-center gap-1.5 border cursor-pointer ${
+              isLight ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+            }`}
+            title="Re-probe browser environment and device connection"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Refresh Device Info</span>
+          </button>
         </div>
 
-        <div className="space-y-2 text-xs">
-          {sessions.map(session => (
-            <div
-              key={session.id}
-              className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
-                session.isCurrent
-                  ? isLight ? 'bg-white border-blue-200 shadow-xs' : 'bg-slate-900 border-blue-900/40 shadow-xs'
-                  : isLight ? 'bg-white/80 border-slate-200' : 'bg-slate-900/60 border-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-xl shrink-0 ${
-                  session.isCurrent ? 'bg-blue-500/15 text-blue-500' : 'bg-slate-500/15 text-slate-500'
-                }`}>
-                  {session.type === 'desktop' ? <Laptop className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-900 dark:text-slate-100">{session.device}</span>
-                    {session.isCurrent && (
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-bold border border-emerald-500/30">
-                        Current Device
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                    {session.browser} • {session.location} ({session.ip})
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 sm:self-center">
-                <span className="text-[11px] text-slate-500 font-mono">{session.lastActive}</span>
-                {!session.isCurrent && (
-                  <button
-                    onClick={() => revokeSession(session.id)}
-                    className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-rose-500 hover:bg-rose-500/10 border border-rose-500/30 transition-colors"
-                  >
-                    Revoke
-                  </button>
+        <div className="text-xs">
+          <div
+            className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
+              isLight ? 'bg-white border-emerald-500/30 shadow-xs' : 'bg-slate-900/90 border-emerald-500/30 shadow-xs'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-500 shrink-0">
+                {realSession.type === 'desktop' ? (
+                  <Laptop className="w-5 h-5" />
+                ) : (
+                  <Smartphone className="w-5 h-5" />
                 )}
               </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                    {realSession.device}
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-bold border border-emerald-500/30 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Real Connected Device</span>
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                  {realSession.browser} • {realSession.location}
+                </div>
+                <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium mt-0.5 flex items-center gap-1.5">
+                  <Wifi className="w-3 h-3" />
+                  <span>{realSession.ip}</span>
+                </div>
+              </div>
             </div>
-          ))}
+
+            <div className="flex items-center gap-2 sm:self-center shrink-0">
+              <span className="text-[11px] font-mono font-semibold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                ● {realSession.lastActive}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </section>

@@ -9,7 +9,11 @@ import {
   Sliders, 
   Sparkles,
   RefreshCw,
-  Search
+  Search,
+  Pencil,
+  Bot,
+  X,
+  CheckCircle2
 } from 'lucide-react';
 import { useFinance, CURRENCY_CONFIGS } from '../../context/FinanceContext';
 import { CurrencyCode } from '../../types';
@@ -270,10 +274,24 @@ export const LanguageRegionSection: React.FC = () => {
     return localStorage.getItem('fix_settings_first_day') || 'Monday';
   });
 
+  // Editing state for each of the 4 sections
+  const [isEditingLang, setIsEditingLang] = useState(false);
+  const [draftLanguage, setDraftLanguage] = useState(selectedLanguage);
+
+  const [isEditingCountry, setIsEditingCountry] = useState(false);
+  const [draftCountry, setDraftCountry] = useState(selectedCountry);
+
+  const [isEditingDateFormat, setIsEditingDateFormat] = useState(false);
+  const [draftDateFormat, setDraftDateFormat] = useState(selectedDateFormat);
+
+  const [isEditingTimezone, setIsEditingTimezone] = useState(false);
+  const [draftTimezone, setDraftTimezone] = useState(selectedTimezone);
+
   const [langCategory, setLangCategory] = useState<'all' | 'tamil_indian' | 'english' | 'international'>('all');
   const [langSearch, setLangSearch] = useState('');
 
   const [saveToast, setSaveToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('Saved');
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState('');
 
   // Live clock based on selected timezone
@@ -302,10 +320,22 @@ export const LanguageRegionSection: React.FC = () => {
     return () => clearInterval(interval);
   }, [selectedTimezone]);
 
+  const showSavedNotification = (msg = 'Saved') => {
+    setToastMessage(msg);
+    setSaveToast(true);
+    setTimeout(() => setSaveToast(false), 2500);
+  };
+
   const handleLanguageChange = (langCode: string) => {
     setSelectedLanguage(langCode);
     localStorage.setItem('fix_settings_language', langCode);
-    showSavedNotification();
+    const lang = SUPPORTED_LANGUAGES.find(l => l.code === langCode);
+    showSavedNotification(`Language saved: ${lang?.nativeName || langCode} (AI Chat)`);
+  };
+
+  const handleSaveLanguage = () => {
+    handleLanguageChange(draftLanguage);
+    setIsEditingLang(false);
   };
 
   const handleCountryChange = (countryCode: string) => {
@@ -316,40 +346,68 @@ export const LanguageRegionSection: React.FC = () => {
     if (country) {
       setCurrency(country.currency);
     }
-    showSavedNotification();
+    showSavedNotification(`Country saved: ${country?.name || countryCode}`);
+  };
+
+  const handleSaveCountry = () => {
+    handleCountryChange(draftCountry);
+    setIsEditingCountry(false);
   };
 
   const handleDateFormatChange = (format: string) => {
     setSelectedDateFormat(format);
     localStorage.setItem('fix_settings_date_format', format);
-    showSavedNotification();
+    showSavedNotification(`Date format updated`);
+  };
+
+  const handleSaveDateFormat = () => {
+    handleDateFormatChange(draftDateFormat);
+    setIsEditingDateFormat(false);
   };
 
   const handleTimezoneChange = (tz: string) => {
     setSelectedTimezone(tz);
     localStorage.setItem('fix_settings_timezone', tz);
-    showSavedNotification();
+    showSavedNotification(`Time zone updated`);
+  };
+
+  const handleSaveTimezone = () => {
+    handleTimezoneChange(draftTimezone);
+    setIsEditingTimezone(false);
   };
 
   const handleNumberFormatChange = (nf: string) => {
     setSelectedNumberFormat(nf);
     localStorage.setItem('fix_settings_number_format', nf);
-    showSavedNotification();
+    showSavedNotification('Number delimiter updated');
   };
 
   const handleFirstDayChange = (day: string) => {
     setFirstDayOfWeek(day);
     localStorage.setItem('fix_settings_first_day', day);
-    showSavedNotification();
+    showSavedNotification('First day of week updated');
   };
 
-  const showSavedNotification = () => {
-    setSaveToast(true);
-    setTimeout(() => setSaveToast(false), 2500);
+  const getFormattedDateSample = (formatId: string) => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthShort = monthNames[now.getMonth()];
+
+    switch (formatId) {
+      case 'YYYY-MM-DD': return `${year}-${month}-${day}`;
+      case 'DD/MM/YYYY': return `${day}/${month}/${year}`;
+      case 'MM/DD/YYYY': return `${month}/${day}/${year}`;
+      case 'DD MMM YYYY': return `${day} ${monthShort} ${year}`;
+      default: return `${day} ${monthShort} ${year}`;
+    }
   };
 
   const activeLangObj = SUPPORTED_LANGUAGES.find(l => l.code === selectedLanguage) || SUPPORTED_LANGUAGES[0];
   const activeCountryObj = SUPPORTED_COUNTRIES.find(c => c.code === selectedCountry) || SUPPORTED_COUNTRIES[0];
+  const activeDateFormatObj = DATE_FORMATS.find(df => df.id === selectedDateFormat) || DATE_FORMATS[0];
   const activeTzObj = TIMEZONE_OPTIONS.find(t => t.id === selectedTimezone) || TIMEZONE_OPTIONS[0];
 
   return (
@@ -385,7 +443,7 @@ export const LanguageRegionSection: React.FC = () => {
           <span className="truncate">{currentTimeDisplay || 'Live Clock Syncing...'}</span>
           {saveToast && (
             <span className="text-emerald-500 text-[10px] font-sans font-bold flex items-center gap-1 animate-in fade-in">
-              <Check className="w-3 h-3" /> Saved
+              <Check className="w-3 h-3" /> {toastMessage}
             </span>
           )}
         </div>
@@ -400,12 +458,12 @@ export const LanguageRegionSection: React.FC = () => {
           <div>
             <div className="text-xs font-bold">{activeLangObj.greeting}</div>
             <div className="text-[11px] text-blue-600/80 dark:text-blue-300/80 font-mono">
-              Locale: {activeLangObj.nativeName} ({activeLangObj.name}) • Valuation in {currency}
+              AI Chat Language: {activeLangObj.nativeName} ({activeLangObj.name}) • UI: English • Valuation in {currency}
             </div>
           </div>
         </div>
-        <span className="text-[10px] font-mono px-2 py-1 rounded-lg bg-blue-500/15 border border-blue-500/30 font-semibold">
-          Auto-Localized
+        <span className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-blue-500/15 border border-blue-500/30 font-semibold text-blue-600 dark:text-blue-400">
+          AI Language Active
         </span>
       </div>
 
@@ -413,149 +471,238 @@ export const LanguageRegionSection: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
         
         {/* 1. Language Selector */}
-        <div className={`p-4 rounded-2xl border space-y-3 ${
+        <div className={`p-5 rounded-2xl border space-y-4 transition-all ${
           isLight ? 'bg-slate-50/70 border-slate-200' : 'bg-slate-950/50 border-slate-800'
         }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
               <Globe className="w-4 h-4 text-blue-500" />
-              <span>Display Language</span>
+              <span>Language (AI Assistant)</span>
             </div>
-            <span className="text-[10px] text-slate-500 font-mono">
-              {SUPPORTED_LANGUAGES.length} languages
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-500 border border-blue-500/30">
+              {activeLangObj.code} • {activeLangObj.nativeName}
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Choose your language: Tamil, Indian languages (Hindi, Telugu, Kannada, etc.), and English varieties.
-          </p>
 
-          {/* Quick Select Popular Languages */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] text-slate-400 font-medium">Quick Pick:</span>
-            {[
-              { code: 'ta', label: '🇮🇳 தமிழ் (Tamil)' },
-              { code: 'en-IN', label: '🇮🇳 English (India)' },
-              { code: 'hi', label: '🇮🇳 हिन्दी' },
-              { code: 'en-US', label: '🇺🇸 English (US)' },
-              { code: 'en-GB', label: '🇬🇧 English (UK)' },
-            ].map(quick => (
+          {!isEditingLang ? (
+            /* Selected Summary View - Only show what the user selected */
+            <div className="space-y-3">
+              <div className={`p-4 rounded-xl border flex items-center justify-between gap-3 ${
+                isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-900 border-slate-800'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl shrink-0">{activeLangObj.flag}</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-bold text-slate-900 dark:text-white">
+                        {activeLangObj.nativeName}
+                      </span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        ({activeLangObj.name})
+                      </span>
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/25">
+                        Selected
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-600 dark:text-slate-400 italic mt-0.5">
+                      "{activeLangObj.greeting}"
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] font-mono px-2 py-1 rounded-lg bg-blue-500/10 text-blue-500 border border-blue-500/20 font-bold block">
+                    Code: {activeLangObj.code}
+                  </span>
+                </div>
+              </div>
+
+              {/* Informational Pill about AI Chat Only */}
+              <div className={`p-3 rounded-xl border flex items-start gap-2.5 text-[11px] ${
+                isLight ? 'bg-blue-50/50 border-blue-200/60 text-blue-900' : 'bg-blue-950/20 border-blue-900/40 text-blue-300'
+              }`}>
+                <Bot className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <span className="font-bold">AI Chat Language Only:</span> The AI Assistant answers and delivers personalized advice in <strong>{activeLangObj.nativeName} ({activeLangObj.name})</strong>. All dashboard navigation, tabs, cards, and calculators remain in <strong>English</strong>.
+                </div>
+              </div>
+
+              {/* Change Button */}
               <button
-                key={quick.code}
-                onClick={() => handleLanguageChange(quick.code)}
-                className={`text-[10px] px-2 py-0.5 rounded-full border transition-all ${
-                  selectedLanguage === quick.code
-                    ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
-                    : isLight
-                      ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
-                      : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                onClick={() => {
+                  setDraftLanguage(selectedLanguage);
+                  setIsEditingLang(true);
+                }}
+                className={`w-full py-2.5 px-4 rounded-xl border font-bold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer ${
+                  isLight
+                    ? 'bg-white hover:bg-slate-100 text-blue-600 border-blue-200 hover:border-blue-300'
+                    : 'bg-slate-900 hover:bg-slate-800 text-blue-400 border-slate-800 hover:border-blue-500/40'
                 }`}
               >
-                {quick.label}
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Change Language</span>
               </button>
-            ))}
-          </div>
-
-          {/* Category Tabs & Search Bar */}
-          <div className="space-y-2 pt-1">
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none text-[11px]">
-              {[
-                { id: 'all', label: `All (${SUPPORTED_LANGUAGES.length})` },
-                { id: 'tamil_indian', label: '🇮🇳 Tamil & Indian' },
-                { id: 'english', label: '🌐 English Any' },
-                { id: 'international', label: '🌍 Global' },
-              ].map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => setLangCategory(cat.id as any)}
-                  className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-all ${
-                    langCategory === cat.id
-                      ? 'bg-blue-600 text-white font-bold shadow-xs'
-                      : isLight
-                        ? 'bg-white hover:bg-slate-200/70 text-slate-600 border border-slate-200'
-                        : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
             </div>
-
-            {/* Language Search */}
-            <div className="relative">
-              <Search className="w-3 h-3 absolute left-2.5 top-2 text-slate-400" />
-              <input
-                type="text"
-                value={langSearch}
-                onChange={(e) => setLangSearch(e.target.value)}
-                placeholder="Search language (e.g., Tamil, Telugu, English)..."
-                className={`w-full pl-7 pr-7 py-1 text-[11px] rounded-lg border focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                  isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
-                }`}
-              />
-              {langSearch && (
+          ) : (
+            /* Editing / Picker Mode with Save and Cancel */
+            <div className="space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-200 dark:border-slate-800">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                  Select AI Chat Language (Click option, then click Save)
+                </span>
                 <button
-                  onClick={() => setLangSearch('')}
-                  className="absolute right-2 top-1.5 text-[10px] text-slate-400 hover:text-slate-600"
+                  onClick={() => setIsEditingLang(false)}
+                  className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {/* Languages Grid */}
-          <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
-            {SUPPORTED_LANGUAGES
-              .filter(lang => {
-                const matchesCat = langCategory === 'all' || lang.category === langCategory;
-                if (!matchesCat) return false;
-                if (!langSearch.trim()) return true;
-                const q = langSearch.toLowerCase();
-                return (
-                  lang.name.toLowerCase().includes(q) ||
-                  lang.nativeName.toLowerCase().includes(q) ||
-                  lang.code.toLowerCase().includes(q)
-                );
-              })
-              .map(lang => {
-                const isSelected = selectedLanguage === lang.code;
-                return (
+              {/* Quick Picks */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] text-slate-400 font-medium">Quick Pick:</span>
+                {[
+                  { code: 'ta', label: '🇮🇳 தமிழ் (Tamil)' },
+                  { code: 'en-IN', label: '🇮🇳 English (India)' },
+                  { code: 'hi', label: '🇮🇳 हिन्दी' },
+                  { code: 'en-US', label: '🇺🇸 English (US)' },
+                  { code: 'en-GB', label: '🇬🇧 English (UK)' },
+                ].map(quick => (
                   <button
-                    key={lang.code}
-                    onClick={() => handleLanguageChange(lang.code)}
-                    className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all ${
-                      isSelected
-                        ? 'bg-blue-600 text-white border-blue-500 shadow-sm font-bold ring-2 ring-blue-500/20'
-                        : isLight 
-                          ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' 
+                    key={quick.code}
+                    onClick={() => setDraftLanguage(quick.code)}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-all cursor-pointer ${
+                      draftLanguage === quick.code
+                        ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
+                        : isLight
+                          ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
                           : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
                     }`}
                   >
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="text-base shrink-0">{lang.flag}</span>
-                      <div className="truncate">
-                        <div className="truncate font-semibold flex items-center gap-1">
-                          <span>{lang.nativeName}</span>
-                          {lang.code === 'ta' && (
-                            <span className="text-[9px] px-1 rounded bg-amber-400/20 text-amber-300 font-normal">
-                              Featured
-                            </span>
-                          )}
-                        </div>
-                        <div className={`text-[10px] truncate ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>
-                          {lang.name}
-                        </div>
-                      </div>
-                    </div>
-                    {isSelected && <Check className="w-3.5 h-3.5 shrink-0 text-white" />}
+                    {quick.label}
                   </button>
-                );
-              })}
-          </div>
+                ))}
+              </div>
+
+              {/* Category Tabs */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none text-[11px]">
+                {[
+                  { id: 'all', label: `All (${SUPPORTED_LANGUAGES.length})` },
+                  { id: 'tamil_indian', label: '🇮🇳 Tamil & Indian' },
+                  { id: 'english', label: '🌐 English Any' },
+                  { id: 'international', label: '🌍 Global' },
+                ].map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setLangCategory(cat.id as any)}
+                    className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-all cursor-pointer ${
+                      langCategory === cat.id
+                        ? 'bg-blue-600 text-white font-bold shadow-xs'
+                        : isLight
+                          ? 'bg-white hover:bg-slate-200/70 text-slate-600 border border-slate-200'
+                          : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search */}
+              <div className="relative">
+                <Search className="w-3 h-3 absolute left-2.5 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={langSearch}
+                  onChange={(e) => setLangSearch(e.target.value)}
+                  placeholder="Search language (e.g. Tamil, Telugu, Hindi)..."
+                  className={`w-full pl-7 pr-7 py-1.5 text-[11px] rounded-lg border focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                    isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
+                  }`}
+                />
+                {langSearch && (
+                  <button
+                    onClick={() => setLangSearch('')}
+                    className="absolute right-2 top-2 text-[10px] text-slate-400 hover:text-slate-600"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* List */}
+              <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
+                {SUPPORTED_LANGUAGES
+                  .filter(lang => {
+                    const matchesCat = langCategory === 'all' || lang.category === langCategory;
+                    if (!matchesCat) return false;
+                    if (!langSearch.trim()) return true;
+                    const q = langSearch.toLowerCase();
+                    return (
+                      lang.name.toLowerCase().includes(q) ||
+                      lang.nativeName.toLowerCase().includes(q) ||
+                      lang.code.toLowerCase().includes(q)
+                    );
+                  })
+                  .map(lang => {
+                    const isDraft = draftLanguage === lang.code;
+                    return (
+                      <button
+                        key={lang.code}
+                        onClick={() => setDraftLanguage(lang.code)}
+                        className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                          isDraft
+                            ? 'bg-blue-600 text-white border-blue-500 shadow-sm font-bold ring-2 ring-blue-500/20'
+                            : isLight 
+                              ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' 
+                              : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="text-base shrink-0">{lang.flag}</span>
+                          <div className="truncate">
+                            <div className="truncate font-semibold flex items-center gap-1">
+                              <span>{lang.nativeName}</span>
+                              {lang.code === 'ta' && (
+                                <span className="text-[9px] px-1 rounded bg-amber-400/20 text-amber-300 font-normal">
+                                  Featured
+                                </span>
+                              )}
+                            </div>
+                            <div className={`text-[10px] truncate ${isDraft ? 'text-blue-100' : 'text-slate-400'}`}>
+                              {lang.name}
+                            </div>
+                          </div>
+                        </div>
+                        {isDraft && <Check className="w-3.5 h-3.5 shrink-0 text-white" />}
+                      </button>
+                    );
+                  })}
+              </div>
+
+              {/* Save & Cancel Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  onClick={() => setIsEditingLang(false)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer ${
+                    isLight ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveLanguage}
+                  className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Save Language</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 2. Country / Region */}
-        <div className={`p-4 rounded-2xl border space-y-3 ${
+        <div className={`p-5 rounded-2xl border space-y-4 transition-all ${
           isLight ? 'bg-slate-50/70 border-slate-200' : 'bg-slate-950/50 border-slate-800'
         }`}>
           <div className="flex items-center justify-between">
@@ -563,128 +710,408 @@ export const LanguageRegionSection: React.FC = () => {
               <MapPin className="w-4 h-4 text-emerald-500" />
               <span>Country & Fiscal Region</span>
             </div>
-            <span className="text-[10px] text-slate-500 font-mono">Tax & Accounting</span>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+              {activeCountryObj.code} • {activeCountryObj.currency}
+            </span>
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Defines your financial calendar, tax year cycle, and benchmark metrics.
-          </p>
-          <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-            {SUPPORTED_COUNTRIES.map(country => {
-              const isSelected = selectedCountry === country.code;
-              return (
-                <button
-                  key={country.code}
-                  onClick={() => handleCountryChange(country.code)}
-                  className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all ${
-                    isSelected
-                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm font-bold'
-                      : isLight 
-                        ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' 
-                        : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <span className="text-base shrink-0">{country.flag}</span>
-                    <div className="truncate">
-                      <div className="truncate font-semibold">{country.name}</div>
-                      <div className={`text-[10px] font-mono ${isSelected ? 'text-emerald-100' : 'text-slate-400'}`}>
-                        {country.currency} • {country.fiscalYear.split(' ')[0]}
-                      </div>
+
+          {!isEditingCountry ? (
+            /* Selected Summary View - Only show what the user selected */
+            <div className="space-y-3">
+              <div className={`p-4 rounded-xl border flex items-center justify-between gap-3 ${
+                isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-900 border-slate-800'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl shrink-0">{activeCountryObj.flag}</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-bold text-slate-900 dark:text-white">
+                        {activeCountryObj.name}
+                      </span>
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/25">
+                        Selected
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-600 dark:text-slate-400 font-mono mt-0.5">
+                      Base Currency: <strong>{activeCountryObj.currency} ({CURRENCY_CONFIGS[activeCountryObj.currency]?.symbol})</strong> • Fiscal: {activeCountryObj.fiscalYear}
                     </div>
                   </div>
-                  {isSelected && <Check className="w-3.5 h-3.5 shrink-0 text-white" />}
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] font-mono px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-bold block">
+                    {activeCountryObj.code}
+                  </span>
+                </div>
+              </div>
+
+              {/* Informational Pill about Fiscal Standard */}
+              <div className={`p-3 rounded-xl border flex items-start gap-2.5 text-[11px] ${
+                isLight ? 'bg-emerald-50/50 border-emerald-200/60 text-emerald-900' : 'bg-emerald-950/20 border-emerald-900/40 text-emerald-300'
+              }`}>
+                <MapPin className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <span className="font-bold">Fiscal Standard:</span> Sets your financial calendar, tax year cycle, benchmark tax metrics, and default base currency across the application.
+                </div>
+              </div>
+
+              {/* Change Button */}
+              <button
+                onClick={() => {
+                  setDraftCountry(selectedCountry);
+                  setIsEditingCountry(true);
+                }}
+                className={`w-full py-2.5 px-4 rounded-xl border font-bold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer ${
+                  isLight
+                    ? 'bg-white hover:bg-slate-100 text-emerald-600 border-emerald-200 hover:border-emerald-300'
+                    : 'bg-slate-900 hover:bg-slate-800 text-emerald-400 border-slate-800 hover:border-emerald-500/40'
+                }`}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Change Country & Region</span>
+              </button>
+            </div>
+          ) : (
+            /* Editing / Picker Mode with Save and Cancel */
+            <div className="space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-200 dark:border-slate-800">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                  Select Country & Fiscal Region (Click option, then click Save)
+                </span>
+                <button
+                  onClick={() => setIsEditingCountry(false)}
+                  className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
                 </button>
-              );
-            })}
-          </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
+                {SUPPORTED_COUNTRIES.map(country => {
+                  const isDraft = draftCountry === country.code;
+                  return (
+                    <button
+                      key={country.code}
+                      onClick={() => setDraftCountry(country.code)}
+                      className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                        isDraft
+                          ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm font-bold ring-2 ring-emerald-500/20'
+                          : isLight 
+                            ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' 
+                            : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="text-base shrink-0">{country.flag}</span>
+                        <div className="truncate">
+                          <div className="truncate font-semibold">{country.name}</div>
+                          <div className={`text-[10px] font-mono ${isDraft ? 'text-emerald-100' : 'text-slate-400'}`}>
+                            {country.currency} • {country.fiscalYear.split(' ')[0]}
+                          </div>
+                        </div>
+                      </div>
+                      {isDraft && <Check className="w-3.5 h-3.5 shrink-0 text-white" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Save & Cancel Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  onClick={() => setIsEditingCountry(false)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer ${
+                    isLight ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveCountry}
+                  className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Save Country</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 3. Date Format */}
-        <div className={`p-4 rounded-2xl border space-y-3 ${
+        <div className={`p-5 rounded-2xl border space-y-4 transition-all ${
           isLight ? 'bg-slate-50/70 border-slate-200' : 'bg-slate-950/50 border-slate-800'
         }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
               <Calendar className="w-4 h-4 text-purple-500" />
-              <span>Date Format</span>
+              <span>Date Notation Format</span>
             </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/15 text-purple-500 font-bold">
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-500 border border-purple-500/30">
               {selectedDateFormat}
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Preferred visual notation for transaction dates and timeline entries.
-          </p>
-          <div className="space-y-1.5">
-            {DATE_FORMATS.map(df => {
-              const isSelected = selectedDateFormat === df.id;
-              return (
-                <button
-                  key={df.id}
-                  onClick={() => handleDateFormatChange(df.id)}
-                  className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all ${
-                    isSelected
-                      ? 'bg-purple-600 text-white border-purple-500 shadow-sm font-bold'
-                      : isLight
-                        ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
-                        : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
-                  }`}
-                >
+
+          {!isEditingDateFormat ? (
+            /* Selected Summary View - Only show what the user selected */
+            <div className="space-y-3">
+              <div className={`p-4 rounded-xl border flex items-center justify-between gap-3 ${
+                isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-900 border-slate-800'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-purple-500/15 text-purple-500 shrink-0">
+                    <Calendar className="w-5 h-5" />
+                  </div>
                   <div>
-                    <div className="font-semibold text-xs">{df.label}</div>
-                    <div className={`text-[10px] ${isSelected ? 'text-purple-100' : 'text-slate-400'}`}>
-                      Preview: <span className="font-mono font-bold">{df.sample}</span> ({df.desc})
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-bold text-slate-900 dark:text-white font-mono">
+                        {activeDateFormatObj.label}
+                      </span>
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/25">
+                        Selected
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-purple-600 dark:text-purple-400 font-mono font-bold mt-0.5">
+                      Sample Today: {getFormattedDateSample(selectedDateFormat)}
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      {activeDateFormatObj.desc}
                     </div>
                   </div>
-                  {isSelected && <Check className="w-4 h-4 shrink-0 text-white" />}
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] font-mono px-2 py-1 rounded-lg bg-purple-500/10 text-purple-500 border border-purple-500/20 font-bold block">
+                    {activeDateFormatObj.id}
+                  </span>
+                </div>
+              </div>
+
+              {/* Informational Pill */}
+              <div className={`p-3 rounded-xl border flex items-start gap-2.5 text-[11px] ${
+                isLight ? 'bg-purple-50/50 border-purple-200/60 text-purple-900' : 'bg-purple-950/20 border-purple-900/40 text-purple-300'
+              }`}>
+                <Calendar className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <span className="font-bold">Format Standard:</span> Applied uniformly across transaction dates, statement exports, timeline entries, and date pickers.
+                </div>
+              </div>
+
+              {/* Change Button */}
+              <button
+                onClick={() => {
+                  setDraftDateFormat(selectedDateFormat);
+                  setIsEditingDateFormat(true);
+                }}
+                className={`w-full py-2.5 px-4 rounded-xl border font-bold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer ${
+                  isLight
+                    ? 'bg-white hover:bg-slate-100 text-purple-600 border-purple-200 hover:border-purple-300'
+                    : 'bg-slate-900 hover:bg-slate-800 text-purple-400 border-slate-800 hover:border-purple-500/40'
+                }`}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Change Date Format</span>
+              </button>
+            </div>
+          ) : (
+            /* Editing / Picker Mode with Save and Cancel */
+            <div className="space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-200 dark:border-slate-800">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                  Select Date Notation Format (Click option, then click Save)
+                </span>
+                <button
+                  onClick={() => setIsEditingDateFormat(false)}
+                  className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
                 </button>
-              );
-            })}
-          </div>
+              </div>
+
+              <div className="space-y-2">
+                {DATE_FORMATS.map(df => {
+                  const isDraft = draftDateFormat === df.id;
+                  return (
+                    <button
+                      key={df.id}
+                      onClick={() => setDraftDateFormat(df.id)}
+                      className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                        isDraft
+                          ? 'bg-purple-600 text-white border-purple-500 shadow-sm font-bold ring-2 ring-purple-500/20'
+                          : isLight
+                            ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                            : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                      }`}
+                    >
+                      <div>
+                        <div className="font-semibold text-xs">{df.label}</div>
+                        <div className={`text-[10px] ${isDraft ? 'text-purple-100' : 'text-slate-400'}`}>
+                          Preview: <span className="font-mono font-bold">{getFormattedDateSample(df.id)}</span> ({df.desc})
+                        </div>
+                      </div>
+                      {isDraft && <Check className="w-4 h-4 shrink-0 text-white" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Save & Cancel Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  onClick={() => setIsEditingDateFormat(false)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer ${
+                    isLight ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveDateFormat}
+                  className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Save Format</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 4. Time Zone */}
-        <div className={`p-4 rounded-2xl border space-y-3 ${
+        <div className={`p-5 rounded-2xl border space-y-4 transition-all ${
           isLight ? 'bg-slate-50/70 border-slate-200' : 'bg-slate-950/50 border-slate-800'
         }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
               <Clock className="w-4 h-4 text-amber-500" />
-              <span>Time Zone</span>
+              <span>Time Zone & Real-Time Sync</span>
             </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold">
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30">
               {activeTzObj.offset}
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Syncs cash flow calendar triggers and daily midnight ledger roll-overs.
-          </p>
-          <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-            {TIMEZONE_OPTIONS.map(tz => {
-              const isSelected = selectedTimezone === tz.id;
-              return (
-                <button
-                  key={tz.id}
-                  onClick={() => handleTimezoneChange(tz.id)}
-                  className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all ${
-                    isSelected
-                      ? 'bg-amber-600 text-white border-amber-500 shadow-sm font-bold'
-                      : isLight
-                        ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
-                        : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
-                  }`}
-                >
-                  <div className="truncate pr-2">
-                    <div className="font-semibold text-xs truncate">{tz.label}</div>
-                    <div className={`text-[10px] font-mono truncate ${isSelected ? 'text-amber-100' : 'text-slate-400'}`}>
-                      {tz.city} ({tz.offset})
+
+          {!isEditingTimezone ? (
+            /* Selected Summary View - Only show what the user selected */
+            <div className="space-y-3">
+              <div className={`p-4 rounded-xl border flex items-center justify-between gap-3 ${
+                isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-900 border-slate-800'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-500/15 text-amber-500 shrink-0">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-bold text-slate-900 dark:text-white">
+                        {activeTzObj.label}
+                      </span>
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/25">
+                        Selected
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-600 dark:text-slate-400 font-mono mt-0.5">
+                      {activeTzObj.city} • <strong className="text-amber-600 dark:text-amber-400 font-mono">{activeTzObj.offset}</strong>
+                    </div>
+                    <div className="text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Live Zone Clock: {currentTimeDisplay || 'Syncing...'}
                     </div>
                   </div>
-                  {isSelected && <Check className="w-4 h-4 shrink-0 text-white" />}
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] font-mono px-2 py-1 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold block">
+                    {activeTzObj.offset}
+                  </span>
+                </div>
+              </div>
+
+              {/* Informational Pill */}
+              <div className={`p-3 rounded-xl border flex items-start gap-2.5 text-[11px] ${
+                isLight ? 'bg-amber-50/50 border-amber-200/60 text-amber-900' : 'bg-amber-950/20 border-amber-900/40 text-amber-300'
+              }`}>
+                <Clock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <span className="font-bold">Real-Time Sync:</span> Coordinates cash flow calendar triggers, daily midnight ledger roll-overs, automated transaction reminders, and recurring series triggers.
+                </div>
+              </div>
+
+              {/* Change Button */}
+              <button
+                onClick={() => {
+                  setDraftTimezone(selectedTimezone);
+                  setIsEditingTimezone(true);
+                }}
+                className={`w-full py-2.5 px-4 rounded-xl border font-bold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer ${
+                  isLight
+                    ? 'bg-white hover:bg-slate-100 text-amber-600 border-amber-200 hover:border-amber-300'
+                    : 'bg-slate-900 hover:bg-slate-800 text-amber-400 border-slate-800 hover:border-amber-500/40'
+                }`}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Change Time Zone</span>
+              </button>
+            </div>
+          ) : (
+            /* Editing / Picker Mode with Save and Cancel */
+            <div className="space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-200 dark:border-slate-800">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                  Select Time Zone (Click option, then click Save)
+                </span>
+                <button
+                  onClick={() => setIsEditingTimezone(false)}
+                  className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
                 </button>
-              );
-            })}
-          </div>
+              </div>
+
+              <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                {TIMEZONE_OPTIONS.map(tz => {
+                  const isDraft = draftTimezone === tz.id;
+                  return (
+                    <button
+                      key={tz.id}
+                      onClick={() => setDraftTimezone(tz.id)}
+                      className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                        isDraft
+                          ? 'bg-amber-600 text-white border-amber-500 shadow-sm font-bold ring-2 ring-amber-500/20'
+                          : isLight
+                            ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                            : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                      }`}
+                    >
+                      <div className="truncate pr-2">
+                        <div className="font-semibold text-xs truncate">{tz.label}</div>
+                        <div className={`text-[10px] font-mono truncate ${isDraft ? 'text-amber-100' : 'text-slate-400'}`}>
+                          {tz.city} ({tz.offset})
+                        </div>
+                      </div>
+                      {isDraft && <Check className="w-4 h-4 shrink-0 text-white" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Save & Cancel Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  onClick={() => setIsEditingTimezone(false)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer ${
+                    isLight ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveTimezone}
+                  className="px-4 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Save Timezone</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,6 +1,8 @@
 import {
   FinScoreProfile,
+  FinScoreIncomeSource,
   FinScoreExpenseCategory,
+  FinancialPriorityLevel,
   FinScoreLoan,
   FinScoreInsurance,
   FinScoreEmergency,
@@ -65,6 +67,14 @@ export const EMPTY_FINSCORE_EMERGENCY: FinScoreEmergency = {
 
 export const EMPTY_FINSCORE_GOALS: FinScoreGoal[] = [];
 
+export const EMPTY_FINSCORE_INCOMES: FinScoreIncomeSource[] = [];
+
+export const INITIAL_FINSCORE_INCOMES: FinScoreIncomeSource[] = [
+  { id: 'inc-1', source: 'Primary Job / Salary', amount: 42000, priority: 'essential', isEssential: true },
+  { id: 'inc-2', source: 'Secondary / Freelance / Retainer', amount: 5000, priority: 'moderate', isEssential: false },
+  { id: 'inc-3', source: 'Dividends & Interest Inflow', amount: 3000, priority: 'discretionary', isEssential: false },
+];
+
 export const INITIAL_FINSCORE_PROFILE: FinScoreProfile = {
   name: 'Sudharsan',
   age: 28,
@@ -75,13 +85,13 @@ export const INITIAL_FINSCORE_PROFILE: FinScoreProfile = {
 };
 
 export const INITIAL_FINSCORE_EXPENSES: FinScoreExpenseCategory[] = [
-  { id: 'exp-1', category: 'Rent & Housing', amount: 10000, isEssential: true },
-  { id: 'exp-2', category: 'Food & Groceries', amount: 7000, isEssential: true },
-  { id: 'exp-3', category: 'Transport & Commute', amount: 3000, isEssential: true },
-  { id: 'exp-4', category: 'Loan EMIs', amount: 8000, isEssential: true },
-  { id: 'exp-5', category: 'Utilities & Bills', amount: 3000, isEssential: true },
-  { id: 'exp-6', category: 'Dining & Entertainment', amount: 2000, isEssential: false },
-  { id: 'exp-7', category: 'Other Expenses', amount: 5000, isEssential: false },
+  { id: 'exp-1', category: 'Rent & Housing', amount: 10000, isEssential: true, priority: 'essential' },
+  { id: 'exp-2', category: 'Food & Groceries', amount: 7000, isEssential: true, priority: 'essential' },
+  { id: 'exp-3', category: 'Transport & Commute', amount: 3000, isEssential: false, priority: 'moderate' },
+  { id: 'exp-4', category: 'Loan EMIs', amount: 8000, isEssential: true, priority: 'essential' },
+  { id: 'exp-5', category: 'Utilities & Bills', amount: 3000, isEssential: true, priority: 'essential' },
+  { id: 'exp-6', category: 'Dining & Entertainment', amount: 2000, isEssential: false, priority: 'discretionary' },
+  { id: 'exp-7', category: 'Other Expenses', amount: 5000, isEssential: false, priority: 'discretionary' },
 ];
 
 export const INITIAL_FINSCORE_LOANS: FinScoreLoan[] = [
@@ -258,9 +268,12 @@ export function calculateFinScore(
   // 1. Income & Expense Analysis
   const totalExpenses = expenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
   const essentialExpenses = expenses
-    .filter(e => e.isEssential)
+    .filter(e => e.priority === 'essential' || (e.priority === undefined && e.isEssential))
     .reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
-  const discretionaryExpenses = Math.max(0, totalExpenses - essentialExpenses);
+  const moderateExpenses = expenses
+    .filter(e => e.priority === 'moderate')
+    .reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+  const discretionaryExpenses = Math.max(0, totalExpenses - essentialExpenses - moderateExpenses);
 
   const monthlySavings = income - totalExpenses;
   const savingsRatio = Math.round(((monthlySavings > 0 ? monthlySavings : 0) / income) * 100);

@@ -171,6 +171,7 @@ export const FireFreedomCalculator: React.FC<FireFreedomCalculatorProps> = ({ on
             years: inputsToUse.years,
           },
           userQuestion: question || undefined,
+          language: localStorage.getItem('fix_settings_language') || 'en-US',
         }),
       });
 
