@@ -12,10 +12,13 @@ import {
   X, 
   MessageSquarePlus, 
   Star, 
-  MoreHorizontal 
+  MoreHorizontal,
+  ShieldCheck
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
+import { useAuth } from '../context/AuthContext';
 import { ThankYouFeedbackModal } from './ThankYouFeedbackModal';
+import { submitUserFeedback } from '../services/firebase';
 
 interface SidebarProfileProps {
   isCollapsed?: boolean;
@@ -28,18 +31,24 @@ export const SidebarProfile: React.FC<SidebarProfileProps> = ({ isCollapsed = fa
     isPrivateMode, 
     togglePrivateMode, 
     netWorth, 
-    formatMoney
+    formatMoney,
+    setActiveTab
   } = useFinance();
+
+  const { 
+    currentUser, 
+    role, 
+    isClientUser, 
+    openAuthModal, 
+    signOut, 
+    isAuthenticated 
+  } = useAuth();
 
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
-  // Persistent user profile state
-  const [userName] = useState<string>(() => {
-    return localStorage.getItem('fix_user_name') || 'Sudharsan M.';
-  });
-  const [userEmail] = useState<string>(() => {
-    return localStorage.getItem('fix_user_email') || 'sudharsanm014@gmail.com';
-  });
+  // Dynamic user profile from AuthContext
+  const userName = currentUser?.name || 'Sudharsan M.';
+  const userEmail = currentUser?.email || 'sudharsanm014@gmail.com';
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
@@ -109,6 +118,16 @@ export const SidebarProfile: React.FC<SidebarProfileProps> = ({ isCollapsed = fa
       date: new Date().toISOString()
     };
     localStorage.setItem('fix_user_feedback_logs', JSON.stringify([newEntry, ...existing]));
+
+    // Sync to Firestore database
+    submitUserFeedback({
+      userId: 'user-sudharsan',
+      userName: userName,
+      userEmail: userEmail,
+      category: (currentCategory.toLowerCase().replace(' ', '_') as any) || 'feature_request',
+      rating: currentRating,
+      message: feedbackText.trim(),
+    }).catch(err => console.warn('Could not sync feedback to Firestore:', err));
 
     setSubmittedRating(currentRating);
     setSubmittedCategory(currentCategory);
@@ -183,6 +202,54 @@ export const SidebarProfile: React.FC<SidebarProfileProps> = ({ isCollapsed = fa
               <MessageSquarePlus className="w-3.5 h-3.5 text-blue-500" />
               <span>Share Feedback</span>
             </button>
+
+            {/* Account & Roles Authentication Modal Launcher */}
+            <button
+              id="sidebar-profile-btn-auth"
+              onClick={() => {
+                setIsMenuOpen(false);
+                openAuthModal('login');
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors cursor-pointer ${
+                isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-slate-800 text-slate-200'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <User className="w-3.5 h-3.5 text-blue-500" />
+                <span className="font-semibold">Account &amp; Roles</span>
+              </div>
+              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                role === 'main_admin' 
+                  ? 'bg-blue-500/20 text-blue-400' 
+                  : role === 'admin_advisor' 
+                  ? 'bg-indigo-500/20 text-indigo-400' 
+                  : 'bg-emerald-500/20 text-emerald-400'
+              }`}>
+                {role === 'main_admin' ? 'Admin' : role === 'admin_advisor' ? 'Advisor' : 'Client'}
+              </span>
+            </button>
+
+            {/* Admin & Advisor Panel Direct Launch (Hidden for Client Users) */}
+            {!isClientUser && (
+              <button
+                id="sidebar-profile-btn-admin"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setActiveTab('admin');
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors cursor-pointer ${
+                  isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-slate-800 text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />
+                  <span className="font-semibold">Admin &amp; Advisors</span>
+                </div>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-400 font-bold">
+                  Portal
+                </span>
+              </button>
+            )}
 
             <div className={`my-1 h-px ${isLight ? 'bg-slate-200' : 'bg-slate-800'}`} />
 

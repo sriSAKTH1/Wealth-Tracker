@@ -277,7 +277,7 @@ export interface NetWorthSnapshot {
 
 export type AppTheme = 'coolors' | 'dark' | 'midnight' | 'emerald' | 'slate' | 'light' | 'flavorfit' | 'nature' | 'retro';
 
-export type MainTab = 'overview' | 'wealth' | 'goals' | 'account' | 'more' | 'calendar' | 'balancesheet' | 'reports' | 'finscore' | 'settings' | 'calculators';
+export type MainTab = 'overview' | 'wealth' | 'goals' | 'account' | 'more' | 'calendar' | 'balancesheet' | 'reports' | 'finscore' | 'settings' | 'calculators' | 'admin';
 
 export type WealthSubTab = 'assets' | 'liabilities' | 'networth' | 'allocation';
 export type GoalsSubTab = 'essential' | 'goals' | 'fire';
@@ -457,3 +457,45 @@ export const DEFAULT_LIABILITY_TAGS: AssetTagMeta[] = [
   { name: 'Revolving Credit', color: '#ec4899', badgeClass: 'bg-pink-500/15 text-pink-300 border-pink-500/30' },
   { name: 'Refinance Target', color: '#eab308', badgeClass: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30' },
 ];
+
+export type AppUserRole = 'main_admin' | 'admin_advisor' | 'user';
+
+export interface AppUserProfile {
+  id: string;
+  email: string;
+  name: string;
+  role: AppUserRole;
+  assignedAdvisorId?: string;
+  assignedAdvisorName?: string;
+  deviceInfo?: string;
+  lastLoginAt?: string;
+  createdAt: string;
+  finScore?: number;
+  monthlyIncome?: number;
+  savingsRatio?: number;
+}
+
+export interface AppAdvisorAssignment {
+  advisorId: string;
+  advisorName: string;
+  advisorEmail: string;
+  assignedUserIds: string[]; // max 10
+  currentClientCount: number; // 0..10
+  maxCapacity: number; // 10
+  updatedAt: string;
+}
+
+export interface AppFeedback {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  assignedAdvisorId?: string;
+  category: 'feature_request' | 'question' | 'bug' | 'praise' | 'general';
+  rating: number; // 1..5
+  message: string;
+  status: 'new' | 'in_review' | 'resolved';
+  adminNotes?: string;
+  createdAt: string;
+}
+

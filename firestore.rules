@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(docId) {
+      return docId is string && docId.size() > 0 && docId.size() <= 128 && docId.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function getUserRole() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : 'user';
+    }
+
+    function isMainAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'sudharsanm014@gmail.com' ||
+        getUserRole() == 'main_admin'
+      );
+    }
+
+    function isAdvisor() {
+      return isSignedIn() && (isMainAdmin() || getUserRole() == 'admin_advisor');
+    }
+
+    // --- USERS ROOT COLLECTION ---
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || isAdvisor());
+      allow list: if isSignedIn() && isAdvisor();
+      allow create: if isSignedIn() && isValidId(userId) && isOwner(userId);
+      allow update: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isMainAdmin());
+      allow delete: if isMainAdmin();
+
+      // --- PERSISTENT USER TRANSACTIONS SUBCOLLECTION ---
+      match /transactions/{transactionId} {
+        allow read: if isSignedIn() && (isOwner(userId) || isAdvisor());
+        allow write: if isSignedIn() && isValidId(transactionId) && (isOwner(userId) || isMainAdmin());
+      }
+
+      // --- PERSISTENT USER FINANCIAL DATA & PORTFOLIO SNAPSHOTS ---
+      match /financial_data/{docId} {
+        allow read: if isSignedIn() && (isOwner(userId) || isAdvisor());
+        allow write: if isSignedIn() && isValidId(docId) && (isOwner(userId) || isMainAdmin());
+      }
+    }
+
+    // --- ADVISOR ASSIGNMENTS ---
+    match /advisor_assignments/{advisorId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create, update: if isSignedIn() && isValidId(advisorId) && (isMainAdmin() || request.auth.uid == advisorId)
+        && request.resource.data.assignedUserIds.size() <= 10;
+      allow delete: if isMainAdmin();
+    }
+
+    // --- FEEDBACK COLLECTION ---
+    match /feedback/{feedbackId} {
+      allow get: if isSignedIn() && (
+        request.auth.uid == resource.data.userId || isAdvisor()
+      );
+      allow list: if isSignedIn() && isAdvisor();
+      allow create: if isSignedIn() && isValidId(feedbackId)
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.rating >= 1 && request.resource.data.rating <= 5;
+      allow update: if isSignedIn() && isAdvisor();
+      allow delete: if isMainAdmin();
+    }
+
+    // Connection validation test document
+    match /test/{testId} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

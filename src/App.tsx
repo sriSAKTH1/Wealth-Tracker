@@ -1,6 +1,8 @@
 import React from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Shield } from 'lucide-react';
 import { FinanceProvider, useFinance } from './context/FinanceContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthModal } from './components/auth/AuthModal';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { BottomNav } from './components/BottomNav';
@@ -22,10 +24,12 @@ import { FinScoreView } from './components/views/FinScoreView';
 import { BalanceSheetView } from './components/views/BalanceSheetView';
 import { SettingsView } from './components/views/SettingsView';
 import { FinancialCalculatorsView } from './components/calculators/FinancialCalculatorsView';
+import { AdminPanelView } from './components/views/AdminPanelView';
 import { AppFooter } from './components/AppFooter';
 
 const MainLayout: React.FC = () => {
-  const { activeTab, theme, accentColor, isMobileFrameSimulated, openQuickAdd, transactions = [] } = useFinance();
+  const { activeTab, setActiveTab, theme, accentColor, isMobileFrameSimulated, openQuickAdd, transactions = [] } = useFinance();
+  const { isClientUser } = useAuth();
   const hasNoTransactions = !transactions || transactions.length === 0;
 
   // Render current active view
@@ -53,6 +57,30 @@ const MainLayout: React.FC = () => {
         return <SettingsView />;
       case 'calculators':
         return <FinancialCalculatorsView />;
+      case 'admin':
+        if (isClientUser) {
+          return (
+            <div className="p-8 text-center max-w-lg mx-auto my-16 rounded-3xl border border-rose-500/25 bg-rose-500/10 space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-500 flex items-center justify-center mx-auto">
+                <Shield className="w-6 h-6" />
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                Client Access Restricted
+              </h2>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                The Admin &amp; Advisor Panel is strictly reserved for credentialed Administrators and Financial Advisors. Client financial data remains 100% private in local storage on this device.
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveTab('overview')}
+                className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-md shadow-blue-600/25 hover:bg-blue-500 transition-all cursor-pointer"
+              >
+                Return to Overview Dashboard
+              </button>
+            </div>
+          );
+        }
+        return <AdminPanelView />;
       default:
         return <OverviewView />;
     }
@@ -188,8 +216,11 @@ const MainLayout: React.FC = () => {
 
 export default function App() {
   return (
-    <FinanceProvider>
-      <MainLayout />
-    </FinanceProvider>
+    <AuthProvider>
+      <FinanceProvider>
+        <MainLayout />
+        <AuthModal />
+      </FinanceProvider>
+    </AuthProvider>
   );
 }

@@ -117,6 +117,7 @@ import {
 import { FinScoreAmountInput } from '../finscore/FinScoreAmountInput';
 import { FinScoreHealthPlanModal, FinScoreBenchmarkModal } from '../finscore/FinScoreModals';
 import { FinancialStatementChart } from '../FinancialStatementChart';
+import { PersonalFinanceAdvisorSection } from '../finscore/PersonalFinanceAdvisorSection';
 
 type FinScoreTab = 
   | 'dashboard' 
@@ -3534,6 +3535,20 @@ Strategic Focus: ${result.biggestPriority}`;
               />
             </div>
           </div>
+
+          {/* SECTION 1.7: PERSONAL FINANCE & ASSET ALLOCATION ADVISOR */}
+          <PersonalFinanceAdvisorSection
+            profile={profile}
+            onUpdateProfile={updated => {
+              setProfile(prev => ({ ...prev, ...updated }));
+            }}
+            result={result}
+            loans={loans}
+            investments={finScoreInvestments.map(i => ({ id: i.id, name: i.name, category: i.category, value: i.currentValue }))}
+            currSym={currSym}
+            isLight={isLight}
+            onNavigateToStep={stepId => setActiveTab(stepId as any)}
+          />
         </div>
       )}
 
@@ -3592,15 +3607,44 @@ Strategic Focus: ${result.biggestPriority}`;
             </div>
 
             <div>
-              <label className="block mb-1 text-slate-400">Age</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-slate-400 font-semibold flex items-center gap-1.5">
+                  <span>Age</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                    Mandatory *
+                  </span>
+                </label>
+                <span className="text-[11px] text-indigo-400 font-medium">Powers Asset Allocation</span>
+              </div>
               <input
                 type="number"
-                value={profile.age}
+                min={18}
+                max={95}
+                required
+                placeholder="e.g. 22, 28, 35, 45, 55"
+                value={profile.age || ''}
                 onChange={e => setProfile({ ...profile, age: parseInt(e.target.value) || 0 })}
                 className={`w-full px-3.5 py-2.5 rounded-xl border ${
                   isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'
                 }`}
               />
+              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                <span className="text-[10px] text-slate-400">Advisor Milestones:</span>
+                {[22, 28, 35, 45, 55].map(a => (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => setProfile({ ...profile, age: a })}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      profile.age === a
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : isLight ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    {a === 55 ? '55+ (Senior)' : `${a}y`}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>

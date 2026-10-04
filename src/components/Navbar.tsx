@@ -19,9 +19,12 @@ import {
   PanelLeftClose,
   PanelLeft,
   MoreVertical,
-  X
+  X,
+  Database,
+  User
 } from 'lucide-react';
 import { useFinance, CURRENCY_CONFIGS } from '../context/FinanceContext';
+import { useAuth } from '../context/AuthContext';
 import { CurrencyCode } from '../types';
 
 export const Navbar: React.FC = () => {
@@ -47,6 +50,8 @@ export const Navbar: React.FC = () => {
     isSidebarOpen,
     toggleSidebar
   } = useFinance();
+
+  const { currentUser, role, openAuthModal } = useAuth();
 
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
@@ -323,6 +328,33 @@ export const Navbar: React.FC = () => {
             {keyboardShortcutsEnabled && (
               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-950" />
             )}
+          </button>
+
+          {/* Desktop-Only: Local-First Zero-Knowledge Privacy Badge */}
+          <div
+            id="badge-nav-local-privacy"
+            title="Zero-Knowledge Privacy: All transactions, salary, and assets are kept 100% locally on this device. Only login credentials and feedback are stored in the database."
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden md:inline">100% Local Privacy</span>
+          </div>
+
+          {/* Desktop-Only: Account & Role Sign In Pill */}
+          <button
+            id="btn-nav-auth"
+            onClick={() => openAuthModal('login')}
+            className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all cursor-pointer shadow-xs ${
+              role === 'main_admin'
+                ? 'bg-blue-600/15 text-blue-400 border-blue-500/30 hover:bg-blue-600/25'
+                : role === 'admin_advisor'
+                ? 'bg-indigo-600/15 text-indigo-400 border-indigo-500/30 hover:bg-indigo-600/25'
+                : 'bg-emerald-600/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-600/25'
+            }`}
+            title={`Account: ${currentUser?.name || 'User'} (${role}). Click to switch or log in.`}
+          >
+            <User className="w-3.5 h-3.5" />
+            <span className="max-w-[110px] truncate">{currentUser?.name?.split(' ')[0] || 'Sign In'}</span>
           </button>
 
           {/* Desktop-Only: FinScore Financial Health Launcher */}
