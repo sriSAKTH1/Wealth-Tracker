@@ -20,63 +20,42 @@ service cloud.firestore {
         : 'user';
     }
 
-    function isMainAdmin() {
+    function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'sudharsanm014@gmail.com' ||
+        getUserRole() == 'admin' ||
         getUserRole() == 'main_admin'
       );
     }
 
-    function isAdvisor() {
-      return isSignedIn() && (isMainAdmin() || getUserRole() == 'admin_advisor');
-    }
-
     // --- USERS ROOT COLLECTION ---
     match /users/{userId} {
-      allow get: if isSignedIn() && (isOwner(userId) || isAdvisor());
-      allow list: if isSignedIn() && isAdvisor();
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && isAdmin();
       allow create: if isSignedIn() && isValidId(userId) && isOwner(userId);
-      allow update: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isMainAdmin());
-      allow delete: if isMainAdmin();
-
-      // --- PERSISTENT USER TRANSACTIONS SUBCOLLECTION ---
-      match /transactions/{transactionId} {
-        allow read: if isSignedIn() && (isOwner(userId) || isAdvisor());
-        allow write: if isSignedIn() && isValidId(transactionId) && (isOwner(userId) || isMainAdmin());
-      }
-
-      // --- PERSISTENT USER FINANCIAL DATA & PORTFOLIO SNAPSHOTS ---
-      match /financial_data/{docId} {
-        allow read: if isSignedIn() && (isOwner(userId) || isAdvisor());
-        allow write: if isSignedIn() && isValidId(docId) && (isOwner(userId) || isMainAdmin());
-      }
+      allow update: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
     }
 
-    // --- ADVISOR ASSIGNMENTS ---
-    match /advisor_assignments/{advisorId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create, update: if isSignedIn() && isValidId(advisorId) && (isMainAdmin() || request.auth.uid == advisorId)
-        && request.resource.data.assignedUserIds.size() <= 10;
-      allow delete: if isMainAdmin();
-    }
-
-    // --- FEEDBACK COLLECTION ---
+    // --- FEEDBACK & TICKETS WITH ADMIN REPLIES ---
     match /feedback/{feedbackId} {
-      allow get: if isSignedIn() && (
-        request.auth.uid == resource.data.userId || isAdvisor()
-      );
-      allow list: if isSignedIn() && isAdvisor();
-      allow create: if isSignedIn() && isValidId(feedbackId)
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.rating >= 1 && request.resource.data.rating <= 5;
-      allow update: if isSignedIn() && isAdvisor();
-      allow delete: if isMainAdmin();
+      allow get: if isSignedIn() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow list: if isSignedIn() && isAdmin();
+      allow create: if isSignedIn() && isValidId(feedbackId) && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if isAdmin();
     }
 
-    // Connection validation test document
-    match /test/{testId} {
-      allow read, write: if isSignedIn();
+    // --- BROADCAST NOTIFICATIONS (NEW FEATURE ALERTS) ---
+    match /broadcast_notifications/{notificationId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // --- NEWS & BLOG POSTS (PUBLIC READ, ADMIN WRITE) ---
+    match /news_posts/{postId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

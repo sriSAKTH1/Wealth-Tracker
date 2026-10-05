@@ -5,33 +5,46 @@ import {
   signOut as fbSignOut, 
   onAuthStateChanged,
   updateProfile,
+  signInWithPopup,
+  GoogleAuthProvider,
   User as FirebaseUser
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db, getClientDeviceName, SUPER_ADMIN_EMAIL, INITIAL_SEED_USERS } from '../services/firebase';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { auth, db, getClientDeviceName, SUPER_ADMIN_EMAIL } from '../services/firebase';
 import { AppUserProfile, AppUserRole } from '../types';
 
 interface AuthContextType {
   currentUser: AppUserProfile | null;
   firebaseUser: FirebaseUser | null;
-  role: AppUserRole;
-  isMainAdmin: boolean;
-  isAdminAdvisor: boolean;
-  isClientUser: boolean;
+  role: 'admin' | 'user';
+  isAdmin: boolean;
+  isUser: boolean;
   isAuthenticated: boolean;
   isAuthModalOpen: boolean;
   authModalMode: 'login' | 'register';
   openAuthModal: (mode?: 'login' | 'register') => void;
   closeAuthModal: () => void;
   signIn: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (username: string, email: string, pass: string, role?: AppUserRole) => Promise<{ success: boolean; error?: string }>;
+  signUp: (username: string, email: string, pass: string, role?: 'admin' | 'user') => Promise<{ success: boolean; error?: string }>;
+  signInWithGoogle: (assignedRole?: 'admin' | 'user') => Promise<{ success: boolean; error?: string }>;
+  signInWithGoogleDemo: (assignedRole?: 'admin' | 'user') => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
-  switchDemoRole: (role: AppUserRole) => void;
+  switchDemoRole: (role: 'admin' | 'user') => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const LOCAL_AUTH_USER_KEY = 'app_auth_active_user_v3';
+const LOCAL_AUTH_USER_KEY = 'app_auth_active_user_v4';
+
+const DEFAULT_ADMIN_PROFILE: AppUserProfile = {
+  id: 'user-sudharsan',
+  email: 'sudharsanm014@gmail.com',
+  name: 'Sudharsan M. (Admin)',
+  role: 'admin',
+  deviceInfo: 'macOS • Chrome Desktop',
+  lastLoginAt: new Date().toISOString(),
+  createdAt: new Date(Date.now() - 30 * 86400000).toISOString()
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
@@ -39,11 +52,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cached = localStorage.getItem(LOCAL_AUTH_USER_KEY);
     if (cached) {
       try {
-        return JSON.parse(cached);
+        const parsed = JSON.parse(cached);
+        if (parsed.role === 'main_admin') parsed.role = 'admin';
+        return parsed;
       } catch {}
     }
-    // Default initial profile for immediate smooth experience
-    return INITIAL_SEED_USERS[0]; // Sudharsan (main_admin by default for demo)
+    return DEFAULT_ADMIN_PROFILE;
   });
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -54,26 +68,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
-        // Fetch or create user record in Firestore (/users/{uid})
         try {
           const userRef = doc(db, 'users', fbUser.uid);
           const snap = await getDoc(userRef);
           let userProfile: AppUserProfile;
+          const now = new Date().toISOString();
 
           if (snap.exists()) {
-            userProfile = snap.data() as AppUserProfile;
+            const data = snap.data();
+            const normalizedRole = (data.role === 'main_admin' || fbUser.email === SUPER_ADMIN_EMAIL) ? 'admin' : (data.role || 'user');
+            userProfile = {
+              id: fbUser.uid,
+              email: fbUser.email || '',
+              name: data.name || fbUser.displayName || fbUser.email?.split('@')[0] || 'User',
+              role: normalizedRole,
+              deviceInfo: getClientDeviceName(),
+              lastLoginAt: now,
+              createdAt: data.createdAt || now
+            };
+            // Update last seen in Firestore
+            await updateDoc(userRef, {
+              lastLoginAt: now,
+              deviceInfo: getClientDeviceName()
+            }).catch(() => {});
           } else {
-            const role: AppUserRole = fbUser.email === SUPER_ADMIN_EMAIL ? 'main_admin' : 'user';
+            const role = fbUser.email === SUPER_ADMIN_EMAIL ? 'admin' : 'user';
             userProfile = {
               id: fbUser.uid,
               email: fbUser.email || '',
               name: fbUser.displayName || fbUser.email?.split('@')[0] || 'User',
               role,
               deviceInfo: getClientDeviceName(),
-              lastLoginAt: new Date().toISOString(),
-              createdAt: new Date().toISOString()
+              lastLoginAt: now,
+              createdAt: now
             };
-            // Only user auth identity is stored in Firestore
             await setDoc(userRef, userProfile, { merge: true });
           }
 
@@ -103,19 +131,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userRef = doc(db, 'users', cred.user.uid);
       const snap = await getDoc(userRef);
       let profile: AppUserProfile;
+      const now = new Date().toISOString();
 
       if (snap.exists()) {
-        profile = snap.data() as AppUserProfile;
+        const data = snap.data();
+        const role = (data.role === 'main_admin' || cred.user.email === SUPER_ADMIN_EMAIL) ? 'admin' : (data.role || 'user');
+        profile = {
+          id: cred.user.uid,
+          email: cred.user.email || '',
+          name: data.name || cred.user.displayName || cred.user.email?.split('@')[0] || 'User',
+          role,
+          deviceInfo: getClientDeviceName(),
+          lastLoginAt: now,
+          createdAt: data.createdAt || now
+        };
+        await updateDoc(userRef, { lastLoginAt: now, deviceInfo: getClientDeviceName() }).catch(() => {});
       } else {
-        const role: AppUserRole = cred.user.email === SUPER_ADMIN_EMAIL ? 'main_admin' : 'user';
+        const role = cred.user.email === SUPER_ADMIN_EMAIL ? 'admin' : 'user';
         profile = {
           id: cred.user.uid,
           email: cred.user.email || '',
           name: cred.user.displayName || cred.user.email?.split('@')[0] || 'User',
           role,
           deviceInfo: getClientDeviceName(),
-          lastLoginAt: new Date().toISOString(),
-          createdAt: new Date().toISOString()
+          lastLoginAt: now,
+          createdAt: now
         };
         await setDoc(userRef, profile, { merge: true });
       }
@@ -141,28 +181,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     username: string, 
     email: string, 
     pass: string, 
-    assignedRole: AppUserRole = 'user'
+    assignedRole: 'admin' | 'user' = 'user'
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const cred = await createUserWithEmailAndPassword(auth, email.trim(), pass);
       
-      // Update display name on auth
       if (username) {
         await updateProfile(cred.user, { displayName: username.trim() });
       }
 
-      const role: AppUserRole = email.trim() === SUPER_ADMIN_EMAIL ? 'main_admin' : assignedRole;
+      const role = email.trim() === SUPER_ADMIN_EMAIL ? 'admin' : assignedRole;
+      const now = new Date().toISOString();
       const profile: AppUserProfile = {
         id: cred.user.uid,
         email: email.trim(),
         name: username.trim() || email.split('@')[0],
         role,
         deviceInfo: getClientDeviceName(),
-        lastLoginAt: new Date().toISOString(),
-        createdAt: new Date().toISOString()
+        lastLoginAt: now,
+        createdAt: now
       };
 
-      // Only store minimal user account in Firestore
       const userRef = doc(db, 'users', cred.user.uid);
       await setDoc(userRef, profile);
 
@@ -183,17 +222,94 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithGoogle = async (assignedRole: 'admin' | 'user' = 'user'): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const cred = await signInWithPopup(auth, provider);
+      const fbUser = cred.user;
+      const userRef = doc(db, 'users', fbUser.uid);
+      const snap = await getDoc(userRef);
+      let profile: AppUserProfile;
+      const now = new Date().toISOString();
+
+      if (snap.exists()) {
+        const data = snap.data();
+        const role = (data.role === 'admin' || fbUser.email === SUPER_ADMIN_EMAIL) ? 'admin' : (data.role || assignedRole);
+        profile = {
+          id: fbUser.uid,
+          email: fbUser.email || '',
+          name: fbUser.displayName || data.name || fbUser.email?.split('@')[0] || 'User',
+          role,
+          deviceInfo: getClientDeviceName(),
+          lastLoginAt: now,
+          createdAt: data.createdAt || now
+        };
+        await updateDoc(userRef, { lastLoginAt: now, deviceInfo: getClientDeviceName() }).catch(() => {});
+      } else {
+        const role = fbUser.email === SUPER_ADMIN_EMAIL ? 'admin' : assignedRole;
+        profile = {
+          id: fbUser.uid,
+          email: fbUser.email || '',
+          name: fbUser.displayName || fbUser.email?.split('@')[0] || 'User',
+          role,
+          deviceInfo: getClientDeviceName(),
+          lastLoginAt: now,
+          createdAt: now
+        };
+        await setDoc(userRef, profile, { merge: true });
+      }
+
+      setCurrentUser(profile);
+      localStorage.setItem(LOCAL_AUTH_USER_KEY, JSON.stringify(profile));
+      closeAuthModal();
+      return { success: true };
+    } catch (err: any) {
+      console.warn('Google sign-in error:', err);
+      let message = 'Google sign-in could not be completed.';
+      if (err.code === 'auth/popup-closed-by-user') {
+        message = 'Google sign-in was closed before completing.';
+      } else if (err.code === 'auth/popup-blocked') {
+        message = 'Popup was blocked by your browser. Please allow popups for Google sign in.';
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        message = 'Another sign-in attempt was in progress.';
+      } else if (err.message) {
+        message = err.message;
+      }
+      return { success: false, error: message };
+    }
+  };
+
+  const signInWithGoogleDemo = async (assignedRole: 'admin' | 'user' = 'user'): Promise<{ success: boolean; error?: string }> => {
+    const isTargetAdmin = assignedRole === 'admin';
+    const demoEmail = isTargetAdmin ? SUPER_ADMIN_EMAIL : 'alex.user@gmail.com';
+    const demoName = isTargetAdmin ? 'Sudharsan M. (Google)' : 'Alex Rivera (Google)';
+    const now = new Date().toISOString();
+    const profile: AppUserProfile = {
+      id: 'google-demo-' + (isTargetAdmin ? 'sudharsan' : 'user'),
+      email: demoEmail,
+      name: demoName,
+      role: isTargetAdmin ? 'admin' : 'user',
+      deviceInfo: getClientDeviceName() + ' • Google Auth',
+      lastLoginAt: now,
+      createdAt: now
+    };
+    setCurrentUser(profile);
+    localStorage.setItem(LOCAL_AUTH_USER_KEY, JSON.stringify(profile));
+    closeAuthModal();
+    return { success: true };
+  };
+
   const signOut = async () => {
     try {
       await fbSignOut(auth);
     } catch (e) {
       console.warn('Sign out error:', e);
     }
-    // Switch to unauthenticated client default
     const guestUser: AppUserProfile = {
-      id: 'user-client-guest',
-      email: 'client.guest@wealthtracker.io',
-      name: 'Client User',
+      id: 'user-guest',
+      email: 'guest@wealthtracker.io',
+      name: 'Guest User',
       role: 'user',
       deviceInfo: getClientDeviceName(),
       lastLoginAt: new Date().toISOString(),
@@ -203,28 +319,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(LOCAL_AUTH_USER_KEY, JSON.stringify(guestUser));
   };
 
-  // Fast demo role switch for testing permissions
-  const switchDemoRole = (targetRole: AppUserRole) => {
+  // Instant demo switcher between Admin and User
+  const switchDemoRole = (targetRole: 'admin' | 'user') => {
     let mockUser: AppUserProfile;
-    if (targetRole === 'main_admin') {
+    const now = new Date().toISOString();
+    if (targetRole === 'admin') {
       mockUser = {
         id: 'user-sudharsan',
         email: 'sudharsanm014@gmail.com',
-        name: 'Sudharsan M (Main Admin)',
-        role: 'main_admin',
+        name: 'Sudharsan M. (Admin)',
+        role: 'admin',
         deviceInfo: getClientDeviceName(),
-        lastLoginAt: new Date().toISOString(),
-        createdAt: new Date().toISOString()
-      };
-    } else if (targetRole === 'admin_advisor') {
-      mockUser = {
-        id: 'adv-arun',
-        email: 'arun.advisor@wealthtracker.io',
-        name: 'Arun Kumar, CFA (Advisor)',
-        role: 'admin_advisor',
-        deviceInfo: getClientDeviceName(),
-        lastLoginAt: new Date().toISOString(),
-        createdAt: new Date().toISOString()
+        lastLoginAt: now,
+        createdAt: new Date(Date.now() - 30 * 86400000).toISOString()
       };
     } else {
       mockUser = {
@@ -232,11 +339,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: 'client@wealthtracker.io',
         name: 'Client User',
         role: 'user',
-        assignedAdvisorId: 'adv-arun',
-        assignedAdvisorName: 'Arun Kumar, CFA',
         deviceInfo: getClientDeviceName(),
-        lastLoginAt: new Date().toISOString(),
-        createdAt: new Date().toISOString()
+        lastLoginAt: now,
+        createdAt: new Date(Date.now() - 7 * 86400000).toISOString()
       };
     }
 
@@ -244,11 +349,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(LOCAL_AUTH_USER_KEY, JSON.stringify(mockUser));
   };
 
-  const role: AppUserRole = currentUser?.role || 'user';
-  const isMainAdmin = role === 'main_admin';
-  const isAdminAdvisor = role === 'admin_advisor';
-  const isClientUser = role === 'user';
-  const isAuthenticated = Boolean(currentUser && currentUser.id !== 'user-client-guest');
+  const role: 'admin' | 'user' = currentUser?.role === 'admin' ? 'admin' : 'user';
+  const isAdmin = role === 'admin';
+  const isUser = role === 'user';
+  const isAuthenticated = Boolean(currentUser && currentUser.id !== 'user-guest');
 
   return (
     <AuthContext.Provider
@@ -256,9 +360,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentUser,
         firebaseUser,
         role,
-        isMainAdmin,
-        isAdminAdvisor,
-        isClientUser,
+        isAdmin,
+        isUser,
         isAuthenticated,
         isAuthModalOpen,
         authModalMode,
@@ -266,6 +369,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         closeAuthModal,
         signIn,
         signUp,
+        signInWithGoogle,
+        signInWithGoogleDemo,
         signOut,
         switchDemoRole
       }}

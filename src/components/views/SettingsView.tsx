@@ -22,9 +22,11 @@ import {
   Sliders,
   Save,
   Printer,
-  FileText
+  FileText,
+  LogOut
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
+import { useAuth } from '../../context/AuthContext';
 import { LanguageRegionSection } from '../settings/LanguageRegionSection';
 import { HelpSupportSection } from '../settings/HelpSupportSection';
 import { SecuritySection } from '../settings/SecuritySection';
@@ -63,6 +65,8 @@ export const SettingsView: React.FC = () => {
     toggleKeyboardShortcuts,
     setIsShortcutsHelpOpen
   } = useFinance();
+
+  const { signOut, currentUser } = useAuth();
 
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
@@ -353,10 +357,22 @@ export const SettingsView: React.FC = () => {
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">Used for accounts, reports, and sidebar presentation</p>
               </div>
             </div>
-            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-semibold border border-emerald-500/20">
-              <ShieldCheck className="w-3 h-3" />
-              <span>Verified Pro Member</span>
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-semibold border border-emerald-500/20">
+                <ShieldCheck className="w-3 h-3" />
+                <span>Verified Pro Member</span>
+              </span>
+              <button
+                type="button"
+                id="btn-settings-profile-signout"
+                onClick={() => signOut()}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                title="Sign out of your account"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
@@ -417,6 +433,28 @@ export const SettingsView: React.FC = () => {
                   <Check className="w-3.5 h-3.5" /> Auto-saved
                 </span>
               )}
+            </div>
+
+            {/* Account Session Actions & Sign Out Button */}
+            <div className="sm:col-span-3 pt-3 border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className="text-slate-600 dark:text-slate-300 font-medium">
+                  Signed in as <strong className="text-slate-900 dark:text-white">{currentUser?.email || email}</strong>
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 font-bold uppercase border border-blue-500/20">
+                  {currentUser?.role === 'admin' ? '👑 Admin' : '👤 User'}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                id="btn-settings-profile-footer-signout"
+                onClick={() => signOut()}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-600/20 cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
             </div>
           </div>
         </section>

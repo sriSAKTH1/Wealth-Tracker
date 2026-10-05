@@ -21,11 +21,14 @@ import {
   MoreVertical,
   X,
   Database,
-  User
+  User,
+  Radio,
+  ExternalLink
 } from 'lucide-react';
 import { useFinance, CURRENCY_CONFIGS } from '../context/FinanceContext';
 import { useAuth } from '../context/AuthContext';
-import { CurrencyCode } from '../types';
+import { CurrencyCode, AppBroadcastNotification } from '../types';
+import { fetchBroadcastNotifications } from '../services/firebase';
 
 export const Navbar: React.FC = () => {
   const { 
@@ -51,13 +54,27 @@ export const Navbar: React.FC = () => {
     toggleSidebar
   } = useFinance();
 
-  const { currentUser, role, openAuthModal } = useAuth();
+  const { currentUser, role, isAdmin, isUser, openAuthModal, switchDemoRole, isAuthenticated } = useAuth();
 
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileAlertsExpanded, setMobileAlertsExpanded] = useState(false);
+  const [broadcastNotifs, setBroadcastNotifs] = useState<AppBroadcastNotification[]>([]);
+
+  // Load latest admin broadcast notifications
+  React.useEffect(() => {
+    fetchBroadcastNotifications()
+      .then(setBroadcastNotifs)
+      .catch(err => console.warn('Could not fetch notifications:', err));
+  }, []);
+
+  const refreshBroadcasts = () => {
+    fetchBroadcastNotifications()
+      .then(setBroadcastNotifs)
+      .catch(() => {});
+  };
 
   // Theme-aware styling configurations for the navbar header component and text
   const navStyles = React.useMemo(() => {
@@ -330,32 +347,22 @@ export const Navbar: React.FC = () => {
             )}
           </button>
 
-          {/* Desktop-Only: Local-First Zero-Knowledge Privacy Badge */}
-          <div
-            id="badge-nav-local-privacy"
-            title="Zero-Knowledge Privacy: All transactions, salary, and assets are kept 100% locally on this device. Only login credentials and feedback are stored in the database."
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden md:inline">100% Local Privacy</span>
-          </div>
-
-          {/* Desktop-Only: Account & Role Sign In Pill */}
-          <button
-            id="btn-nav-auth"
-            onClick={() => openAuthModal('login')}
-            className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all cursor-pointer shadow-xs ${
-              role === 'main_admin'
-                ? 'bg-blue-600/15 text-blue-400 border-blue-500/30 hover:bg-blue-600/25'
-                : role === 'admin_advisor'
-                ? 'bg-indigo-600/15 text-indigo-400 border-indigo-500/30 hover:bg-indigo-600/25'
-                : 'bg-emerald-600/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-600/25'
-            }`}
-            title={`Account: ${currentUser?.name || 'User'} (${role}). Click to switch or log in.`}
-          >
-            <User className="w-3.5 h-3.5" />
-            <span className="max-w-[110px] truncate">{currentUser?.name?.split(' ')[0] || 'Sign In'}</span>
-          </button>
+          {/* Desktop-Only: Sign In / Auth Pill (Shown only when NOT logged into dashboard) */}
+          {!isAuthenticated && (
+            <button
+              id="btn-nav-auth"
+              onClick={() => openAuthModal('login')}
+              title="Sign in with Email or Continue with Google"
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all shadow-sm cursor-pointer ${
+                isLight
+                  ? 'bg-blue-600 hover:bg-blue-500 text-white border-blue-500 shadow-blue-500/20'
+                  : 'bg-blue-600 hover:bg-blue-500 text-white border-blue-500 shadow-blue-500/25'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </button>
+          )}
 
           {/* Desktop-Only: FinScore Financial Health Launcher */}
           <button
@@ -382,14 +389,66 @@ export const Navbar: React.FC = () => {
 
             {isAlertsOpen && (
               <div 
-                className={`absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl border p-3 z-50 animate-in fade-in zoom-in-95 duration-100 ${navStyles.dropdown}`}
+                className={`absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border p-3.5 z-50 animate-in fade-in zoom-in-95 duration-100 max-h-[480px] overflow-y-auto ${navStyles.dropdown}`}
                 onMouseLeave={() => setIsAlertsOpen(false)}
               >
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-inherit/40">
-                  <span className={`text-xs font-bold ${navStyles.title}`}>Financial Vital Signs</span>
-                  <span className="text-[10px] text-blue-500 bg-blue-500/15 px-2 py-0.5 rounded-full font-mono font-medium">All Systems Active</span>
+                <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-inherit/40">
+                  <div className="flex items-center gap-1.5">
+                    <Bell className="w-4 h-4 text-blue-500" />
+                    <span className={`text-xs font-bold ${navStyles.title}`}>Alerts &amp; Announcements</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={refreshBroadcasts}
+                    className="text-[10px] text-blue-400 hover:text-blue-300 font-mono cursor-pointer"
+                  >
+                    Refresh
+                  </button>
                 </div>
-                <div className="space-y-2">
+
+                {/* Section 1: Admin Broadcast Feature Alerts */}
+                <div className="mb-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1">
+                      <Radio className="w-3 h-3 text-blue-400 animate-pulse" />
+                      <span>Admin Feature Releases ({broadcastNotifs.length})</span>
+                    </span>
+                  </div>
+
+                  {broadcastNotifs.length === 0 ? (
+                    <div className="p-3 rounded-xl border border-dashed border-slate-700 text-center text-xs text-slate-400">
+                      No new feature announcements yet.
+                    </div>
+                  ) : (
+                    broadcastNotifs.map(bn => (
+                      <div 
+                        key={bn.id} 
+                        className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/10 text-xs space-y-1"
+                      >
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span className="font-bold text-slate-900 dark:text-white">{bn.title}</span>
+                          {bn.badge && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 shrink-0">
+                              {bn.badge}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                          {bn.message}
+                        </p>
+                        <div className="text-[9px] text-slate-400 font-mono pt-1">
+                          {new Date(bn.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Section 2: Financial Vital Signs */}
+                <div className="space-y-2 pt-2 border-t border-inherit/30">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Financial Vital Signs ({alerts.length})
+                  </span>
                   {alerts.map(a => {
                     const Icon = a.icon;
                     return (
@@ -506,23 +565,49 @@ export const Navbar: React.FC = () => {
 
                     {/* Expanded Mobile Alerts List */}
                     {mobileAlertsExpanded && (
-                      <div className="p-2 pt-0 space-y-1.5 border-t border-inherit/30">
-                        {alerts.map(a => {
-                          const Icon = a.icon;
-                          return (
-                            <div key={a.id} className="p-2 rounded-lg bg-black/10 dark:bg-black/30 border border-inherit/20 text-xs">
-                              <div className="flex items-center gap-1.5 font-medium">
-                                <Icon className={`w-3 h-3 ${
-                                  a.type === 'success' ? 'text-emerald-500' : a.type === 'warning' ? 'text-amber-500' : 'text-blue-500'
-                                }`} />
-                                <span className={`text-[11px] font-bold ${navStyles.title}`}>{a.title}</span>
+                      <div className="p-2 pt-0 space-y-2 border-t border-inherit/30 max-h-72 overflow-y-auto">
+                        {broadcastNotifs.length > 0 && (
+                          <div className="space-y-1.5 pt-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400 block">
+                              📢 Admin Feature Announcements
+                            </span>
+                            {broadcastNotifs.map(bn => (
+                              <div key={bn.id} className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="font-bold text-white">{bn.title}</span>
+                                  {bn.badge && (
+                                    <span className="text-[9px] px-1 rounded bg-blue-500/20 text-blue-300 font-bold shrink-0">
+                                      {bn.badge}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-slate-300 mt-0.5">{bn.message}</p>
                               </div>
-                              <p className={`text-[10px] mt-0.5 pl-4.5 ${navStyles.dropdownText}`}>
-                                {a.message}
-                              </p>
-                            </div>
-                          );
-                        })}
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="space-y-1.5 pt-1 border-t border-inherit/20">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                            Vital Signs ({alerts.length})
+                          </span>
+                          {alerts.map(a => {
+                            const Icon = a.icon;
+                            return (
+                              <div key={a.id} className="p-2 rounded-lg bg-black/10 dark:bg-black/30 border border-inherit/20 text-xs">
+                                <div className="flex items-center gap-1.5 font-medium">
+                                  <Icon className={`w-3 h-3 ${
+                                    a.type === 'success' ? 'text-emerald-500' : a.type === 'warning' ? 'text-amber-500' : 'text-blue-500'
+                                  }`} />
+                                  <span className={`text-[11px] font-bold ${navStyles.title}`}>{a.title}</span>
+                                </div>
+                                <p className={`text-[10px] mt-0.5 pl-4.5 ${navStyles.dropdownText}`}>
+                                  {a.message}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>

@@ -12,7 +12,8 @@ import {
   PanelLeftClose,
   Sparkles,
   ShieldCheck,
-  X
+  X,
+  Newspaper
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { useAuth } from '../context/AuthContext';
@@ -29,7 +30,7 @@ export const Sidebar: React.FC = () => {
     toggleSidebar
   } = useFinance();
 
-  const { isClientUser } = useAuth();
+  const { isAdmin } = useAuth();
 
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
@@ -41,18 +42,18 @@ export const Sidebar: React.FC = () => {
     { id: 'account', label: 'Accounts & Budgets', icon: Wallet },
   ];
 
-  // Group 2: Financial Tools (Calendar, Balance Sheet, Reports, Calculators, Admin, Settings)
-  // Hide Admin & Advisors portal for Client Users per RBAC specification
+  // Group 2: Financial Tools (Calendar, Balance Sheet, Reports, Calculators, News, Admin, Settings)
   const allToolNavItems: { id: MainTab; label: string; icon: any; badge?: string; adminOnly?: boolean }[] = [
     { id: 'calendar', label: 'Cash Flow Calendar', icon: CalendarDays },
     { id: 'balancesheet', label: 'Balance Sheet & Audit', icon: Scale, badge: 'Audit' },
     { id: 'reports', label: 'Reports & Analytics', icon: BarChart3 },
     { id: 'calculators', label: 'Tools & Calculators', icon: MoreHorizontal },
-    { id: 'admin', label: 'Admin & Advisors', icon: ShieldCheck, badge: 'Portal', adminOnly: true },
+    { id: 'news', label: 'News & Release Blogs', icon: Newspaper, badge: 'New' },
+    { id: 'admin', label: 'Admin Control Panel', icon: ShieldCheck, badge: 'Master', adminOnly: true },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
-  const toolNavItems = allToolNavItems.filter(item => !item.adminOnly || !isClientUser);
+  const toolNavItems = allToolNavItems.filter(item => !item.adminOnly || isAdmin);
 
   const handleNavClick = (id: MainTab) => {
     setActiveTab(id);

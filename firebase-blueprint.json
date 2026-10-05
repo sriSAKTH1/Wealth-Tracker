@@ -2,115 +2,86 @@
   "entities": {
     "User": {
       "title": "User",
-      "description": "Registered application user with role-based access control (main_admin, admin_advisor, or user).",
+      "description": "Registered application user with simplified 2-tier role access (admin or user).",
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "Unique user authentication UID" },
         "email": { "type": "string", "description": "User email address" },
         "name": { "type": "string", "description": "User full display name" },
-        "role": { "type": "string", "enum": ["main_admin", "admin_advisor", "user"], "description": "Assigned access role" },
-        "assignedAdvisorId": { "type": "string", "description": "Assigned advisor UID if role is user" },
-        "assignedAdvisorName": { "type": "string", "description": "Display name of assigned advisor" },
+        "role": { "type": "string", "enum": ["admin", "user"], "description": "Assigned access role: admin or user" },
         "deviceInfo": { "type": "string", "description": "Device name or client user-agent summary" },
         "lastLoginAt": { "type": "string", "description": "ISO timestamp of most recent login" },
         "createdAt": { "type": "string", "description": "ISO timestamp when account was created" }
       },
       "required": ["id", "email", "name", "role", "createdAt"]
     },
-    "Transaction": {
-      "title": "Transaction",
-      "description": "Financial income or expense transaction belonging to a user.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string", "description": "Unique transaction ID" },
-        "userId": { "type": "string", "description": "Owner user UID" },
-        "amount": { "type": "number", "description": "Transaction amount value" },
-        "type": { "type": "string", "enum": ["income", "expense"], "description": "Transaction type: income or expense" },
-        "category": { "type": "string", "description": "Category name for budgeting and allocation" },
-        "date": { "type": "string", "description": "Date of transaction formatted as YYYY-MM-DD" },
-        "note": { "type": "string", "description": "Optional memo or description for the transaction" },
-        "accountId": { "type": "string", "description": "Linked financial account ID" },
-        "isRecurring": { "type": "string", "description": "Whether this is a recurring monthly transaction" },
-        "createdAt": { "type": "string", "description": "ISO timestamp when created" },
-        "updatedAt": { "type": "string", "description": "ISO timestamp when last modified" }
-      },
-      "required": ["id", "amount", "type", "category", "date"]
-    },
-    "FinancialData": {
-      "title": "FinancialData",
-      "description": "Aggregated user portfolio data including assets, liabilities, accounts, envelopes, and goals.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string", "description": "Document identifier (e.g. portfolio_summary or active_state)" },
-        "userId": { "type": "string", "description": "Owner user UID" },
-        "assets": { "type": "array", "description": "List of user assets with market valuations" },
-        "liabilities": { "type": "array", "description": "List of debts, mortgages, loans, and EMIs" },
-        "accounts": { "type": "array", "description": "Bank, brokerage, and cash accounts" },
-        "budgets": { "type": "array", "description": "Budget envelopes and monthly caps" },
-        "essentialGoals": { "type": "array", "description": "Emergency funds, insurance, and core reserves" },
-        "customGoals": { "type": "array", "description": "Life goals, car, house, retirement targets" },
-        "scheduledItems": { "type": "array", "description": "Calendar cash flow scheduled inflows/outflows" },
-        "netWorthHistory": { "type": "array", "description": "Historical net worth progression snapshots" },
-        "currency": { "type": "string", "description": "Primary currency code" },
-        "updatedAt": { "type": "string", "description": "ISO timestamp of last cloud synchronization" }
-      },
-      "required": ["id", "userId", "updatedAt"]
-    },
-    "AdvisorAssignment": {
-      "title": "AdvisorAssignment",
-      "description": "Maintains 1:10 client mapping for an admin advisor.",
-      "type": "object",
-      "properties": {
-        "advisorId": { "type": "string", "description": "UID of the advisor" },
-        "advisorName": { "type": "string", "description": "Display name of the advisor" },
-        "advisorEmail": { "type": "string", "description": "Email address of the advisor" },
-        "assignedUserIds": { "type": "array", "description": "List of user UIDs assigned to this advisor (max 10)" },
-        "currentClientCount": { "type": "number", "description": "Current number of assigned users (0 to 10)" },
-        "maxCapacity": { "type": "number", "description": "Maximum client limit (10)" },
-        "updatedAt": { "type": "string", "description": "ISO timestamp of last assignment change" }
-      },
-      "required": ["advisorId", "advisorName", "assignedUserIds", "currentClientCount", "maxCapacity"]
-    },
     "Feedback": {
       "title": "Feedback",
-      "description": "User feedback, suggestions, reviews, and bug reports routed to the admin panel.",
+      "description": "User feedback, suggestions, reviews, and bug reports with admin replies.",
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "Unique feedback ID" },
         "userId": { "type": "string", "description": "UID of user who submitted feedback" },
         "userName": { "type": "string", "description": "Display name of the user" },
         "userEmail": { "type": "string", "description": "Email address of the user" },
-        "assignedAdvisorId": { "type": "string", "description": "Assigned advisor ID if applicable" },
         "category": { "type": "string", "enum": ["feature_request", "question", "bug", "praise", "general"], "description": "Feedback category" },
         "rating": { "type": "number", "description": "Rating score from 1 to 5" },
         "message": { "type": "string", "description": "Feedback content message" },
         "status": { "type": "string", "enum": ["new", "in_review", "resolved"], "description": "Ticket status" },
-        "adminNotes": { "type": "string", "description": "Internal notes added by admin or advisor" },
+        "adminReply": { "type": "string", "description": "Admin response reply message to user" },
+        "repliedAt": { "type": "string", "description": "ISO timestamp when admin replied" },
         "createdAt": { "type": "string", "description": "ISO timestamp when feedback was sent" }
       },
       "required": ["id", "userId", "userName", "category", "rating", "message", "status", "createdAt"]
+    },
+    "BroadcastNotification": {
+      "title": "BroadcastNotification",
+      "description": "System-wide notification broadcast by Admin to all users announcing new features and updates.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique notification ID" },
+        "title": { "type": "string", "description": "Announcement title" },
+        "message": { "type": "string", "description": "Detailed update text" },
+        "type": { "type": "string", "enum": ["new_feature", "announcement", "update", "maintenance"], "description": "Notification category" },
+        "badge": { "type": "string", "description": "Optional pill tag (e.g. New, Release, Pro)" },
+        "createdAt": { "type": "string", "description": "ISO timestamp of broadcast" },
+        "createdBy": { "type": "string", "description": "Admin who broadcast the alert" }
+      },
+      "required": ["id", "title", "message", "type", "createdAt"]
+    },
+    "NewsPost": {
+      "title": "NewsPost",
+      "description": "News article or release blog post authored and published by the Admin.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique article post ID" },
+        "title": { "type": "string", "description": "Article headline" },
+        "category": { "type": "string", "enum": ["Feature Release", "Market News", "Personal Finance", "Platform Update"], "description": "News topic" },
+        "summary": { "type": "string", "description": "Brief 1-2 sentence lead overview" },
+        "content": { "type": "string", "description": "Complete article body content" },
+        "author": { "type": "string", "description": "Author display name" },
+        "publishedAt": { "type": "string", "description": "ISO timestamp of publication" },
+        "readTimeMinutes": { "type": "number", "description": "Estimated read duration in minutes" }
+      },
+      "required": ["id", "title", "category", "summary", "content", "publishedAt"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": "User",
-      "description": "User profiles and RBAC role assignments."
-    },
-    "/users/{userId}/transactions/{transactionId}": {
-      "schema": "Transaction",
-      "description": "Persistent individual financial transactions for each user."
-    },
-    "/users/{userId}/financial_data/{docId}": {
-      "schema": "FinancialData",
-      "description": "User's persistent assets, liabilities, budgets, and goals snapshot."
-    },
-    "/advisor_assignments/{advisorId}": {
-      "schema": "AdvisorAssignment",
-      "description": "Advisor 1:10 client allocation rosters."
+      "description": "User profiles with 2-role system (admin or user) and lastLoginAt timestamps."
     },
     "/feedback/{feedbackId}": {
       "schema": "Feedback",
-      "description": "Feedback and support tickets routed to Main Admin and Advisors."
+      "description": "User feedback tickets and Admin replies."
+    },
+    "/broadcast_notifications/{notificationId}": {
+      "schema": "BroadcastNotification",
+      "description": "Broadcast notifications for new features sent by Admin to all users."
+    },
+    "/news_posts/{postId}": {
+      "schema": "NewsPost",
+      "description": "News and blog posts published by Admin for users to read."
     }
   }
 }

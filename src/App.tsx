@@ -25,11 +25,12 @@ import { BalanceSheetView } from './components/views/BalanceSheetView';
 import { SettingsView } from './components/views/SettingsView';
 import { FinancialCalculatorsView } from './components/calculators/FinancialCalculatorsView';
 import { AdminPanelView } from './components/views/AdminPanelView';
+import { NewsUpdatesView } from './components/views/NewsUpdatesView';
 import { AppFooter } from './components/AppFooter';
 
 const MainLayout: React.FC = () => {
   const { activeTab, setActiveTab, theme, accentColor, isMobileFrameSimulated, openQuickAdd, transactions = [] } = useFinance();
-  const { isClientUser } = useAuth();
+  const { isUser, isAdmin } = useAuth();
   const hasNoTransactions = !transactions || transactions.length === 0;
 
   // Render current active view
@@ -57,18 +58,20 @@ const MainLayout: React.FC = () => {
         return <SettingsView />;
       case 'calculators':
         return <FinancialCalculatorsView />;
+      case 'news':
+        return <NewsUpdatesView />;
       case 'admin':
-        if (isClientUser) {
+        if (!isAdmin) {
           return (
             <div className="p-8 text-center max-w-lg mx-auto my-16 rounded-3xl border border-rose-500/25 bg-rose-500/10 space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-500 flex items-center justify-center mx-auto">
                 <Shield className="w-6 h-6" />
               </div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                Client Access Restricted
+                Admin Panel Restricted
               </h2>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                The Admin &amp; Advisor Panel is strictly reserved for credentialed Administrators and Financial Advisors. Client financial data remains 100% private in local storage on this device.
+                The Master Admin Control Panel is strictly reserved for the Administrator. Your personal finances and records remain 100% private in local storage on this device.
               </p>
               <button
                 type="button"

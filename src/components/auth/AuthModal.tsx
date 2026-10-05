@@ -5,19 +5,15 @@ import {
   Mail, 
   User, 
   ShieldCheck, 
-  Briefcase, 
   Users, 
   Shield, 
   Eye, 
   EyeOff, 
-  CheckCircle2, 
   AlertCircle,
-  Sparkles,
   ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useFinance } from '../../context/FinanceContext';
-import { AppUserRole } from '../../types';
 
 export const AuthModal: React.FC = () => {
   const { 
@@ -26,8 +22,9 @@ export const AuthModal: React.FC = () => {
     authModalMode, 
     signIn, 
     signUp, 
-    switchDemoRole,
-    currentUser
+    signInWithGoogle,
+    signInWithGoogleDemo,
+    switchDemoRole 
   } = useAuth();
 
   const { theme } = useFinance();
@@ -38,12 +35,37 @@ export const AuthModal: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [username, setUsername] = useState('');
-  const [selectedRole, setSelectedRole] = useState<AppUserRole>('user');
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'user'>('user');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
   if (!isAuthModalOpen) return null;
+
+  const handleGoogleSignIn = async () => {
+    setErrorMessage(null);
+    setIsGoogleSubmitting(true);
+    try {
+      const res = await signInWithGoogle(selectedRole);
+      if (!res.success) {
+        if (
+          res.error?.includes('Popup was blocked') || 
+          res.error?.includes('closed before completing') || 
+          res.error?.includes('cancelled')
+        ) {
+          const fallback = await signInWithGoogleDemo(selectedRole);
+          if (!fallback.success) {
+            setErrorMessage(res.error || 'Google sign-in could not be completed.');
+          }
+        } else {
+          setErrorMessage(res.error || 'Google sign-in could not be completed.');
+        }
+      }
+    } finally {
+      setIsGoogleSubmitting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,10 +120,10 @@ export const AuthModal: React.FC = () => {
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                {activeTab === 'login' ? 'Account Sign In' : 'Create Wealth Account'}
+                {activeTab === 'login' ? 'Account Sign In' : 'Create Account'}
               </h3>
               <p className="text-[11px] text-slate-400">
-                Database Authentication &amp; Role Management
+                2-Role Access: Administrator or Client User
               </p>
             </div>
           </div>
@@ -155,6 +177,58 @@ export const AuthModal: React.FC = () => {
             </div>
           )}
 
+          {/* Continue to Google Authentication Button */}
+          <button
+            type="button"
+            id="btn-auth-google"
+            onClick={handleGoogleSignIn}
+            disabled={isGoogleSubmitting || isSubmitting}
+            className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-center gap-2.5 text-xs font-bold transition-all cursor-pointer shadow-xs ${
+              isLight
+                ? 'bg-white hover:bg-slate-50 border-slate-300 text-slate-800 hover:border-slate-400'
+                : 'bg-slate-800/90 hover:bg-slate-700 border-slate-700 text-white'
+            }`}
+          >
+            {isGoogleSubmitting ? (
+              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                />
+              </svg>
+            )}
+            <span>
+              {isGoogleSubmitting 
+                ? 'Connecting to Google...' 
+                : activeTab === 'login' 
+                  ? 'Continue to Google' 
+                  : 'Continue to Google (Sign Up)'}
+            </span>
+          </button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-2">
+            <div className={`flex-1 h-px ${isLight ? 'bg-slate-200' : 'bg-slate-800'}`} />
+            <span className="text-[10px] uppercase font-bold text-slate-400">
+              or continue with email
+            </span>
+            <div className={`flex-1 h-px ${isLight ? 'bg-slate-200' : 'bg-slate-800'}`} />
+          </div>
+
           {activeTab === 'register' && (
             <>
               <div>
@@ -178,49 +252,35 @@ export const AuthModal: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Account Role
+                  Account Type
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setSelectedRole('user')}
-                    className={`p-2 rounded-xl border text-left cursor-pointer transition-all ${
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
                       selectedRole === 'user'
                         ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500'
                         : 'border-slate-200 dark:border-slate-800 text-slate-500'
                     }`}
                   >
                     <Users className="w-4 h-4 mb-1" />
-                    <div className="text-[11px] font-bold">Client User</div>
-                    <div className="text-[9px] opacity-75">Personal Page</div>
+                    <div className="text-xs font-bold">Client User</div>
+                    <div className="text-[10px] opacity-75">Personal Wealth App</div>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setSelectedRole('admin_advisor')}
-                    className={`p-2 rounded-xl border text-left cursor-pointer transition-all ${
-                      selectedRole === 'admin_advisor'
-                        ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500'
-                        : 'border-slate-200 dark:border-slate-800 text-slate-500'
-                    }`}
-                  >
-                    <Briefcase className="w-4 h-4 mb-1" />
-                    <div className="text-[11px] font-bold">Advisor</div>
-                    <div className="text-[9px] opacity-75">10 Clients</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRole('main_admin')}
-                    className={`p-2 rounded-xl border text-left cursor-pointer transition-all ${
-                      selectedRole === 'main_admin'
+                    onClick={() => setSelectedRole('admin')}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                      selectedRole === 'admin'
                         ? 'border-blue-500 bg-blue-500/10 text-blue-500'
                         : 'border-slate-200 dark:border-slate-800 text-slate-500'
                     }`}
                   >
                     <Shield className="w-4 h-4 mb-1" />
-                    <div className="text-[11px] font-bold">Main Admin</div>
-                    <div className="text-[9px] opacity-75">Full Panel</div>
+                    <div className="text-xs font-bold">Administrator</div>
+                    <div className="text-[10px] opacity-75">Admin Panel &amp; Broadcasts</div>
                   </button>
                 </div>
               </div>
@@ -319,32 +379,27 @@ export const AuthModal: React.FC = () => {
             </span>
           </div>
 
-          {/* Instant 1-Click Role Switcher Demo Buttons */}
+          {/* Development Test Mode 1-Click Role Switcher */}
           <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block text-center">
-              Quick 1-Click Role Switcher (For Testing)
-            </span>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                Development Test Mode
+              </span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-500 font-mono font-bold">
+                1-Click Testing
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => {
-                  switchDemoRole('main_admin');
+                  switchDemoRole('admin');
                   closeAuthModal();
                 }}
-                className="py-1.5 px-2 rounded-xl text-[10px] font-bold bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 border border-blue-500/30 transition-all cursor-pointer"
+                className="py-2 px-3 rounded-xl text-xs font-bold bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 border border-blue-500/30 transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
-                👑 Main Admin
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  switchDemoRole('admin_advisor');
-                  closeAuthModal();
-                }}
-                className="py-1.5 px-2 rounded-xl text-[10px] font-bold bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-400 border border-indigo-500/30 transition-all cursor-pointer"
-              >
-                💼 Advisor Arun
+                <Shield className="w-3.5 h-3.5" />
+                <span>👑 Admin Mode</span>
               </button>
 
               <button
@@ -353,9 +408,10 @@ export const AuthModal: React.FC = () => {
                   switchDemoRole('user');
                   closeAuthModal();
                 }}
-                className="py-1.5 px-2 rounded-xl text-[10px] font-bold bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 border border-emerald-500/30 transition-all cursor-pointer"
+                className="py-2 px-3 rounded-xl text-xs font-bold bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 border border-emerald-500/30 transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
-                👤 Client User
+                <Users className="w-3.5 h-3.5" />
+                <span>👤 User Mode</span>
               </button>
             </div>
           </div>

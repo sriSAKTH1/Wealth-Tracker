@@ -307,6 +307,53 @@ export const SecuritySection: React.FC = () => {
         </div>
       )}
 
+      {/* 100% LOCAL PRIVACY GUARANTEE & ZERO-KNOWLEDGE ARCHITECTURE */}
+      <div className={`p-5 rounded-2xl border transition-all ${
+        isLight 
+          ? 'bg-gradient-to-r from-emerald-50/80 via-teal-50/50 to-white border-emerald-200 shadow-xs' 
+          : 'bg-gradient-to-r from-emerald-950/20 via-slate-900 to-slate-900 border-emerald-500/30 shadow-xs'
+      }`}>
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-500 shrink-0 mt-0.5">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  100% Local Privacy &amp; Zero-Knowledge Architecture
+                </h3>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Stored &amp; Enforced in Security Settings</span>
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                  Local Vault: Active
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
+                Your financial data (transactions, income, salary, bank accounts, debt balances, and investments) is stored <strong>100% locally on this device</strong>. Only your account identity (username and email) and user feedback are stored in the database. No external servers or third parties ever receive your portfolio balances.
+              </p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 text-[11px]">
+                <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">Local-First Vault: Device Only</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">Zero Financial Telemetry</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">100% Offline Capable</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Grid of Security Controls (Core Password & 2FA) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
         
