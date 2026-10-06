@@ -4,7 +4,12 @@ export interface CurrencyConfig {
   code: CurrencyCode;
   symbol: string;
   name: string;
-  rateToUSD: number; // For multi-currency reference
+  rateToUSD: number; // Value of 1 unit of this currency in USD
+  ratePerUSD?: number; // How many units of this currency for 1 USD (e.g. 96.38 for INR)
+  priceChange24h?: number; // 24h percentage change
+  priceChange24hAmount?: number;
+  lastUpdated?: string;
+  isLive?: boolean;
 }
 
 export type AssetCategory = 

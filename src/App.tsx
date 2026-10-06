@@ -27,6 +27,7 @@ import { FinancialCalculatorsView } from './components/calculators/FinancialCalc
 import { AdminPanelView } from './components/views/AdminPanelView';
 import { NewsUpdatesView } from './components/views/NewsUpdatesView';
 import { AppFooter } from './components/AppFooter';
+import { LaunchPage } from './components/LaunchPage';
 
 const MainLayout: React.FC = () => {
   const { activeTab, setActiveTab, theme, accentColor, isMobileFrameSimulated, openQuickAdd, transactions = [] } = useFinance();
@@ -217,11 +218,21 @@ const MainLayout: React.FC = () => {
   );
 };
 
+const RootAppContent: React.FC = () => {
+  const { isAuthenticated, currentUser } = useAuth();
+
+  if (!isAuthenticated || !currentUser) {
+    return <LaunchPage />;
+  }
+
+  return <MainLayout />;
+};
+
 export default function App() {
   return (
     <AuthProvider>
       <FinanceProvider>
-        <MainLayout />
+        <RootAppContent />
         <AuthModal />
       </FinanceProvider>
     </AuthProvider>

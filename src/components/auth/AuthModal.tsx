@@ -5,8 +5,6 @@ import {
   Mail, 
   User, 
   ShieldCheck, 
-  Users, 
-  Shield, 
   Eye, 
   EyeOff, 
   AlertCircle,
@@ -23,8 +21,7 @@ export const AuthModal: React.FC = () => {
     signIn, 
     signUp, 
     signInWithGoogle,
-    signInWithGoogleDemo,
-    switchDemoRole 
+    signInWithGoogleDemo
   } = useAuth();
 
   const { theme } = useFinance();
@@ -35,7 +32,6 @@ export const AuthModal: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [username, setUsername] = useState('');
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'user'>('user');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,14 +43,14 @@ export const AuthModal: React.FC = () => {
     setErrorMessage(null);
     setIsGoogleSubmitting(true);
     try {
-      const res = await signInWithGoogle(selectedRole);
+      const res = await signInWithGoogle();
       if (!res.success) {
         if (
           res.error?.includes('Popup was blocked') || 
           res.error?.includes('closed before completing') || 
           res.error?.includes('cancelled')
         ) {
-          const fallback = await signInWithGoogleDemo(selectedRole);
+          const fallback = await signInWithGoogleDemo();
           if (!fallback.success) {
             setErrorMessage(res.error || 'Google sign-in could not be completed.');
           }
@@ -95,7 +91,7 @@ export const AuthModal: React.FC = () => {
           setErrorMessage(res.error || 'Login failed.');
         }
       } else {
-        const res = await signUp(username, email, password, selectedRole);
+        const res = await signUp(username, email, password);
         if (!res.success) {
           setErrorMessage(res.error || 'Registration failed.');
         }
@@ -123,7 +119,7 @@ export const AuthModal: React.FC = () => {
                 {activeTab === 'login' ? 'Account Sign In' : 'Create Account'}
               </h3>
               <p className="text-[11px] text-slate-400">
-                2-Role Access: Administrator or Client User
+                {activeTab === 'login' ? 'Access your private personal wealth tracker' : 'Register your private wealth command center'}
               </p>
             </div>
           </div>
@@ -230,61 +226,24 @@ export const AuthModal: React.FC = () => {
           </div>
 
           {activeTab === 'register' && (
-            <>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Full Name / Username
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                  <input
-                    type="text"
-                    required
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    placeholder="e.g. Sudharsan"
-                    className={`w-full pl-9 pr-3.5 py-2 rounded-xl border text-xs ${
-                      isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'
-                    }`}
-                  />
-                </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Full Name / Username
+              </label>
+              <div className="relative">
+                <User className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  required
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  placeholder="e.g. Alex"
+                  className={`w-full pl-9 pr-3.5 py-2 rounded-xl border text-xs ${
+                    isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'
+                  }`}
+                />
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Account Type
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRole('user')}
-                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
-                      selectedRole === 'user'
-                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500'
-                        : 'border-slate-200 dark:border-slate-800 text-slate-500'
-                    }`}
-                  >
-                    <Users className="w-4 h-4 mb-1" />
-                    <div className="text-xs font-bold">Client User</div>
-                    <div className="text-[10px] opacity-75">Personal Wealth App</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRole('admin')}
-                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
-                      selectedRole === 'admin'
-                        ? 'border-blue-500 bg-blue-500/10 text-blue-500'
-                        : 'border-slate-200 dark:border-slate-800 text-slate-500'
-                    }`}
-                  >
-                    <Shield className="w-4 h-4 mb-1" />
-                    <div className="text-xs font-bold">Administrator</div>
-                    <div className="text-[10px] opacity-75">Admin Panel &amp; Broadcasts</div>
-                  </button>
-                </div>
-              </div>
-            </>
+            </div>
           )}
 
           <div>
@@ -375,45 +334,8 @@ export const AuthModal: React.FC = () => {
               <span>Zero-Knowledge Local Storage Guarantee:</span>
             </span>
             <span>
-              Only your login username and email are stored in the database. All your transactions, salary, and assets are kept 100% private in local device storage.
+              Your personal transactions, salary, and assets remain 100% private in local device storage.
             </span>
-          </div>
-
-          {/* Development Test Mode 1-Click Role Switcher */}
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Development Test Mode
-              </span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-500 font-mono font-bold">
-                1-Click Testing
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  switchDemoRole('admin');
-                  closeAuthModal();
-                }}
-                className="py-2 px-3 rounded-xl text-xs font-bold bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 border border-blue-500/30 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <Shield className="w-3.5 h-3.5" />
-                <span>👑 Admin Mode</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  switchDemoRole('user');
-                  closeAuthModal();
-                }}
-                className="py-2 px-3 rounded-xl text-xs font-bold bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 border border-emerald-500/30 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>👤 User Mode</span>
-              </button>
-            </div>
           </div>
         </form>
       </div>

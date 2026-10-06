@@ -13,10 +13,15 @@ import {
   Pencil,
   Bot,
   X,
-  CheckCircle2
+  CheckCircle2,
+  TrendingUp,
+  TrendingDown,
+  ArrowRightLeft,
+  Radio,
+  Activity
 } from 'lucide-react';
 import { useFinance, CURRENCY_CONFIGS } from '../../context/FinanceContext';
-import { CurrencyCode } from '../../types';
+import { CurrencyCode, CurrencyConfig } from '../../types';
 
 export interface LanguageOption {
   code: string;
@@ -206,8 +211,8 @@ export interface CountryOption {
 }
 
 export const SUPPORTED_COUNTRIES: CountryOption[] = [
-  { code: 'US', name: 'United States', flag: '🇺🇸', currency: 'USD', fiscalYear: 'Jan - Dec (Calendar Year)' },
   { code: 'IN', name: 'India', flag: '🇮🇳', currency: 'INR', fiscalYear: 'Apr - Mar (Fiscal Year)' },
+  { code: 'US', name: 'United States', flag: '🇺🇸', currency: 'USD', fiscalYear: 'Jan - Dec (Calendar Year)' },
   { code: 'GB', name: 'United Kingdom', flag: '🇬🇧', currency: 'GBP', fiscalYear: 'Apr 6 - Apr 5' },
   { code: 'CA', name: 'Canada', flag: '🇨🇦', currency: 'CAD', fiscalYear: 'Jan - Dec (Calendar Year)' },
   { code: 'AU', name: 'Australia', flag: '🇦🇺', currency: 'AUD', fiscalYear: 'Jul - Jun (Fiscal Year)' },
@@ -219,6 +224,18 @@ export const SUPPORTED_COUNTRIES: CountryOption[] = [
   { code: 'AE', name: 'United Arab Emirates', flag: '🇦🇪', currency: 'USD', fiscalYear: 'Jan - Dec (Calendar Year)' },
   { code: 'BR', name: 'Brazil', flag: '🇧🇷', currency: 'USD', fiscalYear: 'Jan - Dec (Calendar Year)' },
 ];
+
+export const CURRENCY_FLAGS: Record<string, string> = {
+  INR: '🇮🇳',
+  USD: '🇺🇸',
+  EUR: '🇪🇺',
+  GBP: '🇬🇧',
+  CAD: '🇨🇦',
+  AUD: '🇦🇺',
+  JPY: '🇯🇵',
+  SGD: '🇸🇬',
+  CHF: '🇨🇭',
+};
 
 export const TIMEZONE_OPTIONS = [
   { id: 'America/Los_Angeles', label: 'Pacific Time (US & Canada)', offset: 'UTC-08:00', city: 'San Francisco, LA' },
@@ -246,16 +263,47 @@ export const NUMBER_FORMATS = [
 ];
 
 export const LanguageRegionSection: React.FC = () => {
-  const { theme, currency, setCurrency, formatMoney } = useFinance();
+  const { 
+    theme, 
+    currency, 
+    setCurrency, 
+    formatMoney,
+    liveCurrencyConfigs,
+    refreshLiveCurrencyRates,
+    isForexLoading,
+    lastForexUpdated,
+    isForexLive
+  } = useFinance();
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
-  // Persistent settings state
+  // Strongly typed currency list from live configs
+  const currencyConfigsList = (Object.values(liveCurrencyConfigs || CURRENCY_CONFIGS) as CurrencyConfig[]);
+
+  // Live Currency Converter State
+  const [converterAmount, setConverterAmount] = useState<number>(1000);
+  const [converterSource, setConverterSource] = useState<CurrencyCode>('USD');
+  const [isRefreshingFx, setIsRefreshingFx] = useState(false);
+  const [manualFxSuccess, setManualFxSuccess] = useState<string | null>(null);
+
+  const handleRefreshFx = async () => {
+    setIsRefreshingFx(true);
+    setManualFxSuccess(null);
+    try {
+      await refreshLiveCurrencyRates();
+      setManualFxSuccess('Live currency exchange rates updated successfully!');
+      setTimeout(() => setManualFxSuccess(null), 3000);
+    } finally {
+      setIsRefreshingFx(false);
+    }
+  };
+
+  // Persistent settings state - defaulted to Indian locale & currency
   const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
-    return localStorage.getItem('fix_settings_language') || 'en-US';
+    return localStorage.getItem('fix_settings_language') || 'en-IN';
   });
 
   const [selectedCountry, setSelectedCountry] = useState<string>(() => {
-    return localStorage.getItem('fix_settings_country') || 'US';
+    return localStorage.getItem('fix_settings_country') || 'IN';
   });
 
   const [selectedDateFormat, setSelectedDateFormat] = useState<string>(() => {
@@ -267,14 +315,14 @@ export const LanguageRegionSection: React.FC = () => {
   });
 
   const [selectedNumberFormat, setSelectedNumberFormat] = useState<string>(() => {
-    return localStorage.getItem('fix_settings_number_format') || 'standard';
+    return localStorage.getItem('fix_settings_number_format') || 'lakhs';
   });
 
   const [firstDayOfWeek, setFirstDayOfWeek] = useState<string>(() => {
     return localStorage.getItem('fix_settings_first_day') || 'Monday';
   });
 
-  // Editing state for each of the 4 sections
+  // Editing state for each of the sections
   const [isEditingLang, setIsEditingLang] = useState(false);
   const [draftLanguage, setDraftLanguage] = useState(selectedLanguage);
 
@@ -286,6 +334,27 @@ export const LanguageRegionSection: React.FC = () => {
 
   const [isEditingTimezone, setIsEditingTimezone] = useState(false);
   const [draftTimezone, setDraftTimezone] = useState(selectedTimezone);
+
+  // Currency Standard editing state (defaults to Indian Rupee INR)
+  const [isEditingCurrency, setIsEditingCurrency] = useState(false);
+  const [draftCurrency, setDraftCurrency] = useState<CurrencyCode>(currency);
+  const [currencySearch, setCurrencySearch] = useState('');
+
+  useEffect(() => {
+    setDraftCurrency(currency);
+  }, [currency]);
+
+  const handleCurrencyChange = (currCode: CurrencyCode) => {
+    setCurrency(currCode);
+    localStorage.setItem('aura_currency', currCode);
+    const cfg = (liveCurrencyConfigs || CURRENCY_CONFIGS)[currCode];
+    showSavedNotification(`Currency Standard saved: ${currCode} (${cfg?.symbol || ''})`);
+  };
+
+  const handleSaveCurrency = () => {
+    handleCurrencyChange(draftCurrency);
+    setIsEditingCurrency(false);
+  };
 
   const [langCategory, setLangCategory] = useState<'all' | 'tamil_indian' | 'english' | 'international'>('all');
   const [langSearch, setLangSearch] = useState('');
@@ -1115,54 +1184,426 @@ export const LanguageRegionSection: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. Currency Selection Standard (Integrated directly with FinanceContext) */}
-      <div className={`p-5 rounded-2xl border space-y-4 ${
+      {/* 5. Currency Selection Standard (Live Price & Real-Time Forex Feed) */}
+      <div id="section-currency-standard" className={`p-5 rounded-2xl border space-y-4 ${
         isLight ? 'bg-slate-50/70 border-slate-200' : 'bg-slate-950/50 border-slate-800'
       }`}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/80 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <Coins className="w-4 h-4 text-emerald-500" />
-            <h3 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-              Valuation Currency Standard
-            </h3>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-bold border border-emerald-500/20">
-              Active: {currency} ({CURRENCY_CONFIGS[currency]?.symbol})
-            </span>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-500">
+              <Coins className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <span>Currency Standard</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-bold border border-emerald-500/20">
+                    Active: {currency} ({liveCurrencyConfigs[currency]?.symbol || CURRENCY_CONFIGS[currency]?.symbol})
+                  </span>
+                </h3>
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-500 dark:text-blue-400 font-bold border border-blue-500/20">
+                  <Activity className="w-3 h-3 text-emerald-500 animate-pulse" />
+                  <span>Live Market Price Stream</span>
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Real-time interbank market pricing for assets, loans, net worth, statements, and ledger valuations
+              </p>
+            </div>
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400">
-            Sample Valuation: <strong className="font-mono text-emerald-600 dark:text-emerald-400">{formatMoney(1254300)}</strong>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Live Indicator Pill */}
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-mono font-semibold border ${
+              isForexLive 
+                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+                : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+            }`}>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Live FX Rate Feed</span>
+              <span className="opacity-60 text-[10px]">
+                • {lastForexUpdated ? new Date(lastForexUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Now'}
+              </span>
+            </div>
+
+            {/* Refresh Live Rates Button */}
+            <button
+              type="button"
+              id="btn-refresh-forex"
+              onClick={handleRefreshFx}
+              disabled={isRefreshingFx || isForexLoading}
+              title="Fetch latest live exchange rates from live currency feeds"
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
+                isLight
+                  ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
+                  : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border-slate-800 hover:border-slate-700'
+              }`}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-blue-500 ${isRefreshingFx || isForexLoading ? 'animate-spin' : ''}`} />
+              <span>{isRefreshingFx || isForexLoading ? 'Updating Live...' : 'Refresh Live Rates'}</span>
+            </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
-          {Object.values(CURRENCY_CONFIGS).map(c => {
-            const isSelected = currency === c.code;
-            return (
+        {/* Live Forex Market Ticker Ribbon */}
+        <div className={`p-2.5 rounded-xl border flex items-center gap-2 overflow-x-auto no-scrollbar text-xs font-mono ${
+          isLight ? 'bg-white/80 border-slate-200 text-slate-700' : 'bg-slate-900/80 border-slate-800 text-slate-300'
+        }`}>
+          <div className="flex items-center gap-1.5 shrink-0 pr-2 border-r border-slate-200 dark:border-slate-800 font-bold text-[10px] text-emerald-500 uppercase tracking-wider">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Live Ticker</span>
+          </div>
+          <div className="flex items-center gap-4 text-[11px] shrink-0 font-medium">
+            {currencyConfigsList
+              .filter(c => c.code !== 'USD')
+              .map(c => {
+                const ratePerUSD = c.ratePerUSD || (c.rateToUSD > 0 ? 1 / c.rateToUSD : 1);
+                const isEURorGBP = c.code === 'EUR' || c.code === 'GBP' || c.code === 'AUD';
+                const quoteText = isEURorGBP
+                  ? `${c.code}/USD: $${(c.rateToUSD || 1).toFixed(4)}`
+                  : `USD/${c.code}: ${c.symbol}${ratePerUSD >= 100 ? ratePerUSD.toFixed(2) : ratePerUSD.toFixed(4)}`;
+                const isUp = (c.priceChange24h ?? 0) >= 0;
+                return (
+                  <span key={c.code} className="inline-flex items-center gap-1 shrink-0">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">{quoteText}</span>
+                    <span className={`text-[10px] ${isUp ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}`}>
+                      {isUp ? '+' : ''}{(c.priceChange24h ?? 0).toFixed(2)}%
+                    </span>
+                  </span>
+                );
+              })}
+          </div>
+        </div>
+
+        {manualFxSuccess && (
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-500 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{manualFxSuccess}</span>
+          </div>
+        )}
+
+        {/* Currency Standard & Statement: Summary View vs Edit Mode */}
+        {(() => {
+          const activeCurrencyObj = (liveCurrencyConfigs || CURRENCY_CONFIGS)[currency] || CURRENCY_CONFIGS.INR;
+          return !isEditingCurrency ? (
+            /* Selected Summary View - Only show what the user selected (default: Indian currency INR ₹) */
+            <div className="space-y-3">
+              <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-900 border-slate-800'
+              }`}>
+                <div className="flex items-center gap-3.5">
+                  <span className="text-4xl shrink-0">{CURRENCY_FLAGS[activeCurrencyObj.code] || '🇮🇳'}</span>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-xl font-black text-slate-900 dark:text-white">
+                        {activeCurrencyObj.symbol} {activeCurrencyObj.code}
+                      </span>
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                        ({activeCurrencyObj.name})
+                      </span>
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/25">
+                        Selected Standard
+                      </span>
+                      {activeCurrencyObj.code === 'INR' && (
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/25">
+                          Default Currency
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400 font-mono mt-1 flex items-center gap-3 flex-wrap">
+                      <span>
+                        Live Market Rate: <strong className="text-slate-900 dark:text-white">{activeCurrencyObj.code === 'USD' ? '$1.00 USD' : `1 USD = ${activeCurrencyObj.symbol}${activeCurrencyObj.ratePerUSD >= 100 ? activeCurrencyObj.ratePerUSD.toFixed(2) : activeCurrencyObj.ratePerUSD.toFixed(4)}`}</strong>
+                      </span>
+                      <span className="opacity-80">
+                        Unit in USD: <strong>${activeCurrencyObj.rateToUSD >= 1 ? activeCurrencyObj.rateToUSD.toFixed(4) : activeCurrencyObj.rateToUSD.toFixed(4)}</strong>
+                      </span>
+                      <span className={`text-[10px] font-bold flex items-center gap-0.5 ${(activeCurrencyObj.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {(activeCurrencyObj.priceChange24h ?? 0) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                        <span>{(activeCurrencyObj.priceChange24h ?? 0) >= 0 ? '+' : ''}{(activeCurrencyObj.priceChange24h ?? 0).toFixed(2)}% (24h)</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-bold inline-flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Live Synced</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Informational Pill about Currency Standard / Statement */}
+              <div className={`p-3 rounded-xl border flex items-start gap-2.5 text-[11px] ${
+                isLight ? 'bg-emerald-50/50 border-emerald-200/60 text-emerald-900' : 'bg-emerald-950/20 border-emerald-900/40 text-emerald-300'
+              }`}>
+                <Coins className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <span className="font-bold">Currency Statement &amp; Valuation Standard:</span> The application default is calibrated in <strong>{activeCurrencyObj.name} ({activeCurrencyObj.symbol})</strong>. All account balances, net worth statements, income &amp; expense ledgers, emergency runway metrics, and wealth charts are calculated and displayed in this live currency standard.
+                </div>
+              </div>
+
+              {/* Change Currency Button */}
               <button
-                key={c.code}
+                id="btn-change-currency-standard"
                 onClick={() => {
-                  setCurrency(c.code as CurrencyCode);
-                  showSavedNotification();
+                  setDraftCurrency(currency);
+                  setIsEditingCurrency(true);
                 }}
-                className={`p-3 rounded-2xl border text-left transition-all ${
-                  isSelected
-                    ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/25 font-bold scale-[1.02]'
-                    : isLight
-                      ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
-                      : 'bg-slate-900/90 border-slate-800 text-slate-300 hover:bg-slate-800'
+                className={`w-full py-2.5 px-4 rounded-xl border font-bold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer ${
+                  isLight
+                    ? 'bg-white hover:bg-slate-100 text-emerald-600 border-emerald-200 hover:border-emerald-300'
+                    : 'bg-slate-900 hover:bg-slate-800 text-emerald-400 border-slate-800 hover:border-emerald-500/40'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-base font-black">{c.symbol}</span>
-                  <span className="text-[10px] font-mono opacity-80 font-bold">{c.code}</span>
-                </div>
-                <div className="text-[11px] truncate mt-1 font-semibold">{c.name}</div>
-                <div className={`text-[10px] font-mono mt-1 ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>
-                  1 USD ≈ {(1 / c.rateToUSD).toFixed(c.rateToUSD < 0.05 ? 0 : 2)} {c.code}
-                </div>
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Change Currency Standard</span>
               </button>
-            );
-          })}
+            </div>
+          ) : (
+            /* Editing / Picker Mode with Save and Cancel */
+            <div className="space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-200 dark:border-slate-800">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                  Select Valuation Currency Standard (Click option, then click Save)
+                </span>
+                <button
+                  onClick={() => setIsEditingCurrency(false)}
+                  className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Quick Pick Pills - featuring Indian Currency INR first */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] text-slate-400 font-medium">Quick Pick:</span>
+                {[
+                  { code: 'INR', label: '🇮🇳 INR (Indian Rupee - ₹)' },
+                  { code: 'USD', label: '🇺🇸 USD ($)' },
+                  { code: 'EUR', label: '🇪🇺 EUR (€)' },
+                  { code: 'GBP', label: '🇬🇧 GBP (£)' },
+                  { code: 'SGD', label: '🇸🇬 SGD (S$)' },
+                  { code: 'CAD', label: '🇨🇦 CAD (C$)' },
+                  { code: 'AUD', label: '🇦🇺 AUD (A$)' },
+                  { code: 'JPY', label: '🇯🇵 JPY (¥)' },
+                  { code: 'CHF', label: '🇨🇭 CHF' },
+                ].map(quick => (
+                  <button
+                    key={quick.code}
+                    onClick={() => setDraftCurrency(quick.code as CurrencyCode)}
+                    className={`text-[10px] px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
+                      draftCurrency === quick.code
+                        ? 'bg-emerald-600 text-white border-emerald-600 font-bold shadow-xs'
+                        : isLight
+                          ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                          : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                    }`}
+                  >
+                    {quick.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search Input */}
+              <div className="relative">
+                <Search className="w-3 h-3 absolute left-2.5 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={currencySearch}
+                  onChange={(e) => setCurrencySearch(e.target.value)}
+                  placeholder="Search currency (e.g. INR, Rupee, USD, EUR)..."
+                  className={`w-full pl-7 pr-7 py-1.5 text-[11px] rounded-lg border focus:outline-none focus:ring-1 focus:ring-emerald-500 ${
+                    isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
+                  }`}
+                />
+                {currencySearch && (
+                  <button
+                    onClick={() => setCurrencySearch('')}
+                    className="absolute right-2 top-2 text-[10px] text-slate-400 hover:text-slate-600"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* List of Currencies */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-60 overflow-y-auto pr-1">
+                {currencyConfigsList
+                  .filter(c => {
+                    if (!currencySearch.trim()) return true;
+                    const q = currencySearch.toLowerCase();
+                    return (
+                      c.name.toLowerCase().includes(q) ||
+                      c.code.toLowerCase().includes(q) ||
+                      c.symbol.toLowerCase().includes(q)
+                    );
+                  })
+                  .map(c => {
+                    const isDraft = draftCurrency === c.code;
+                    const ratePerUSD = c.ratePerUSD || (c.rateToUSD > 0 ? 1 / c.rateToUSD : 1);
+                    const rateToUSD = c.rateToUSD || (ratePerUSD > 0 ? 1 / ratePerUSD : 1);
+                    const isEURorGBP = c.code === 'EUR' || c.code === 'GBP' || c.code === 'AUD';
+                    const quoteText = isEURorGBP
+                      ? `${c.code}/USD: $${rateToUSD.toFixed(4)}`
+                      : `1 USD = ${c.symbol}${ratePerUSD >= 100 ? ratePerUSD.toFixed(2) : ratePerUSD.toFixed(4)}`;
+                    const flag = CURRENCY_FLAGS[c.code] || '🌐';
+
+                    return (
+                      <button
+                        key={c.code}
+                        id={`btn-select-currency-${c.code.toLowerCase()}`}
+                        onClick={() => setDraftCurrency(c.code as CurrencyCode)}
+                        className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                          isDraft
+                            ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm font-bold ring-2 ring-emerald-500/20'
+                            : isLight 
+                              ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' 
+                              : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <span className="text-xl shrink-0">{flag}</span>
+                          <div className="truncate">
+                            <div className="truncate font-semibold flex items-center gap-1">
+                              <span>{c.code}</span>
+                              <span className="text-xs opacity-80">({c.symbol})</span>
+                              {c.code === 'INR' && (
+                                <span className={`text-[9px] px-1 rounded font-normal ${isDraft ? 'bg-amber-400/25 text-amber-200' : 'bg-amber-500/20 text-amber-600 dark:text-amber-300'}`}>
+                                  Default
+                                </span>
+                              )}
+                            </div>
+                            <div className={`text-[10px] truncate ${isDraft ? 'text-emerald-100' : 'text-slate-400'}`}>
+                              {c.name} • {quoteText}
+                            </div>
+                          </div>
+                        </div>
+                        {isDraft && <Check className="w-4 h-4 shrink-0 text-white" />}
+                      </button>
+                    );
+                  })}
+              </div>
+
+              {/* Save & Cancel Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  onClick={() => setIsEditingCurrency(false)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer ${
+                    isLight ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveCurrency}
+                  className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Save Currency Standard</span>
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Live Currency Cross-Rate Converter / Calculator Bar */}
+        <div className={`p-4 rounded-2xl border space-y-3 ${
+          isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+        }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <ArrowRightLeft className="w-4 h-4 text-blue-500" />
+              <span className="font-bold text-xs text-slate-900 dark:text-white">
+                Live Currency Converter &amp; Cross-Rate Checker
+              </span>
+            </div>
+            <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+              Instant conversion grounded in live market pricing
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                Amount to Convert
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={converterAmount}
+                onChange={e => setConverterAmount(Math.max(0, Number(e.target.value) || 0))}
+                className={`w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold ${
+                  isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-white'
+                }`}
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                From Currency
+              </label>
+              <select
+                value={converterSource}
+                onChange={e => setConverterSource(e.target.value as CurrencyCode)}
+                className={`w-full px-3 py-2 rounded-xl border text-xs font-semibold ${
+                  isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-white'
+                }`}
+              >
+                {currencyConfigsList.map(c => (
+                  <option key={c.code} value={c.code}>
+                    {c.code} - {c.name} ({c.symbol})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                Converted into Active ({currency})
+              </label>
+              <div className={`px-3 py-2 rounded-xl border text-xs font-mono font-bold flex items-center justify-between ${
+                isLight ? 'bg-emerald-50/80 border-emerald-200 text-emerald-800' : 'bg-emerald-950/20 border-emerald-500/30 text-emerald-400'
+              }`}>
+                <span>{liveCurrencyConfigs[currency]?.symbol || '$'}</span>
+                <span>
+                  {(() => {
+                    const fromCfg = (liveCurrencyConfigs || CURRENCY_CONFIGS)[converterSource] || CURRENCY_CONFIGS.USD;
+                    const toCfg = (liveCurrencyConfigs || CURRENCY_CONFIGS)[currency] || CURRENCY_CONFIGS.USD;
+                    const inUSD = converterAmount * (fromCfg.rateToUSD || 1);
+                    const inTarget = toCfg.rateToUSD > 0 ? inUSD / toCfg.rateToUSD : inUSD;
+                    return inTarget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  })()}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Cross-Conversion Pills */}
+          <div className="pt-2 border-t border-inherit/40 flex items-center gap-2 overflow-x-auto no-scrollbar text-[11px] font-mono">
+            <span className="text-[10px] uppercase font-bold text-slate-400 shrink-0">
+              Live Equivalence ({converterAmount.toLocaleString()} {converterSource}):
+            </span>
+            {currencyConfigsList
+              .filter(c => c.code !== converterSource)
+              .slice(0, 5)
+              .map(c => {
+                const fromCfg = (liveCurrencyConfigs || CURRENCY_CONFIGS)[converterSource] || CURRENCY_CONFIGS.USD;
+                const inUSD = converterAmount * (fromCfg.rateToUSD || 1);
+                const inTarget = c.rateToUSD > 0 ? inUSD / c.rateToUSD : inUSD;
+                return (
+                  <span 
+                    key={c.code} 
+                    className="px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/5 border border-inherit/30 shrink-0 font-medium text-slate-700 dark:text-slate-300"
+                  >
+                    {c.symbol}{inTarget.toLocaleString('en-US', { maximumFractionDigits: 1 })} <span className="opacity-60">{c.code}</span>
+                  </span>
+                );
+              })}
+          </div>
         </div>
       </div>
 

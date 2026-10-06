@@ -45,8 +45,7 @@ export const SidebarProfile: React.FC<SidebarProfileProps> = ({ isCollapsed = fa
     isAdmin,
     isUser, 
     signOut, 
-    isAuthenticated,
-    switchDemoRole 
+    isAuthenticated 
   } = useAuth();
 
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
@@ -233,27 +232,6 @@ export const SidebarProfile: React.FC<SidebarProfileProps> = ({ isCollapsed = fa
             >
               <MessageSquarePlus className="w-3.5 h-3.5 text-blue-500" />
               <span>Share Feedback</span>
-            </button>
-
-            {/* Quick 1-Click Test Mode Switcher */}
-            <button
-              id="sidebar-profile-btn-test-switch"
-              onClick={() => {
-                switchDemoRole(isAdmin ? 'user' : 'admin');
-                setIsMenuOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-left transition-colors cursor-pointer text-xs ${
-                isLight ? 'hover:bg-slate-100 text-slate-600' : 'hover:bg-slate-800 text-slate-300'
-              }`}
-              title="Toggle role in Test Mode"
-            >
-              <div className="flex items-center gap-2">
-                <Shield className="w-3.5 h-3.5 text-amber-500" />
-                <span className="font-semibold text-[11px]">Test Mode: Switch to {isAdmin ? 'User' : 'Admin'}</span>
-              </div>
-              <span className="text-[9px] font-mono px-1 rounded bg-amber-500/15 text-amber-400 font-bold">
-                1-Click
-              </span>
             </button>
 
             <div className={`my-1 h-px ${isLight ? 'bg-slate-200' : 'bg-slate-800'}`} />

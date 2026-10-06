@@ -54,7 +54,7 @@ export const Navbar: React.FC = () => {
     toggleSidebar
   } = useFinance();
 
-  const { currentUser, role, isAdmin, isUser, openAuthModal, switchDemoRole, isAuthenticated } = useAuth();
+  const { currentUser, role, isAdmin, isUser, openAuthModal, isAuthenticated } = useAuth();
 
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
