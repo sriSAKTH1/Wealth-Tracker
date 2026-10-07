@@ -435,6 +435,15 @@ export const FinScoreView: React.FC = () => {
     },
   ]);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isAiAgentWaitlistJoined, setIsAiAgentWaitlistJoined] = useState(() => {
+    return localStorage.getItem('app_ai_agent_waitlist_joined') === 'true';
+  });
+
+  const handleJoinAiAgentWaitlist = () => {
+    setIsAiAgentWaitlistJoined(true);
+    localStorage.setItem('app_ai_agent_waitlist_joined', 'true');
+    showToast('You are registered for VIP early access to the autonomous AI AGENT once engineering rollout completes!');
+  };
 
   // What-If Simulation Sandbox State
   const [simEmergencyAdd, setSimEmergencyAdd] = useState(0);
@@ -1812,7 +1821,7 @@ Strategic Focus: ${result.biggestPriority}`;
             { id: 'emergency', label: '5. Emergency Fund', shortLabel: 'Emergency', icon: AlertTriangle },
             { id: 'investments_assets', label: '6. Investments & Assets', shortLabel: 'Assets', icon: TrendingUp },
             { id: 'goals', label: '7. Future Goals', shortLabel: 'Goals', icon: Target },
-            { id: 'ai_assistant', label: '8. AI Assistant', shortLabel: 'AI', icon: Bot, isAi: true },
+            { id: 'ai_assistant', label: '8. AI Agent (In Dev)', shortLabel: 'AI Agent', icon: Bot, isAi: true },
             { id: 'dashboard', label: '9. Score Dashboard', shortLabel: 'Score', icon: Activity },
           ].map(tab => {
             const Icon = tab.icon;
@@ -2489,93 +2498,174 @@ Strategic Focus: ${result.biggestPriority}`;
             )}
           </div>
 
-          {/* ACTIVE AI ASSISTANT QUICK-LAUNCH & LIVE CHAT CARD IN SCORE DASHBOARD */}
-          <div className={`p-6 rounded-3xl border shadow-sm ${
-            isLight ? 'bg-gradient-to-br from-blue-50/60 via-indigo-50/40 to-white border-blue-200' : 'bg-gradient-to-br from-blue-950/20 via-slate-900 to-slate-900 border-blue-900/40'
+          {/* ACTIVE AI AGENT IN DEVELOPMENT PROCESS SHOWCASE CARD IN SCORE DASHBOARD */}
+          <div className={`p-6 sm:p-7 rounded-3xl border shadow-sm space-y-4 ${
+            isLight ? 'bg-gradient-to-br from-indigo-50/70 via-blue-50/40 to-white border-indigo-200' : 'bg-gradient-to-br from-indigo-950/30 via-slate-900 to-slate-900 border-indigo-900/50'
           }`}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-              <div className="flex items-center gap-2.5">
+            {/* Child 1: Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-9 h-9 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/30">
-                    <Bot className="w-5 h-5" />
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-blue-600 to-violet-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                    <Bot className="w-6 h-6" />
                   </div>
-                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-950 animate-pulse" />
+                  <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500 border-2 border-slate-950"></span>
+                  </span>
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wider">
-                      7. AI Assistant Chat — Active
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-extrabold text-blue-400 tracking-wide flex items-center gap-2">
+                      <span>AI AGENT</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 font-mono font-semibold">
+                        Autonomous Copilot
+                      </span>
                     </h3>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                      Online
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1.5 font-mono">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      In Development Process • Coming Soon...
                     </span>
                   </div>
                   <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                    Ask real-time questions about your FinScore, emergency fund roadmap, or debt payoff.
+                    An autonomous financial reasoning agent that monitors your accounts, optimizes 80C taxes, and prevents drawdown shocks.
                   </p>
                 </div>
               </div>
 
-              <button
-                id="btn-open-full-ai-studio"
-                onClick={() => setActiveTab('ai_assistant')}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 shadow-md transition-all self-start sm:self-auto cursor-pointer"
-              >
-                <span>Open Full AI Studio</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                <span className="text-[11px] font-mono font-bold px-3 py-1.5 rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                  <span>Phase 2 Engineering</span>
+                </span>
+              </div>
             </div>
 
-            {/* Quick Prompt Suggestions */}
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              {[
-                'How do I reach FinScore 85+ fastest?',
-                'Should I prepay loan or build emergency buffer?',
-                'How much term insurance do I need for my family?'
-              ].map(prompt => (
-                <button
-                  key={prompt}
-                  onClick={() => {
-                    handleSendAiMessage(prompt);
-                    setActiveTab('ai_assistant');
-                  }}
-                  className={`px-3 py-1 rounded-full border text-[11px] font-medium transition-all ${
-                    isLight ? 'bg-white border-blue-200 text-blue-700 hover:bg-blue-50' : 'bg-slate-900 border-blue-900/60 text-blue-300 hover:bg-blue-950/50'
-                  }`}
-                >
-                  ✨ {prompt}
-                </button>
-              ))}
-            </div>
+            {/* Child 2 (Selected Element matching div:nth-of-type(6) > div:nth-of-type(2)): AI AGENT In Development Process Showcase */}
+            <div className={`p-4 sm:p-5 rounded-2xl border ${
+              isLight ? 'bg-white/80 border-indigo-100 shadow-xs' : 'bg-slate-950/70 border-indigo-900/30'
+            }`}>
+              {/* Notice Banner */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-200/60 dark:border-slate-800/60">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/25 shrink-0">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
+                      <span>AI AGENT in development process coming soon...</span>
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30">
+                        Under Active Construction
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Our multi-agent financial engine is currently undergoing security hardening, sandbox simulation, and precision calibration.
+                    </p>
+                  </div>
+                </div>
 
-            {/* Live Chat Input Bar */}
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                placeholder="Ask FinScore AI anything about your financial health, loans, or goals..."
-                value={aiQuestion}
-                onChange={e => setAiQuestion(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') {
-                    handleSendAiMessage();
-                    setActiveTab('ai_assistant');
-                  }
-                }}
-                className={`flex-1 px-4 py-2.5 rounded-xl border text-xs ${
-                  isLight ? 'bg-white border-slate-300 text-slate-900 focus:border-blue-500' : 'bg-slate-950 border-slate-700 text-white focus:border-blue-500'
-                }`}
-              />
-              <button
-                onClick={() => {
-                  handleSendAiMessage();
-                  setActiveTab('ai_assistant');
-                }}
-                disabled={isAiLoading || !aiQuestion.trim()}
-                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 disabled:opacity-50 shadow-md cursor-pointer transition-all"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>Send</span>
-              </button>
+                <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleJoinAiAgentWaitlist}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
+                      isAiAgentWaitlistJoined
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/25'
+                    }`}
+                  >
+                    {isAiAgentWaitlistJoined ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Waitlist Confirmed!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Get Early Access</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('ai_assistant')}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${finScoreTheme.btnSecondary}`}
+                  >
+                    <span>View Roadmap</span>
+                    <ArrowRight className="w-3.5 h-3.5 ml-1 inline" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Development Milestones Progress Bar */}
+              <div className="pt-4 pb-2">
+                <div className="flex items-center justify-between text-[11px] font-mono mb-2">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">Architecture & Readiness:</span>
+                  <span className="text-blue-500 dark:text-blue-400 font-bold">84% Completed • Alpha Stage</span>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-1000"
+                    style={{ width: '84%' }}
+                  />
+                </div>
+              </div>
+
+              {/* 4 Forthcoming Autonomous Capabilities */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-3">
+                <div className={`p-3 rounded-xl border ${finScoreTheme.innerCard}`}>
+                  <div className="flex items-center gap-1.5 font-bold text-xs text-blue-400 mb-1">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Auto Liquidity Shield</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Continuously checks emergency buffer and warns before discretionary spikes threaten essential runway.
+                  </p>
+                  <span className="mt-2 inline-block text-[9px] font-mono font-bold text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                    ✓ Grounding Verified
+                  </span>
+                </div>
+
+                <div className={`p-3 rounded-xl border ${finScoreTheme.innerCard}`}>
+                  <div className="flex items-center gap-1.5 font-bold text-xs text-indigo-400 mb-1">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span>SIP & Portfolio Balancer</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Analyzes age-based asset weights (equity vs debt vs gold) and recommends rebalancing amounts.
+                  </p>
+                  <span className="mt-2 inline-block text-[9px] font-mono font-bold text-amber-500 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                    ⚡ In Optimization
+                  </span>
+                </div>
+
+                <div className={`p-3 rounded-xl border ${finScoreTheme.innerCard}`}>
+                  <div className="flex items-center gap-1.5 font-bold text-xs text-rose-400 mb-1">
+                    <Zap className="w-3.5 h-3.5" />
+                    <span>Debt Avalanche Pilot</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Pinpoints highest interest liabilities to simulate exact interest savings from monthly prepayments.
+                  </p>
+                  <span className="mt-2 inline-block text-[9px] font-mono font-bold text-amber-500 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                    ⚡ In Optimization
+                  </span>
+                </div>
+
+                <div className={`p-3 rounded-xl border ${finScoreTheme.innerCard}`}>
+                  <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-400 mb-1">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Tax & 80C Copilot</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Formulates year-end tax strategies across Indian 80C, 80D, and NPS for maximum tax deduction.
+                  </p>
+                  <span className="mt-2 inline-block text-[9px] font-mono font-bold text-blue-500 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
+                    🛠️ Security Audit
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -6323,15 +6413,15 @@ Strategic Focus: ${result.biggestPriority}`;
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-lg font-bold flex items-center gap-2">
-                    7. AI Financial Health Assistant
+                    8. AI AGENT &amp; Autonomous Copilot
                   </h2>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Multi-Turn Active
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1 font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    In Development Process • Coming Soon...
                   </span>
                 </div>
                 <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                  Conversational financial intelligence grounded directly in your 5-pillar FinScore™ metrics.
+                  Autonomous financial reasoning agent in active engineering. Test interactive query prototypes below.
                 </p>
               </div>
             </div>

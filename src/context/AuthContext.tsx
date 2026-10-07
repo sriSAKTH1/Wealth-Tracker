@@ -365,11 +365,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isTargetAdmin = targetRole === 'admin';
     const now = new Date().toISOString();
     const profile: AppUserProfile = {
-      id: isTargetAdmin ? 'user-sudharsan-test' : 'user-client-test',
-      email: isTargetAdmin ? 'sudharsan@gmail.com' : 'demo.user@wealthtracker.io',
-      name: isTargetAdmin ? 'Sudharsan M. (Admin Test)' : 'Demo Client (Test Mode)',
+      id: isTargetAdmin ? 'user-sudharsan' : 'demo.wealthtracker.com',
+      email: isTargetAdmin ? 'sudharsan@gmail.com' : 'demo@wealthtracker.com',
+      name: isTargetAdmin ? 'Sudharsan M. (Admin)' : 'Demo Client',
       role: isTargetAdmin ? 'admin' : 'user',
-      deviceInfo: getClientDeviceName() + ' • Test Mode',
+      deviceInfo: getClientDeviceName() + ' • Client Vault',
       lastLoginAt: now,
       createdAt: now
     };

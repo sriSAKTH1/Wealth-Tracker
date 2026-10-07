@@ -101,123 +101,50 @@ export function getClientDeviceName(): string {
 }
 
 // Default super admin email
-export const SUPER_ADMIN_EMAIL = 'sudharsanm014@gmail.com';
+export const SUPER_ADMIN_EMAIL = 'sudharsan@gmail.com';
 
-// Seed user accounts for demonstration
+// Seed user accounts - only the real administrator and the single requested demo user
 export const INITIAL_SEED_USERS: AppUserProfile[] = [
   {
     id: 'user-sudharsan',
-    email: 'sudharsanm014@gmail.com',
-    name: 'Sudharsan M. (Admin)',
+    email: 'sudharsan@gmail.com',
+    name: 'Sudharsan (Admin)',
     role: 'admin',
-    deviceInfo: 'macOS • Chrome Desktop',
+    deviceInfo: 'Web Browser • Admin Station',
     lastLoginAt: new Date().toISOString(),
     createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
-    finScore: 84,
-    monthlyIncome: 50000,
-    savingsRatio: 34
-  },
-  {
-    id: 'user-demo-1',
-    email: 'karthik.r@example.com',
-    name: 'Karthik Raja',
-    role: 'user',
-    deviceInfo: 'Windows 11 • Edge',
-    lastLoginAt: new Date(Date.now() - 3600000).toISOString(),
-    createdAt: new Date(Date.now() - 20 * 86400000).toISOString(),
-    finScore: 78,
+    finScore: 88,
     monthlyIncome: 65000,
-    savingsRatio: 28
+    savingsRatio: 35
   },
   {
-    id: 'user-demo-2',
-    email: 'ananya.s@example.com',
-    name: 'Ananya Sen',
+    id: 'demo.wealthtracker.com',
+    email: 'demo@wealthtracker.com',
+    name: 'Demo Client',
     role: 'user',
-    deviceInfo: 'iPhone 15 • Mobile Safari',
-    lastLoginAt: new Date(Date.now() - 7200000).toISOString(),
-    createdAt: new Date(Date.now() - 15 * 86400000).toISOString(),
-    finScore: 91,
-    monthlyIncome: 110000,
-    savingsRatio: 42
-  },
-  {
-    id: 'user-demo-3',
-    email: 'rohit.v@example.com',
-    name: 'Rohit Verma',
-    role: 'user',
-    deviceInfo: 'Linux • Firefox',
-    lastLoginAt: new Date(Date.now() - 86400000).toISOString(),
-    createdAt: new Date(Date.now() - 10 * 86400000).toISOString(),
-    finScore: 62,
-    monthlyIncome: 45000,
-    savingsRatio: 18
-  },
-  {
-    id: 'user-demo-4',
-    email: 'meera.p@example.com',
-    name: 'Meera Patel',
-    role: 'user',
-    deviceInfo: 'macOS • Safari',
-    lastLoginAt: new Date(Date.now() - 14400000).toISOString(),
-    createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-    finScore: 73,
-    monthlyIncome: 80000,
-    savingsRatio: 25
-  },
-  {
-    id: 'user-demo-5',
-    email: 'deepak.n@example.com',
-    name: 'Deepak Nair',
-    role: 'user',
-    deviceInfo: 'Android • Chrome',
-    lastLoginAt: new Date(Date.now() - 28800000).toISOString(),
-    createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+    deviceInfo: 'Web Browser • Client Vault',
+    lastLoginAt: new Date().toISOString(),
+    createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
     finScore: 82,
-    monthlyIncome: 95000,
-    savingsRatio: 36
+    monthlyIncome: 75000,
+    savingsRatio: 30
   }
 ];
 
 export const INITIAL_SEED_FEEDBACK: AppFeedback[] = [
   {
-    id: 'fb-1',
-    userId: 'user-demo-2',
-    userName: 'Ananya Sen',
-    userEmail: 'ananya.s@example.com',
+    id: 'fb-demo-1',
+    userId: 'demo.wealthtracker.com',
+    userName: 'Demo Client',
+    userEmail: 'demo@wealthtracker.com',
     category: 'feature_request',
     rating: 5,
-    message: 'Love the new essential vs discretionary tagging on monthly income streams! Could we also get export to PDF reports?',
+    message: 'Love the INR live pricing and local privacy architecture! Can we export tax-ready statements to Excel/CSV?',
     status: 'in_review',
-    adminReply: 'Hi Ananya! PDF report export is currently under development and will be included in the next update.',
+    adminReply: 'Hi! Statement export to CSV and JSON is available in the Reports & Analytics tab.',
     repliedAt: new Date(Date.now() - 40000000).toISOString(),
-    adminNotes: 'Planned for next milestone release.',
+    adminNotes: 'Verified feature availability.',
     createdAt: new Date(Date.now() - 86400000).toISOString()
-  },
-  {
-    id: 'fb-2',
-    userId: 'user-demo-1',
-    userName: 'Karthik Raja',
-    userEmail: 'karthik.r@example.com',
-    category: 'question',
-    rating: 4,
-    message: 'How is the debt tenure acceleration calculated when an auto loan finishes early?',
-    status: 'new',
-    createdAt: new Date(Date.now() - 43200000).toISOString()
-  },
-  {
-    id: 'fb-3',
-    userId: 'user-demo-5',
-    userName: 'Deepak Nair',
-    userEmail: 'deepak.n@example.com',
-    category: 'praise',
-    rating: 5,
-    message: 'The FIRE Freedom age projections are super motivating and accurate based on my SIP numbers.',
-    status: 'resolved',
-    adminReply: 'Thanks Deepak! Glad the retirement projection models are helping you plan your path to financial freedom.',
-    repliedAt: new Date(Date.now() - 80000000).toISOString(),
-    adminNotes: 'Client satisfied with retirement milestone roadmap.',
-    createdAt: new Date(Date.now() - 172800000).toISOString()
   }
 ];
 
@@ -261,26 +188,84 @@ export async function syncUserProfile(user: FirebaseUser, overrideRole?: AppUser
   return profile;
 }
 
-// Fetch all users for Admin Panel
+// Fetch all users for Admin Panel - ensures only admin and demo.wealthtracker.com exist
 export async function fetchAllUsers(): Promise<AppUserProfile[]> {
   try {
     const q = query(collection(db, 'users'));
     const snapshot = await getDocs(q);
     if (!snapshot.empty) {
       const users: AppUserProfile[] = [];
-      snapshot.forEach(docSnap => users.push(docSnap.data() as AppUserProfile));
+
+      for (const docSnap of snapshot.docs) {
+        const u = docSnap.data() as AppUserProfile;
+        const email = (u.email || '').toLowerCase().trim();
+        const id = docSnap.id || u.id;
+
+        const isAdmin = email === 'sudharsan@gmail.com' || email === 'sudharsanm014@gmail.com' || id === 'user-sudharsan' || id === 'user-sudharsan-admin';
+        const isDemo = id === 'demo.wealthtracker.com' || email === 'demo@wealthtracker.com';
+
+        // Delete any non-admin, non-demo users from Firestore
+        if (!isAdmin && !isDemo) {
+          deleteDoc(doc(db, 'users', id)).catch(() => {});
+          continue;
+        }
+
+        users.push({ ...u, id });
+      }
+
+      // Ensure admin and demo user are always present in the returned list
+      if (!users.some(u => u.email === 'sudharsan@gmail.com' || u.email === 'sudharsanm014@gmail.com' || u.id === 'user-sudharsan')) {
+        users.unshift(INITIAL_SEED_USERS[0]);
+      }
+      if (!users.some(u => u.id === 'demo.wealthtracker.com' || u.email === 'demo@wealthtracker.com')) {
+        users.push(INITIAL_SEED_USERS[1]);
+      }
+
+      localStorage.setItem('app_admin_all_users', JSON.stringify(users));
       return users;
     }
   } catch (err) {
     console.warn("Error fetching remote users, using cached/seed list:", err);
   }
 
-  const cached = localStorage.getItem('app_admin_all_users');
-  if (cached) {
-    try {
-      return JSON.parse(cached);
-    } catch {}
+  // Ensure demo user is persisted in Firestore if missing
+  try {
+    setDoc(doc(db, 'users', 'demo.wealthtracker.com'), INITIAL_SEED_USERS[1], { merge: true }).catch(() => {});
+    setDoc(doc(db, 'users', 'user-sudharsan'), INITIAL_SEED_USERS[0], { merge: true }).catch(() => {});
+  } catch {}
+
+  localStorage.setItem('app_admin_all_users', JSON.stringify(INITIAL_SEED_USERS));
+  return INITIAL_SEED_USERS;
+}
+
+// Delete user account from Firestore and cache
+export async function deleteUserAccount(userId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'users', userId));
+  } catch (err) {
+    console.warn("Could not delete user from Firestore:", err);
   }
+}
+
+// Purge all non-real users from database and keep only Admin and demo.wealthtracker.com
+export async function purgeNonRealUsers(): Promise<AppUserProfile[]> {
+  try {
+    const snapshot = await getDocs(collection(db, 'users'));
+    for (const d of snapshot.docs) {
+      const data = d.data();
+      const email = (data.email || '').toLowerCase().trim();
+      const id = d.id;
+      const isAdmin = email === 'sudharsan@gmail.com' || email === 'sudharsanm014@gmail.com' || id === 'user-sudharsan' || id === 'user-sudharsan-admin';
+      const isDemo = id === 'demo.wealthtracker.com' || email === 'demo@wealthtracker.com';
+      if (!isAdmin && !isDemo) {
+        await deleteDoc(doc(db, 'users', id)).catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.warn("Error purging users from Firestore:", err);
+  }
+
+  localStorage.setItem('app_admin_all_users', JSON.stringify(INITIAL_SEED_USERS));
   return INITIAL_SEED_USERS;
 }
 

@@ -46,6 +46,8 @@ import {
   fetchNewsPosts,
   publishNewsPost,
   deleteNewsPost,
+  deleteUserAccount,
+  purgeNonRealUsers,
   db
 } from '../../services/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -135,6 +137,33 @@ export const AdminPanelView: React.FC = () => {
       // Fallback update in state
       setUsers(prev => prev.map(u => u.id === targetUser.id ? { ...u, role: newRole } : u));
       showToast(`Updated role for ${targetUser.name} to ${newRole.toUpperCase()} (local cache)`);
+    }
+  };
+
+  // Delete user permanently from Firestore database and UI
+  const handleDeleteUser = async (targetUser: AppUserProfile) => {
+    if (targetUser.email === 'sudharsanm014@gmail.com' || targetUser.email === 'sudharsan@gmail.com') {
+      showToast('The Master Administrator account cannot be deleted.');
+      return;
+    }
+    try {
+      await deleteUserAccount(targetUser.id);
+      setUsers(prev => prev.filter(u => u.id !== targetUser.id));
+      showToast(`User ${targetUser.name} deleted from database and UI.`);
+    } catch (err) {
+      setUsers(prev => prev.filter(u => u.id !== targetUser.id));
+      showToast(`User ${targetUser.name} removed from list.`);
+    }
+  };
+
+  // Purge all fake / non-real users from Firestore database and UI
+  const handlePurgeNonRealUsers = async () => {
+    try {
+      const remaining = await purgeNonRealUsers();
+      setUsers(remaining);
+      showToast('Purged all non-real accounts. Only Admin and demo.wealthtracker.com remain.');
+    } catch (err) {
+      showToast('Purge complete.');
     }
   };
 
@@ -434,6 +463,17 @@ export const AdminPanelView: React.FC = () => {
                 <option value="admin">Admins Only</option>
                 <option value="user">Users Only</option>
               </select>
+
+              <button
+                type="button"
+                id="btn-purge-fake-users"
+                onClick={handlePurgeNonRealUsers}
+                className="px-3 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                title="Permanently delete all non-real accounts from Firestore database and UI (keeps Admin and demo.wealthtracker.com)"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Purge Non-Real Users</span>
+              </button>
             </div>
           </div>
 
@@ -447,12 +487,14 @@ export const AdminPanelView: React.FC = () => {
                   <th className="pb-3">Last Seen / Login</th>
                   <th className="pb-3">Joined Date</th>
                   <th className="pb-3">Connected Device</th>
-                  <th className="pb-3 pr-2 text-right">Role Action</th>
+                  <th className="pb-3 pr-2 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                 {filteredUsers.map(user => {
                   const isAdminUser = user.role === 'admin';
+                  const isDemoUser = user.id === 'demo.wealthtracker.com' || user.email === 'demo@wealthtracker.com';
+                  const isMasterAdmin = user.email === 'sudharsanm014@gmail.com' || user.email === 'sudharsan@gmail.com';
                   return (
                     <tr key={user.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                       <td className="py-3.5 pl-2">
@@ -463,8 +505,20 @@ export const AdminPanelView: React.FC = () => {
                             {user.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <span className="font-bold text-slate-900 dark:text-white block">{user.name}</span>
-                            <span className="text-[11px] text-slate-400 font-mono">{user.email}</span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-slate-900 dark:text-white">{user.name}</span>
+                              {isDemoUser && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-500 font-mono font-bold">
+                                  Demo User
+                                </span>
+                              )}
+                              {isMasterAdmin && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-400 font-mono font-bold">
+                                  Primary Admin
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-slate-400 font-mono block">{user.email}</span>
                           </div>
                         </div>
                       </td>
@@ -495,14 +549,26 @@ export const AdminPanelView: React.FC = () => {
                       </td>
 
                       <td className="py-3.5 pr-2 text-right">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleUserRole(user)}
-                          className="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-                          title="Switch role"
-                        >
-                          Make {isAdminUser ? 'User' : 'Admin'}
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleUserRole(user)}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                            title="Switch role"
+                          >
+                            Make {isAdminUser ? 'User' : 'Admin'}
+                          </button>
+                          {!isMasterAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteUser(user)}
+                              className="p-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-all cursor-pointer"
+                              title="Delete user account permanently from database and UI"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

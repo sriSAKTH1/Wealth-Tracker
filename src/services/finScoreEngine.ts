@@ -672,13 +672,18 @@ export function calculateFinScore(
  */
 export function getAdminCohortStatistics(currentResult: FinScoreResult) {
   const sampleUsers = [
-    { id: 'usr-1', name: 'Aakash Verma', age: 24, occupation: 'Junior Developer', income: 42000, score: 62, grade: 'Fair', emergencyFundMonths: 2.1, debtRatio: 28, risk: 'Moderate' },
-    { id: 'usr-2', name: 'Priya Sharma', age: 29, occupation: 'Product Designer', income: 85000, score: 84, grade: 'Excellent', emergencyFundMonths: 7.2, debtRatio: 12, risk: 'Low' },
-    { id: 'usr-3', name: 'Rohan Mehta', age: 32, occupation: 'Marketing Lead', income: 95000, score: 58, grade: 'Fair', emergencyFundMonths: 3.4, debtRatio: 46, risk: 'High Debt' },
-    { id: 'usr-4', name: 'Neha Gupta', age: 26, occupation: 'Data Analyst', income: 55000, score: 71, grade: 'Good', emergencyFundMonths: 5.0, debtRatio: 18, risk: 'Low' },
-    { id: 'usr-5', name: 'Vikram Singh', age: 35, occupation: 'Consultant', income: 120000, score: 77, grade: 'Good', emergencyFundMonths: 6.5, debtRatio: 32, risk: 'Moderate' },
-    { id: 'usr-6', name: 'Ananya Roy', age: 23, occupation: 'Content Specialist', income: 32000, score: 48, grade: 'Needs Attention', emergencyFundMonths: 1.2, debtRatio: 38, risk: 'High' },
-    { id: 'usr-7', name: 'Kavita Nair', age: 31, occupation: 'HR Manager', income: 68000, score: 79, grade: 'Good', emergencyFundMonths: 6.0, debtRatio: 20, risk: 'Low' },
+    { 
+      id: 'demo.wealthtracker.com', 
+      name: 'Demo Client (demo.wealthtracker.com)', 
+      age: 28, 
+      occupation: 'Product Engineer', 
+      income: 75000, 
+      score: 82, 
+      grade: 'Excellent', 
+      emergencyFundMonths: 6.0, 
+      debtRatio: 18, 
+      risk: 'Low' 
+    }
   ];
 
   const allScores = [...sampleUsers.map(u => u.score), currentResult.overallScore];
@@ -693,12 +698,12 @@ export function getAdminCohortStatistics(currentResult: FinScoreResult) {
   ];
 
   return {
-    totalRegisteredUsers: 142, // Simulated active project pool
-    activeCohorts: 8,
+    totalRegisteredUsers: 1, // Only the registered client user (demo.wealthtracker.com)
+    activeCohorts: 1,
     averageScore: avgScore,
-    emergencyFundReadyPct: 44, // % of users with >= 6 months
-    insuranceCoveredPct: 52, // % with adequate coverage
-    avgSavingsRate: 26.4,
+    emergencyFundReadyPct: 100, // % of users with >= 6 months
+    insuranceCoveredPct: 100, // % with adequate coverage
+    avgSavingsRate: 30.0,
     distribution,
     sampleUsers,
   };
