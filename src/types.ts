@@ -507,7 +507,7 @@ export interface AppBroadcastNotification {
 export interface AppNewsPost {
   id: string;
   title: string;
-  category: 'Feature Release' | 'Market News' | 'Personal Finance' | 'Platform Update';
+  category: 'Feature Release' | 'Market News' | 'Personal Finance' | 'Platform Update' | 'Holdings News';
   summary: string;
   content: string;
   author: string;

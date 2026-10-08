@@ -554,6 +554,112 @@ export const AppearanceSection: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* 7. 🖍️ TEXT SELECTION & DRAG HIGHLIGHT COLOR (KEYBOARD SHORTCUTS: LITE-GREEN, RED, BLUE) */}
+      <div className={`p-5 rounded-2xl border space-y-4 ${
+        isLight ? 'bg-slate-50/70 border-slate-200' : 'bg-slate-950/50 border-slate-800'
+      }`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/80 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-emerald-500" />
+            <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+              Text Selection &amp; Drag Highlight Color
+            </span>
+          </div>
+          <span className="text-[10px] font-mono font-bold text-slate-500">
+            Shortcut: Press <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Shift</kbd> to cycle
+          </span>
+        </div>
+
+        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+          When you copy, drag, or select text across the application, the highlight color dynamically reflects your chosen palette. Switch on the fly using keyboard shortcuts (<kbd className="px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">⇧ + G</kbd>, <kbd className="px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">⇧ + R</kbd>, <kbd className="px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">⇧ + B</kbd>) or tap <kbd className="px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Shift</kbd> while text is selected.
+        </p>
+
+        {/* 4 Color Buttons */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            {
+              id: 'default',
+              name: 'Default Theme',
+              hex: '#3b82f6',
+              textHex: '#ffffff',
+              key: '⇧ + D',
+              desc: 'Native theme accent glow',
+            },
+            {
+              id: 'lite-green',
+              name: 'Lite-Green',
+              hex: '#86efac',
+              textHex: '#064e3b',
+              key: '⇧ + G',
+              desc: 'Soft lime-green glow',
+            },
+            {
+              id: 'red',
+              name: 'Red',
+              hex: '#fca5a5',
+              textHex: '#7f1d1d',
+              key: '⇧ + R',
+              desc: 'Vibrant coral red glow',
+            },
+            {
+              id: 'blue',
+              name: 'Blue',
+              hex: '#93c5fd',
+              textHex: '#0c4a6e',
+              key: '⇧ + B',
+              desc: 'Crisp sky-blue marine glow',
+            },
+          ].map(colorOpt => {
+            const currentSelectionColor = (typeof window !== 'undefined' && localStorage.getItem('app_text_highlight_color')) || 'default';
+            const isCurSelected = currentSelectionColor === colorOpt.id;
+            return (
+              <button
+                key={colorOpt.id}
+                type="button"
+                onClick={() => {
+                  localStorage.setItem('app_text_highlight_color', colorOpt.id);
+                  document.documentElement.setAttribute('data-selection-color', colorOpt.id);
+                  document.body.setAttribute('data-selection-color', colorOpt.id);
+                  const keyLetter = colorOpt.id === 'default' ? 'D' : colorOpt.id === 'lite-green' ? 'G' : colorOpt.id === 'red' ? 'R' : 'B';
+                  window.dispatchEvent(new KeyboardEvent('keydown', { key: keyLetter, shiftKey: true }));
+                  showNotice(`Text highlight color set to ${colorOpt.name}`);
+                }}
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-start justify-between ${
+                  isCurSelected
+                    ? isLight ? 'bg-white border-slate-400 ring-2 ring-blue-500/40 shadow-xs' : 'bg-slate-900 border-slate-600 ring-2 ring-blue-500/40 shadow-xs'
+                    : isLight ? 'bg-white border-slate-200 hover:bg-slate-100 text-slate-700' : 'bg-slate-900/60 border-slate-800 text-slate-300'
+                }`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span 
+                      style={{ backgroundColor: colorOpt.hex }}
+                      className="w-3.5 h-3.5 rounded-full border border-black/20 block"
+                    />
+                    <span className="font-bold text-xs text-slate-900 dark:text-slate-100">{colorOpt.name}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500">{colorOpt.desc}</div>
+                  <div className="text-[10px] font-mono text-blue-600 dark:text-blue-400 font-semibold">{colorOpt.key}</div>
+                </div>
+                {isCurSelected && <Check className="w-4 h-4 text-blue-500 shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Live Interactive Selection Test Box */}
+        <div className={`p-4 rounded-xl border space-y-1.5 ${
+          isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+        }`}>
+          <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
+            Live Text Selection Playground:
+          </div>
+          <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300 select-all cursor-text font-sans">
+            ✨ <strong className="text-slate-900 dark:text-white">Try dragging or selecting this sentence with your cursor!</strong> When text is selected, press the <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-[11px] font-bold">Shift</kbd> key to cycle through Default Theme, Lite-Green, Red, and Blue.
+          </p>
+        </div>
+      </div>
     </section>
   );
 };

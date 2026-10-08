@@ -16,6 +16,11 @@ export const SHORTCUT_DEFINITIONS: ShortcutItem[] = [
   { key: '/', displayKey: '/', label: 'Global Search', category: 'Actions', description: 'Quick search transactions, assets, and liabilities' },
   { key: 'Shift+A', displayKey: '⇧ + A', label: 'Quick Add Asset', category: 'Actions', description: 'Open modal directly on Asset addition' },
   { key: 'Shift+L', displayKey: '⇧ + L', label: 'Quick Add Liability', category: 'Actions', description: 'Open modal directly on Liability entry' },
+  { key: 'Shift', displayKey: '⇧ Shift', label: 'Cycle Highlight Color', category: 'Actions', description: 'Shift text highlight color (Default ⇄ Lite-Green ⇄ Red ⇄ Blue) on drag/select' },
+  { key: 'Shift+D', displayKey: '⇧ + D', label: 'Default Theme Highlight', category: 'Actions', description: 'Set text selection highlight to native theme accent' },
+  { key: 'Shift+G', displayKey: '⇧ + G', label: 'Lite-Green Highlight', category: 'Actions', description: 'Set text selection highlight to soft lime-green' },
+  { key: 'Shift+R', displayKey: '⇧ + R', label: 'Red Highlight', category: 'Actions', description: 'Set text selection highlight to vibrant red' },
+  { key: 'Shift+B', displayKey: '⇧ + B', label: 'Blue Highlight', category: 'Actions', description: 'Set text selection highlight to sky blue' },
   
   // Navigation
   { key: 'c', displayKey: 'C', label: 'Calculators', category: 'Navigation', description: 'Direct jump to SIP, EMI, FIRE & financial calculators' },

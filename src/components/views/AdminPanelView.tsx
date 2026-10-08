@@ -963,6 +963,7 @@ export const AdminPanelView: React.FC = () => {
                     <option value="Market News">Market News</option>
                     <option value="Personal Finance">Personal Finance</option>
                     <option value="Platform Update">Platform Update</option>
+                    <option value="Holdings News">Holdings News (Stocks &amp; MF)</option>
                   </select>
                 </div>
               </div>

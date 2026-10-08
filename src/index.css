@@ -1034,8 +1034,58 @@
 
 /* Text Selection Glow with Active Accent */
 [data-accent] ::selection {
-  background-color: var(--accent-500) !important;
+  background-color: var(--accent-500);
+  color: #ffffff;
+}
+
+/* Dynamic Selection Highlight Colors (Default Theme, Lite-Green, Red, Blue) */
+html[data-selection-color="default"] ::selection,
+html[data-selection-color="default"] *::selection,
+body[data-selection-color="default"] ::selection,
+body[data-selection-color="default"] *::selection,
+[data-accent][data-selection-color="default"] ::selection,
+[data-accent] [data-selection-color="default"] ::selection,
+[data-selection-color="default"] *::selection {
+  background-color: var(--accent-500, #3b82f6) !important;
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Dynamic Selection Highlight Colors (Lite-Green, Red, Blue) */
+html[data-selection-color="lite-green"] ::selection,
+html[data-selection-color="lite-green"] *::selection,
+body[data-selection-color="lite-green"] ::selection,
+body[data-selection-color="lite-green"] *::selection,
+[data-accent][data-selection-color="lite-green"] ::selection,
+[data-accent] [data-selection-color="lite-green"] ::selection,
+[data-selection-color="lite-green"] *::selection {
+  background-color: #86efac !important;
+  color: #064e3b !important;
+  -webkit-text-fill-color: #064e3b !important;
+}
+
+html[data-selection-color="red"] ::selection,
+html[data-selection-color="red"] *::selection,
+body[data-selection-color="red"] ::selection,
+body[data-selection-color="red"] *::selection,
+[data-accent][data-selection-color="red"] ::selection,
+[data-accent] [data-selection-color="red"] ::selection,
+[data-selection-color="red"] *::selection {
+  background-color: #fca5a5 !important;
+  color: #7f1d1d !important;
+  -webkit-text-fill-color: #7f1d1d !important;
+}
+
+html[data-selection-color="blue"] ::selection,
+html[data-selection-color="blue"] *::selection,
+body[data-selection-color="blue"] ::selection,
+body[data-selection-color="blue"] *::selection,
+[data-accent][data-selection-color="blue"] ::selection,
+[data-accent] [data-selection-color="blue"] ::selection,
+[data-selection-color="blue"] *::selection {
+  background-color: #93c5fd !important;
+  color: #0c4a6e !important;
+  -webkit-text-fill-color: #0c4a6e !important;
 }
 
 /* Day Mode / Light theme adaptations for active nav pills */

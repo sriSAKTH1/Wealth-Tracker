@@ -11,6 +11,7 @@ import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { GlobalKeyboardShortcuts } from './components/GlobalKeyboardShortcuts';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { QuickAddOnboarding } from './components/QuickAddOnboarding';
+import { TextHighlightController } from './components/TextHighlightController';
 
 // Views
 import { OverviewView } from './components/views/OverviewView';
@@ -234,6 +235,7 @@ export default function App() {
       <FinanceProvider>
         <RootAppContent />
         <AuthModal />
+        <TextHighlightController />
       </FinanceProvider>
     </AuthProvider>
   );

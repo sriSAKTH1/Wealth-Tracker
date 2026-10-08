@@ -446,6 +446,28 @@ export async function deleteBroadcastNotification(id: string): Promise<void> {
 
 export const INITIAL_SEED_NEWS: AppNewsPost[] = [
   {
+    id: 'post-fr-1',
+    title: 'Feature Release: Age-Calibrated Asset Allocator & Live INR Currency Standard',
+    category: 'Feature Release',
+    summary: 'Introducing automated asset weightings by age milestones (22, 28, 35, 45, 55+) with live interbank Forex pricing for INR sovereign accounts.',
+    content: `We are thrilled to launch the automated asset allocation engine!\n\nKey Release Capabilities:\n1. Age-Milestone Auto Allocation: Young accumulators receive 75% equity exposure, while senior citizens scale into sovereign bonds and Post Office POMIS.\n2. Live INR Standard: Every transaction, asset vault, and projection is denominated with sub-millisecond conversion into ₹ Indian Rupee.\n3. Zero Telemetry Privacy: Calculations execute directly in browser memory without sending balances to remote servers.\n\nExplore this in your Wealth & FinScore tabs today!`,
+    author: 'Sudharsan M. (Admin)',
+    publishedAt: new Date(Date.now() - 3600000).toISOString(),
+    readTimeMinutes: 3,
+    isFeatured: true
+  },
+  {
+    id: 'post-mn-1',
+    title: 'Market News: RBI Monetary Policy Stance & Impact on Equity & Debt SIPs',
+    category: 'Market News',
+    summary: 'A deep-dive into the Reserve Bank of India’s benchmark repo rate decisions and how retail investors should position debt mutual funds vs equities.',
+    content: `The Reserve Bank of India (RBI) Monetary Policy Committee maintained status quo on benchmark repo rates, projecting GDP expansion at 7.2% with CPI inflation anchored near 4.5%.\n\nStrategic Takeaways for SIP Accumulators:\n- Debt Mutual Funds & Liquid Funds: Attractive yields across short-duration debt funds provide healthy parking space for emergency funds.\n- Equity SIP Discipline: Sustained domestic institutional inflows continue to provide support during global volatility. Maintain regular monthly index SIPs without timing the market.\n- Sovereign Gold Bonds (SGB) & Gold ETFs: Consider 5% to 10% strategic allocation as a hedge against currency fluctuation.`,
+    author: 'Sudharsan M. (Admin)',
+    publishedAt: new Date(Date.now() - 14400000).toISOString(),
+    readTimeMinutes: 4,
+    isFeatured: true
+  },
+  {
     id: 'post-1',
     title: 'Why Post Office Monthly Income Scheme (POMIS) & SCSS Beat Speculation After 55',
     category: 'Personal Finance',
@@ -454,7 +476,7 @@ export const INITIAL_SEED_NEWS: AppNewsPost[] = [
     author: 'Sudharsan M. (Lead Admin)',
     publishedAt: new Date(Date.now() - 7200000).toISOString(),
     readTimeMinutes: 4,
-    isFeatured: true
+    isFeatured: false
   },
   {
     id: 'post-2',

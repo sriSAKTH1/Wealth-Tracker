@@ -78,6 +78,21 @@ export const KeyboardShortcutsModal: React.FC = () => {
         case 's':
           setActiveTab('settings');
           break;
+        case 'Shift+D':
+          window.dispatchEvent(new KeyboardEvent('keydown', { key: 'D', shiftKey: true }));
+          break;
+        case 'Shift+G':
+          window.dispatchEvent(new KeyboardEvent('keydown', { key: 'G', shiftKey: true }));
+          break;
+        case 'Shift+R':
+          window.dispatchEvent(new KeyboardEvent('keydown', { key: 'R', shiftKey: true }));
+          break;
+        case 'Shift+B':
+          window.dispatchEvent(new KeyboardEvent('keydown', { key: 'B', shiftKey: true }));
+          break;
+        case 'Shift':
+          window.dispatchEvent(new KeyboardEvent('keydown', { key: 'C', shiftKey: true }));
+          break;
         default:
           break;
       }
