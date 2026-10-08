@@ -1316,17 +1316,29 @@ app.get('/api/market/search', async (req, res) => {
 // FINSCORE™ - AI FINANCIAL ASSISTANT ENDPOINT
 // -------------------------------------------------------------
 let geminiClient: GoogleGenAI | null = null;
+let isGeminiAuthDisabled = false;
 
 function getGeminiClient(): GoogleGenAI | null {
-  if (!geminiClient && process.env.GEMINI_API_KEY) {
-    geminiClient = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
+  const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+  // Valid Google Gemini API keys are alphanumeric and start with 'AIza'.
+  // Tokens starting with 'AQ.' or invalid tokens trigger 401 UNAUTHENTICATED errors.
+  if (!apiKey || apiKey.startsWith('AQ.') || isGeminiAuthDisabled) {
+    return null;
+  }
+  if (!geminiClient) {
+    try {
+      geminiClient = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
         },
-      },
-    });
+      });
+    } catch {
+      geminiClient = null;
+      return null;
+    }
   }
   return geminiClient;
 }
@@ -1480,7 +1492,11 @@ Instructions:
           advice: responseText,
         });
       } catch (geminiError: any) {
-        console.warn('Gemini AI API request unavailable, using deterministic financial engine:', geminiError?.message || geminiError);
+        const errorMsg = String(geminiError?.message || geminiError);
+        if (errorMsg.includes('401') || errorMsg.includes('UNAUTHENTICATED') || errorMsg.includes('ACCESS_TOKEN_TYPE_UNSUPPORTED')) {
+          isGeminiAuthDisabled = true;
+          geminiClient = null;
+        }
       }
     }
 
@@ -1640,7 +1656,11 @@ STRICT RULES:
           advice: responseText,
         });
       } catch (geminiError: any) {
-        console.warn('FIRE advisor Gemini request failed, using deterministic engine:', geminiError?.message || geminiError);
+        const errorMsg = String(geminiError?.message || geminiError);
+        if (errorMsg.includes('401') || errorMsg.includes('UNAUTHENTICATED') || errorMsg.includes('ACCESS_TOKEN_TYPE_UNSUPPORTED')) {
+          isGeminiAuthDisabled = true;
+          geminiClient = null;
+        }
       }
     }
 

@@ -13,7 +13,8 @@
     <script>
       (function() {
         try {
-          var t = localStorage.getItem('aura_theme') || 'light';
+          var userExplicit = localStorage.getItem('user_explicit_theme');
+          var t = (userExplicit && localStorage.getItem('aura_theme')) || 'dark';
           document.documentElement.setAttribute('data-theme', t);
           document.documentElement.classList.add(t + '-theme');
           if (t !== 'light' && t !== 'nature' && t !== 'retro') {

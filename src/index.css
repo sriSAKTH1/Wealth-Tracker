@@ -1666,3 +1666,240 @@ body[data-selection-color="blue"] *::selection,
 #desktop-sidebar button#sidebar-nav-settings:hover svg {
   animation: icon-anim-settings 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
 }
+
+/* =========================================================================
+   LAUNCH PAGE LIGHT THEME & LANDING ANIMATIONS
+   The FIX Wealth Landing Page is strictly and exclusively Light Mode.
+   All surfaces, cards, typography, badges, and borders render cleanly
+   in modern fintech daylight styling, independent of the main app theme.
+   ========================================================================= */
+.launch-page-root {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.launch-page-root header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04) !important;
+}
+
+.launch-page-root header nav button {
+  color: #334155 !important;
+}
+
+.launch-page-root header nav button:hover {
+  color: #0f172a !important;
+  background-color: #f1f5f9 !important;
+}
+
+/* Card surfaces */
+.launch-page-root [class*="bg-[#0d1015]"],
+.launch-page-root [class*="bg-[#0c0e12]"],
+.launch-page-root [class*="bg-[#090b0e]"],
+.launch-page-root [class*="bg-[#07090d]"],
+.launch-page-root [class*="bg-[#05070a]"],
+.launch-page-root [class*="bg-[#0e1117]"],
+.launch-page-root [class*="bg-[#0b1329]"],
+.launch-page-root [class*="bg-[#021a13]"],
+.launch-page-root [class*="bg-zinc-950"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.05) !important;
+}
+
+/* Secondary surfaces / inner chips */
+.launch-page-root [class*="bg-zinc-900/60"],
+.launch-page-root [class*="bg-zinc-900/70"],
+.launch-page-root [class*="bg-zinc-900/80"],
+.launch-page-root [class*="bg-zinc-900/40"],
+.launch-page-root [class*="bg-zinc-900/50"],
+.launch-page-root [class*="bg-zinc-900"],
+.launch-page-root [class*="bg-zinc-800"] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Headings and primary text */
+.launch-page-root h1,
+.launch-page-root h2,
+.launch-page-root h3,
+.launch-page-root h4,
+.launch-page-root .text-zinc-100,
+.launch-page-root .text-zinc-200 {
+  color: #0f172a !important;
+}
+
+.launch-page-root span.text-white:not([class*="badge"]),
+.launch-page-root p.text-white,
+.launch-page-root div.text-white:not([class*="bg-emerald"]):not([class*="bg-blue"]):not([class*="bg-gradient"]) {
+  color: #0f172a !important;
+}
+
+/* Primary CTA buttons retain crisp white text */
+.launch-page-root button[class*="bg-emerald"],
+.launch-page-root a[class*="bg-emerald"],
+.launch-page-root button[class*="bg-emerald"] span,
+.launch-page-root button[class*="bg-emerald"] svg {
+  color: #ffffff !important;
+}
+
+/* Body / Secondary text */
+.launch-page-root .text-zinc-300,
+.launch-page-root .text-zinc-400 {
+  color: #475569 !important;
+}
+
+.launch-page-root .text-zinc-500 {
+  color: #64748b !important;
+}
+
+/* Borders */
+.launch-page-root [class*="border-white/"],
+.launch-page-root [class*="border-zinc-800"],
+.launch-page-root [class*="border-white\\["] {
+  border-color: #e2e8f0 !important;
+}
+
+/* Specific emerald accents in light mode: higher contrast */
+.launch-page-root .text-emerald-400 {
+  color: #059669 !important;
+}
+
+.launch-page-root .bg-emerald-500\/10,
+.launch-page-root .bg-emerald-500\/15,
+.launch-page-root .bg-emerald-500\/20 {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+}
+
+/* Blue accents in light mode */
+.launch-page-root .text-blue-400 {
+  color: #2563eb !important;
+}
+
+.launch-page-root .bg-blue-500\/10,
+.launch-page-root .bg-blue-500\/15 {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+
+/* Amber accents in light mode */
+.launch-page-root .text-amber-400 {
+  color: #d97706 !important;
+}
+
+.launch-page-root .bg-amber-500\/10 {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+}
+
+/* =========================================================================
+   LANDING PAGE ONLY ANIMATIONS
+   Floating finance icon physics, dynamic graph drawing & glowing pulses.
+   ========================================================================= */
+
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-16px) rotate(3deg);
+  }
+}
+
+@keyframes floatSway {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-12px) translateX(6px) rotate(4deg);
+  }
+  66% {
+    transform: translateY(8px) translateX(-5px) rotate(-3deg);
+  }
+}
+
+@keyframes floatReverse {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(14px) rotate(-4deg);
+  }
+}
+
+@keyframes drawGraphLine {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+    filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.4));
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+    filter: drop-shadow(0 0 16px rgba(16, 185, 129, 0.8));
+  }
+}
+
+@keyframes rippleWave {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@keyframes livePaceShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-float-gentle {
+  animation: floatGentle 6s ease-in-out infinite;
+}
+
+.animate-float-sway {
+  animation: floatSway 7.5s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: floatReverse 6.8s ease-in-out infinite;
+}
+
+.animate-graph-line {
+  stroke-dasharray: 1000;
+  animation: drawGraphLine 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+.animate-ripple {
+  animation: rippleWave 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+.animate-shimmer-live {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: livePaceShimmer 3s infinite;
+}
+
+

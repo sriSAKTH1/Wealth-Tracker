@@ -396,7 +396,14 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return () => clearInterval(interval);
   }, []);
   const [theme, setThemeState] = useState<AppTheme>(() => {
-    return (localStorage.getItem('aura_theme') as AppTheme) || 'light';
+    const saved = localStorage.getItem('aura_theme') as AppTheme;
+    const userHasChosen = localStorage.getItem('user_explicit_theme');
+    const validThemes: AppTheme[] = ['coolors', 'dark', 'midnight', 'emerald', 'slate', 'light', 'flavorfit', 'nature', 'retro'];
+    if (saved && userHasChosen && validThemes.includes(saved)) {
+      return saved;
+    }
+    // Default to dark theme for FIX Wealth's dark fintech design
+    return 'dark';
   });
   const [accentColor, setAccentColorState] = useState<string>(() => {
     return localStorage.getItem('fix_accent_color') || 'blue';
@@ -619,6 +626,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const setTheme = (t: AppTheme) => {
     setThemeState(t);
     localStorage.setItem('aura_theme', t);
+    localStorage.setItem('user_explicit_theme', 'true');
     syncThemeDOM(t);
   };
 
