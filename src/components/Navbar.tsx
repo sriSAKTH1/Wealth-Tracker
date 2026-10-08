@@ -423,21 +423,30 @@ export const Navbar: React.FC = () => {
                     broadcastNotifs.map(bn => (
                       <div 
                         key={bn.id} 
-                        className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/10 text-xs space-y-1"
+                        className="p-2.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-xs flex items-start gap-2.5"
                       >
-                        <div className="flex items-center justify-between gap-1.5">
-                          <span className="font-bold text-slate-900 dark:text-white">{bn.title}</span>
-                          {bn.badge && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 shrink-0">
-                              {bn.badge}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                          {bn.message}
-                        </p>
-                        <div className="text-[9px] text-slate-400 font-mono pt-1">
-                          {new Date(bn.createdAt).toLocaleDateString()}
+                        {bn.imageUrl && (
+                          <img
+                            src={bn.imageUrl}
+                            alt={bn.title}
+                            className="w-14 h-14 rounded-lg object-cover shrink-0 border border-blue-400/30"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center justify-between gap-1.5">
+                            <span className="font-bold text-slate-900 dark:text-white line-clamp-1">{bn.title}</span>
+                            {bn.badge && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 shrink-0">
+                                {bn.badge}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2">
+                            {bn.message}
+                          </p>
+                          <div className="text-[9px] text-slate-400 font-mono pt-0.5">
+                            {new Date(bn.createdAt).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
                     ))

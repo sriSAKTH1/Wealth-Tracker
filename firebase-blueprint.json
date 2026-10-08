@@ -44,6 +44,7 @@
         "message": { "type": "string", "description": "Detailed update text" },
         "type": { "type": "string", "enum": ["new_feature", "announcement", "update", "maintenance"], "description": "Notification category" },
         "badge": { "type": "string", "description": "Optional pill tag (e.g. New, Release, Pro)" },
+        "imageUrl": { "type": "string", "description": "Optional image URL for the feature alert" },
         "createdAt": { "type": "string", "description": "ISO timestamp of broadcast" },
         "createdBy": { "type": "string", "description": "Admin who broadcast the alert" }
       },
@@ -56,10 +57,12 @@
       "properties": {
         "id": { "type": "string", "description": "Unique article post ID" },
         "title": { "type": "string", "description": "Article headline" },
-        "category": { "type": "string", "enum": ["Feature Release", "Market News", "Personal Finance", "Platform Update"], "description": "News topic" },
+        "category": { "type": "string", "enum": ["Feature Release", "Market News", "Personal Finance", "Platform Update", "Holdings News"], "description": "News topic" },
         "summary": { "type": "string", "description": "Brief 1-2 sentence lead overview" },
         "content": { "type": "string", "description": "Complete article body content" },
         "author": { "type": "string", "description": "Author display name" },
+        "imageUrl": { "type": "string", "description": "Web URL (Chrome link) or uploaded image data URL for article banner" },
+        "imageCaption": { "type": "string", "description": "Optional caption or alt text for the image" },
         "publishedAt": { "type": "string", "description": "ISO timestamp of publication" },
         "readTimeMinutes": { "type": "number", "description": "Estimated read duration in minutes" }
       },

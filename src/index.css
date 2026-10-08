@@ -1611,59 +1611,111 @@ body[data-selection-color="blue"] *::selection,
   100% { transform: rotate(120deg); }
 }
 
-/* Apply animation ONLY when hovered once, during sidebar open state */
+/* All sidebar navigation icons: SVG transform base */
+#desktop-sidebar [class*="icon-hover-"] {
+  display: inline-block;
+  transform-origin: center;
+  transform-box: fill-box;
+  will-change: transform;
+}
+
+/* Apply animation when hovered in BOTH open AND closed (collapsed) sidebar states */
 #desktop-sidebar .sidebar-open-nav-item:hover .icon-hover-overview,
-#desktop-sidebar button#sidebar-nav-overview:hover svg {
+#desktop-sidebar .sidebar-closed-nav-item:hover .icon-hover-overview,
+#desktop-sidebar [data-nav-id="overview"]:hover .icon-hover-overview,
+#desktop-sidebar .group:hover .icon-hover-overview,
+#desktop-sidebar button#sidebar-nav-overview:hover svg,
+#desktop-sidebar button#sidebar-nav-overview:hover .icon-hover-overview {
   animation: icon-anim-overview 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
 }
 
 #desktop-sidebar .sidebar-open-nav-item:hover .icon-hover-wealth,
-#desktop-sidebar button#sidebar-nav-wealth:hover svg {
+#desktop-sidebar .sidebar-closed-nav-item:hover .icon-hover-wealth,
+#desktop-sidebar [data-nav-id="wealth"]:hover .icon-hover-wealth,
+#desktop-sidebar .group:hover .icon-hover-wealth,
+#desktop-sidebar button#sidebar-nav-wealth:hover svg,
+#desktop-sidebar button#sidebar-nav-wealth:hover .icon-hover-wealth {
   animation: icon-anim-wealth 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
 }
 
 #desktop-sidebar .sidebar-open-nav-item:hover .icon-hover-goals,
-#desktop-sidebar button#sidebar-nav-goals:hover svg {
+#desktop-sidebar .sidebar-closed-nav-item:hover .icon-hover-goals,
+#desktop-sidebar [data-nav-id="goals"]:hover .icon-hover-goals,
+#desktop-sidebar .group:hover .icon-hover-goals,
+#desktop-sidebar button#sidebar-nav-goals:hover svg,
+#desktop-sidebar button#sidebar-nav-goals:hover .icon-hover-goals {
   animation: icon-anim-goals 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
 }
 
 #desktop-sidebar .sidebar-open-nav-item:hover .icon-hover-account,
-#desktop-sidebar button#sidebar-nav-account:hover svg {
+#desktop-sidebar .sidebar-closed-nav-item:hover .icon-hover-account,
+#desktop-sidebar [data-nav-id="account"]:hover .icon-hover-account,
+#desktop-sidebar .group:hover .icon-hover-account,
+#desktop-sidebar button#sidebar-nav-account:hover svg,
+#desktop-sidebar button#sidebar-nav-account:hover .icon-hover-account {
   animation: icon-anim-account 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
 }
 
 #desktop-sidebar .sidebar-open-nav-item:hover .icon-hover-calendar,
-#desktop-sidebar button#sidebar-nav-calendar:hover svg {
+#desktop-sidebar .sidebar-closed-nav-item:hover .icon-hover-calendar,
+#desktop-sidebar [data-nav-id="calendar"]:hover .icon-hover-calendar,
+#desktop-sidebar .group:hover .icon-hover-calendar,
+#desktop-sidebar button#sidebar-nav-calendar:hover svg,
+#desktop-sidebar button#sidebar-nav-calendar:hover .icon-hover-calendar {
   animation: icon-anim-calendar 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
 }
 
 #desktop-sidebar .sidebar-open-nav-item:hover .icon-hover-balancesheet,
-#desktop-sidebar button#sidebar-nav-balancesheet:hover svg {
+#desktop-sidebar .sidebar-closed-nav-item:hover .icon-hover-balancesheet,
+#desktop-sidebar [data-nav-id="balancesheet"]:hover .icon-hover-balancesheet,
+#desktop-sidebar .group:hover .icon-hover-balancesheet,
+#desktop-sidebar button#sidebar-nav-balancesheet:hover svg,
+#desktop-sidebar button#sidebar-nav-balancesheet:hover .icon-hover-balancesheet {
   animation: icon-anim-balancesheet 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
 }
 
 #desktop-sidebar .sidebar-open-nav-item:hover .icon-hover-reports,
-#desktop-sidebar button#sidebar-nav-reports:hover svg {
+#desktop-sidebar .sidebar-closed-nav-item:hover .icon-hover-reports,
+#desktop-sidebar [data-nav-id="reports"]:hover .icon-hover-reports,
+#desktop-sidebar .group:hover .icon-hover-reports,
+#desktop-sidebar button#sidebar-nav-reports:hover svg,
+#desktop-sidebar button#sidebar-nav-reports:hover .icon-hover-reports {
   animation: icon-anim-reports 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
 }
 
 #desktop-sidebar .sidebar-open-nav-item:hover .icon-hover-calculators,
-#desktop-sidebar button#sidebar-nav-calculators:hover svg {
+#desktop-sidebar .sidebar-closed-nav-item:hover .icon-hover-calculators,
+#desktop-sidebar [data-nav-id="calculators"]:hover .icon-hover-calculators,
+#desktop-sidebar .group:hover .icon-hover-calculators,
+#desktop-sidebar button#sidebar-nav-calculators:hover svg,
+#desktop-sidebar button#sidebar-nav-calculators:hover .icon-hover-calculators {
   animation: icon-anim-calculators 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
 }
 
 #desktop-sidebar .sidebar-open-nav-item:hover .icon-hover-news,
-#desktop-sidebar button#sidebar-nav-news:hover svg {
+#desktop-sidebar .sidebar-closed-nav-item:hover .icon-hover-news,
+#desktop-sidebar [data-nav-id="news"]:hover .icon-hover-news,
+#desktop-sidebar .group:hover .icon-hover-news,
+#desktop-sidebar button#sidebar-nav-news:hover svg,
+#desktop-sidebar button#sidebar-nav-news:hover .icon-hover-news {
   animation: icon-anim-news 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
 }
 
 #desktop-sidebar .sidebar-open-nav-item:hover .icon-hover-admin,
-#desktop-sidebar button#sidebar-nav-admin:hover svg {
+#desktop-sidebar .sidebar-closed-nav-item:hover .icon-hover-admin,
+#desktop-sidebar [data-nav-id="admin"]:hover .icon-hover-admin,
+#desktop-sidebar .group:hover .icon-hover-admin,
+#desktop-sidebar button#sidebar-nav-admin:hover svg,
+#desktop-sidebar button#sidebar-nav-admin:hover .icon-hover-admin {
   animation: icon-anim-admin 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
 }
 
 #desktop-sidebar .sidebar-open-nav-item:hover .icon-hover-settings,
-#desktop-sidebar button#sidebar-nav-settings:hover svg {
+#desktop-sidebar .sidebar-closed-nav-item:hover .icon-hover-settings,
+#desktop-sidebar [data-nav-id="settings"]:hover .icon-hover-settings,
+#desktop-sidebar .group:hover .icon-hover-settings,
+#desktop-sidebar button#sidebar-nav-settings:hover svg,
+#desktop-sidebar button#sidebar-nav-settings:hover .icon-hover-settings {
   animation: icon-anim-settings 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
 }
 
@@ -1838,6 +1890,37 @@ body[data-selection-color="blue"] *::selection,
   }
 }
 
+@keyframes graphAreaReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  40% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes graphPulseTrace {
+  0% {
+    stroke-dashoffset: 1000;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -1000;
+    opacity: 0;
+  }
+}
+
 @keyframes pulseGlow {
   0%, 100% {
     transform: scale(1);
@@ -1853,11 +1936,14 @@ body[data-selection-color="blue"] *::selection,
 
 @keyframes rippleWave {
   0% {
-    transform: scale(0.8);
-    opacity: 0.8;
+    transform: scale(0.6);
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.45;
   }
   100% {
-    transform: scale(2.4);
+    transform: scale(2.8);
     opacity: 0;
   }
 }
@@ -1885,7 +1971,17 @@ body[data-selection-color="blue"] *::selection,
 
 .animate-graph-line {
   stroke-dasharray: 1000;
-  animation: drawGraphLine 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: drawGraphLine 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-graph-area {
+  animation: graphAreaReveal 1.5s ease-out forwards;
+}
+
+.animate-graph-trace {
+  stroke-dasharray: 100 900;
+  animation: graphPulseTrace 3.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: 1.8s;
 }
 
 .animate-pulse-glow {
@@ -1893,7 +1989,16 @@ body[data-selection-color="blue"] *::selection,
 }
 
 .animate-ripple {
-  animation: rippleWave 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: rippleWave 2.4s cubic-bezier(0.1, 0.4, 0.2, 1) infinite;
+}
+
+.animate-ripple-delayed {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: rippleWave 2.4s cubic-bezier(0.1, 0.4, 0.2, 1) infinite;
+  animation-delay: 1.2s;
 }
 
 .animate-shimmer-live {

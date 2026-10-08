@@ -30,12 +30,37 @@ import {
   Eye,
   Send,
   Zap,
-  Info
+  Info,
+  Image as ImageIcon,
+  Upload,
+  Link as LinkIcon
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { useAuth } from '../../context/AuthContext';
 import { AppNewsPost } from '../../types';
-import { fetchNewsPosts } from '../../services/firebase';
+import { fetchNewsPosts, publishNewsPost } from '../../services/firebase';
+import { ADMIN_IMAGE_PRESETS } from './AdminPanelView';
+
+// Reliable category-based fintech fallback banners
+const getCategoryFallbackImage = (category: string) => {
+  switch (category) {
+    case 'Feature Release':
+    case 'New Features':
+      return 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80';
+    case 'Blog':
+      return 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=800&q=80';
+    case 'Market News':
+      return 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80';
+    case 'Personal Finance':
+      return 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&w=800&q=80';
+    case 'Platform Update':
+      return 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80';
+    case 'Holdings News':
+      return 'https://images.unsplash.com/photo-1642543492481-44e81e3914a7?auto=format&fit=crop&w=800&q=80';
+    default:
+      return 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80';
+  }
+};
 
 interface FinancialNote {
   id: string;
@@ -81,6 +106,19 @@ export const NewsUpdatesView: React.FC = () => {
   const [posts, setPosts] = useState<AppNewsPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeArticle, setActiveArticle] = useState<AppNewsPost | null>(null);
+
+  // Admin direct feature release & blog authoring state
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.email === 'sudharsanm014@gmail.com';
+  const [isAdminCreateOpen, setIsAdminCreateOpen] = useState(false);
+  const [adminPostTitle, setAdminPostTitle] = useState('');
+  const [adminPostCategory, setAdminPostCategory] = useState<AppNewsPost['category']>('Feature Release');
+  const [adminPostSummary, setAdminPostSummary] = useState('');
+  const [adminPostContent, setAdminPostContent] = useState('');
+  const [adminPostImageUrl, setAdminPostImageUrl] = useState('');
+  const [adminPostImageCaption, setAdminPostImageCaption] = useState('');
+  const [adminPostReadTime, setAdminPostReadTime] = useState('3');
+  const [adminImageMode, setAdminImageMode] = useState<'url' | 'upload' | 'preset'>('url');
+  const [isPublishingDirect, setIsPublishingDirect] = useState(false);
 
   // Pro Feature: News Digest Frequency & Delivery Schedule
   const [deliveryTier, setDeliveryTier] = useState<'normal' | 'pro'>(() => {
@@ -172,6 +210,61 @@ export const NewsUpdatesView: React.FC = () => {
     setPreferredDeliveryTime(time);
     localStorage.setItem('app_news_delivery_time', time);
     showToast(`Digest timing set to ${time}`);
+  };
+
+  // Admin Direct Release Image Upload Handler
+  const handleAdminDirectImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (PNG, JPG, WebP).');
+      return;
+    }
+    if (file.size > 1.5 * 1024 * 1024) {
+      showToast('Image file should be under 1.5MB. You can also paste an image URL from Chrome.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setAdminPostImageUrl(dataUrl);
+      showToast('Image uploaded successfully! Preview updated.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Admin Direct Publish Release / Blog Handler
+  const handleAdminPublishDirect = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminPostTitle.trim() || !adminPostContent.trim()) {
+      showToast('Please provide an article headline and content.');
+      return;
+    }
+    setIsPublishingDirect(true);
+    try {
+      const created = await publishNewsPost({
+        title: adminPostTitle.trim(),
+        category: adminPostCategory,
+        summary: adminPostSummary.trim() || adminPostContent.slice(0, 140) + '...',
+        content: adminPostContent.trim(),
+        author: currentUser?.name || 'Sudharsan M. (Admin)',
+        imageUrl: adminPostImageUrl.trim() || undefined,
+        imageCaption: adminPostImageCaption.trim() || undefined,
+        readTimeMinutes: parseInt(adminPostReadTime) || 3
+      });
+      setPosts(prev => [created, ...prev]);
+      setAdminPostTitle('');
+      setAdminPostSummary('');
+      setAdminPostContent('');
+      setAdminPostImageUrl('');
+      setAdminPostImageCaption('');
+      setIsAdminCreateOpen(false);
+      showToast('New release published successfully with cover image!');
+    } catch (err) {
+      showToast('Failed to publish article.');
+    } finally {
+      setIsPublishingDirect(false);
+    }
   };
 
   // Note actions
@@ -296,8 +389,20 @@ export const NewsUpdatesView: React.FC = () => {
             </p>
           </div>
 
-          {/* Quick Status / Mode Pill */}
-          <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+          {/* Quick Status / Mode Pill & Admin Action */}
+          <div className="flex items-center gap-2 self-start md:self-auto shrink-0 flex-wrap">
+            {isAdmin && !activeArticle && (
+              <button
+                type="button"
+                onClick={() => setIsAdminCreateOpen(true)}
+                className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-blue-600/20 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
+                title="Author new feature release or blog post with cover image"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Release Feature / Blog</span>
+              </button>
+            )}
+
             {activeArticle ? (
               <button
                 type="button"
@@ -441,6 +546,26 @@ export const NewsUpdatesView: React.FC = () => {
             <article className={`p-6 sm:p-10 rounded-2xl border space-y-6 animate-in fade-in duration-200 ${
               isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-900 border-slate-800 shadow-xs'
             }`}>
+              {/* Cover Banner (if present) */}
+              {(activeArticle.imageUrl || getCategoryFallbackImage(activeArticle.category)) && (
+                <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 shadow-sm">
+                  <img
+                    src={activeArticle.imageUrl || getCategoryFallbackImage(activeArticle.category)}
+                    alt={activeArticle.title}
+                    className="w-full h-56 sm:h-72 md:h-80 object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = getCategoryFallbackImage(activeArticle.category);
+                    }}
+                  />
+                  {activeArticle.imageCaption && (
+                    <div className="p-3 bg-slate-900/85 backdrop-blur-md text-[11px] text-slate-300 font-mono flex items-center gap-2">
+                      <ImageIcon className="w-3.5 h-3.5 text-blue-400" />
+                      <span>{activeArticle.imageCaption}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-3 pb-6 border-b border-slate-200 dark:border-slate-800">
                 {/* Zero-Pill Metadata Line */}
                 <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 flex-wrap">
@@ -503,11 +628,12 @@ export const NewsUpdatesView: React.FC = () => {
                 {/* Segmented Category Buttons */}
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
                   {[
-                    { id: 'all', label: 'All Sub-News' },
-                    { id: 'Feature Release', label: 'Feature Releases' },
-                    { id: 'Market News', label: 'Market News' },
-                    { id: 'Platform Update', label: 'Platform Updates' },
-                    { id: 'Personal Finance', label: 'Personal Finance' },
+                    { id: 'all', label: 'All Dispatches' },
+                    { id: 'Feature Release', label: '✨ Feature Releases' },
+                    { id: 'Blog', label: '📝 Blogs & Deep Dives' },
+                    { id: 'Platform Update', label: '🛡️ Platform Updates' },
+                    { id: 'Market News', label: '📈 Market News' },
+                    { id: 'Personal Finance', label: '💰 Personal Finance' },
                   ].map(tab => {
                     const isSelected = subNewsFilter === tab.id;
                     return (
@@ -544,42 +670,63 @@ export const NewsUpdatesView: React.FC = () => {
                 </div>
               </div>
 
-              {/* FEATURED SPOTLIGHT CARD (when viewing 'all' and no search) */}
+              {/* FEATURED SPOTLIGHT CARD (IMAGE ON LEFT • TEXT ON RIGHT) */}
               {subNewsFilter === 'all' && newsSearch.trim() === '' && featuredArticle && (
                 <div 
                   onClick={() => setActiveArticle(featuredArticle)}
-                  className={`p-6 sm:p-8 rounded-2xl border transition-all cursor-pointer group space-y-3 ${
+                  className={`p-5 sm:p-7 rounded-2xl border transition-all cursor-pointer group flex flex-col md:flex-row items-stretch gap-6 ${
                     isLight 
-                      ? 'bg-gradient-to-br from-blue-50/50 via-white to-white border-blue-200 hover:border-blue-400' 
-                      : 'bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border-slate-800 hover:border-blue-500/50'
+                      ? 'bg-gradient-to-br from-blue-50/50 via-white to-white border-blue-200 hover:border-blue-400 shadow-sm' 
+                      : 'bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border-slate-800 hover:border-blue-500/50 shadow-sm'
                   }`}
                 >
-                  <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                    <span className="font-semibold text-blue-600 dark:text-blue-400">Featured Spotlight</span>
-                    <span aria-hidden="true">·</span>
-                    <span>{featuredArticle.category}</span>
-                    <span aria-hidden="true">·</span>
-                    <span className="font-mono tabular-nums">{featuredArticle.readTimeMinutes || 3} min read</span>
+                  {/* Image on Left */}
+                  <div className="w-full md:w-5/12 min-h-[220px] md:min-h-full rounded-xl overflow-hidden shrink-0 relative bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80">
+                    <img
+                      src={featuredArticle.imageUrl || getCategoryFallbackImage(featuredArticle.category)}
+                      alt={featuredArticle.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = getCategoryFallbackImage(featuredArticle.category);
+                      }}
+                    />
+                    <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-slate-900/85 backdrop-blur-md text-[10px] font-bold text-white flex items-center gap-1.5 shadow-md border border-white/10">
+                      <Sparkles className="w-3 h-3 text-amber-400" />
+                      <span>Featured Spotlight</span>
+                    </div>
                   </div>
 
-                  <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    {featuredArticle.title}
-                  </h3>
+                  {/* Text on Right */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-between space-y-3 py-1">
+                    <div className="space-y-2">
+                      <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">{featuredArticle.category}</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="font-mono tabular-nums">{featuredArticle.readTimeMinutes || 3} min read</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{new Date(featuredArticle.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      </div>
 
-                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
-                    {featuredArticle.summary}
-                  </p>
+                      <h3 className="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors tracking-tight leading-snug">
+                        {featuredArticle.title}
+                      </h3>
 
-                  <div className="pt-2 flex items-center justify-between text-xs text-slate-400">
-                    <span>By {featuredArticle.author}</span>
-                    <span className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                      Read full report <ChevronRight className="w-3.5 h-3.5" />
-                    </span>
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed">
+                        {featuredArticle.summary}
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                      <span>By {featuredArticle.author}</span>
+                      <span className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                        Read full report <ChevronRight className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* ARTICLES GRID */}
+              {/* ALL ARTICLES GRID (STRICT LEFT IMAGE • RIGHT TEXT LAYOUT FOR ALL POSTS) */}
               {filteredPosts.length === 0 ? (
                 <div className={`p-12 text-center rounded-2xl border ${
                   isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
@@ -589,45 +736,63 @@ export const NewsUpdatesView: React.FC = () => {
                   <p className="text-xs text-slate-500 mt-1">Try resetting the sub-news filter or clearing keywords.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredPosts.map(post => (
-                    <div
-                      key={post.id}
-                      onClick={() => setActiveArticle(post)}
-                      className={`p-5 rounded-2xl border transition-all cursor-pointer space-y-3 group ${
-                        isLight 
-                          ? 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs' 
-                          : 'bg-slate-900 border-slate-800 hover:border-slate-700 hover:shadow-xs'
-                      }`}
-                    >
-                      {/* Zero-Pill Metadata */}
-                      <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">{post.category}</span>
-                          <span aria-hidden="true">·</span>
-                          <span className="font-mono tabular-nums">{post.readTimeMinutes || 3} min</span>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  {filteredPosts.map(post => {
+                    const displayImg = post.imageUrl || getCategoryFallbackImage(post.category);
+                    return (
+                      <div
+                        key={post.id}
+                        onClick={() => setActiveArticle(post)}
+                        className={`p-4 sm:p-4.5 rounded-2xl border transition-all cursor-pointer group flex flex-col sm:flex-row items-stretch sm:items-center gap-4 ${
+                          isLight 
+                            ? 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md' 
+                            : 'bg-slate-900 border-slate-800 hover:border-slate-700 hover:shadow-md'
+                        }`}
+                      >
+                        {/* IMAGE ON LEFT */}
+                        <div className="w-full sm:w-44 md:w-48 h-44 sm:h-36 rounded-xl overflow-hidden shrink-0 relative bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80">
+                          <img
+                            src={displayImg}
+                            alt={post.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = getCategoryFallbackImage(post.category);
+                            }}
+                          />
+                          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur-md text-[9px] font-bold text-white shadow-xs">
+                            {post.category}
+                          </span>
                         </div>
-                        <span className="font-mono tabular-nums text-[11px] text-slate-400">
-                          {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </span>
+
+                        {/* TEXT ON RIGHT */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-between space-y-1.5 h-full py-0.5">
+                          <div>
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                              <span className="font-mono tabular-nums">{post.readTimeMinutes || 3} min read</span>
+                              <span className="font-mono tabular-nums text-slate-400">
+                                {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </span>
+                            </div>
+
+                            <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2 leading-snug mt-1">
+                              {post.title}
+                            </h4>
+
+                            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mt-1">
+                              {post.summary}
+                            </p>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                            <span className="truncate max-w-[130px]">By {post.author}</span>
+                            <span className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform shrink-0">
+                              Read dispatch <ChevronRight className="w-3 h-3" />
+                            </span>
+                          </div>
+                        </div>
                       </div>
-
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2 leading-snug">
-                        {post.title}
-                      </h4>
-
-                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                        {post.summary}
-                      </p>
-
-                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                        <span>By {post.author}</span>
-                        <span className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                          Read dispatch <ChevronRight className="w-3 h-3" />
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>
@@ -1241,6 +1406,287 @@ export const NewsUpdatesView: React.FC = () => {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ADMIN DIRECT RELEASE / BLOG AUTHORING MODAL (WITH IMAGE ON LEFT & RIGHT TEXT) */}
+      {/* ========================================================================= */}
+      {isAdminCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className={`w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border shadow-2xl p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-200 ${
+            isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
+          }`}>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-blue-500/15 text-blue-500 border border-blue-500/30">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Publish Release / Blog (Admin)
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Articles display with cover image on the left and text on the right for all users.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAdminCreateOpen(false)}
+                className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAdminPublishDirect} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold mb-1">Headline / Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={adminPostTitle}
+                    onChange={e => setAdminPostTitle(e.target.value)}
+                    placeholder="e.g. Feature Release: Indian Capital Gains & 80C Estimator"
+                    className={`w-full px-3 py-2 rounded-xl border text-xs ${
+                      isLight ? 'bg-slate-50 border-slate-300' : 'bg-slate-950 border-slate-700'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-1">Category</label>
+                  <select
+                    value={adminPostCategory}
+                    onChange={e => setAdminPostCategory(e.target.value as any)}
+                    className={`w-full px-3 py-2 rounded-xl border text-xs ${
+                      isLight ? 'bg-slate-50 border-slate-300' : 'bg-slate-950 border-slate-700'
+                    }`}
+                  >
+                    <option value="Feature Release">✨ Feature Release</option>
+                    <option value="New Features">🚀 New Features &amp; Capabilities</option>
+                    <option value="Blog">📝 Editorial Blog / Deep Dive</option>
+                    <option value="Platform Update">🛡️ Platform Update</option>
+                    <option value="Market News">📈 Market News</option>
+                    <option value="Personal Finance">💰 Personal Finance</option>
+                    <option value="Holdings News">🔥 Holdings News</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Cover Image Attachment (Chrome Link / Upload / Preset) */}
+              <div className={`p-4 rounded-2xl border space-y-3 ${
+                isLight ? 'bg-slate-50/70 border-slate-200' : 'bg-slate-950 border-slate-800'
+              }`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <label className="text-xs font-bold flex items-center gap-1.5 text-slate-900 dark:text-white">
+                    <ImageIcon className="w-4 h-4 text-blue-500" />
+                    <span>Feature Cover Image (Image on Left • Text on Right)</span>
+                  </label>
+
+                  <div className="flex items-center gap-1 p-1 rounded-xl bg-white dark:bg-slate-800 text-[11px] font-semibold border border-slate-200 dark:border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => setAdminImageMode('url')}
+                      className={`px-2 py-0.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                        adminImageMode === 'url' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <LinkIcon className="w-3 h-3" />
+                      <span>Chrome Link</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAdminImageMode('upload')}
+                      className={`px-2 py-0.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                        adminImageMode === 'upload' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <Upload className="w-3 h-3" />
+                      <span>Upload</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAdminImageMode('preset')}
+                      className={`px-2 py-0.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                        adminImageMode === 'preset' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Presets</span>
+                    </button>
+                  </div>
+                </div>
+
+                {adminImageMode === 'url' && (
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <LinkIcon className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                      <input
+                        type="url"
+                        value={adminPostImageUrl}
+                        onChange={e => setAdminPostImageUrl(e.target.value)}
+                        placeholder="Paste image link from Chrome (e.g. https://images.unsplash.com/...)"
+                        className={`w-full pl-8 pr-3 py-2 rounded-xl border text-xs ${
+                          isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'
+                        }`}
+                      />
+                    </div>
+                    <span className="text-[10px] text-slate-400 block">
+                      💡 Tip: Copy image address from Chrome or any web source.
+                    </span>
+                  </div>
+                )}
+
+                {adminImageMode === 'upload' && (
+                  <label className="flex flex-col items-center justify-center p-3.5 border-2 border-dashed rounded-xl cursor-pointer hover:border-blue-500 transition-colors border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <Upload className="w-5 h-5 text-slate-400 mb-1" />
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Choose image from your computer / phone
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAdminDirectImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+
+                {adminImageMode === 'preset' && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {ADMIN_IMAGE_PRESETS.map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setAdminPostImageUrl(preset.url);
+                          setAdminPostImageCaption(preset.name);
+                        }}
+                        className={`p-1.5 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                          adminPostImageUrl === preset.url
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 ring-2 ring-blue-500/20'
+                            : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-white dark:bg-slate-900'
+                        }`}
+                      >
+                        <img
+                          src={preset.url}
+                          alt={preset.name}
+                          className="w-10 h-9 object-cover rounded-md shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <span className="text-[10px] font-bold block truncate text-slate-900 dark:text-white">
+                            {preset.name}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Live Card Preview */}
+                {adminPostImageUrl && (
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                      <span>Card Layout Preview:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAdminPostImageUrl('');
+                          setAdminPostImageCaption('');
+                        }}
+                        className="text-[10px] text-rose-500 hover:underline flex items-center gap-0.5 cursor-pointer font-semibold"
+                      >
+                        <X className="w-3 h-3" />
+                        <span>Clear Image</span>
+                      </button>
+                    </div>
+
+                    <div className={`p-3 rounded-xl border flex flex-col sm:flex-row items-center gap-3 ${
+                      isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+                    }`}>
+                      <img
+                        src={adminPostImageUrl}
+                        alt="Preview"
+                        className="w-full sm:w-28 h-20 object-cover rounded-lg shrink-0 border border-slate-200 dark:border-slate-700"
+                      />
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                          {adminPostCategory}
+                        </span>
+                        <h5 className="text-xs font-bold truncate text-slate-900 dark:text-white">
+                          {adminPostTitle || 'Sample Feature Headline'}
+                        </h5>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                          {adminPostSummary || 'Summary on the right side of the image.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <input
+                      type="text"
+                      value={adminPostImageCaption}
+                      onChange={e => setAdminPostImageCaption(e.target.value)}
+                      placeholder="Optional image caption / credit (e.g. Automated Asset Rebalancing Preview)"
+                      className={`w-full px-3 py-1.5 rounded-lg border text-[11px] ${
+                        isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-700'
+                      }`}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold mb-1">Summary Lead (1-2 sentences)</label>
+                <input
+                  type="text"
+                  required
+                  value={adminPostSummary}
+                  onChange={e => setAdminPostSummary(e.target.value)}
+                  placeholder="Short engaging lead shown on cards..."
+                  className={`w-full px-3 py-2 rounded-xl border text-xs ${
+                    isLight ? 'bg-slate-50 border-slate-300' : 'bg-slate-950 border-slate-700'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold mb-1">Full Body Content</label>
+                <textarea
+                  required
+                  rows={5}
+                  value={adminPostContent}
+                  onChange={e => setAdminPostContent(e.target.value)}
+                  placeholder="Full feature release announcement or blog article text..."
+                  className={`w-full p-3 rounded-xl border text-xs leading-relaxed resize-none ${
+                    isLight ? 'bg-slate-50 border-slate-300' : 'bg-slate-950 border-slate-700'
+                  }`}
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAdminCreateOpen(false)}
+                  className="px-4 py-2 rounded-xl border text-xs font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isPublishingDirect || !adminPostTitle.trim() || !adminPostContent.trim()}
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/20 cursor-pointer"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>{isPublishingDirect ? 'Publishing...' : 'Publish Feature / Blog'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

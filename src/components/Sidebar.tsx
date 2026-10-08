@@ -142,13 +142,13 @@ export const Sidebar: React.FC = () => {
                 onClick={() => setIsSidebarOpen(false)}
                 aria-label="Close sidebar"
                 title="Close sidebar (⌘B / [ )"
-                className={`p-1.5 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                className={`group p-1.5 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
                   isLight 
                     ? 'hover:bg-slate-100 text-slate-500 hover:text-slate-800 border-slate-200' 
                     : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200 border-slate-800'
                 }`}
               >
-                <PanelLeftClose className="w-4 h-4" />
+                <PanelLeftClose className="w-4 h-4 group-hover:-translate-x-0.5 group-hover:scale-110 transition-transform duration-200" />
               </button>
             </div>
           ) : (
@@ -182,24 +182,27 @@ export const Sidebar: React.FC = () => {
                 const isActive = activeTab === item.id;
 
                 if (!isSidebarOpen) {
-                  /* Collapsed Icon-only view with tooltip */
+                  /* Collapsed Icon-only view with tooltip and animated signature icon */
                   return (
                     <div key={item.id} className="relative group flex justify-center">
                       <button
                         id={`sidebar-nav-${item.id}`}
+                        data-nav-id={item.id}
                         onClick={() => handleNavClick(item.id)}
                         aria-label={item.label}
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                        className={`sidebar-closed-nav-item group w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                           isActive
                             ? isLight
-                              ? 'bg-slate-100 text-blue-600 border border-slate-300 shadow-xs'
-                              : 'bg-slate-800 text-blue-400 border border-slate-700 shadow-xs'
+                              ? 'bg-slate-100 text-blue-600 border border-slate-300 shadow-xs ring-1 ring-blue-500/20'
+                              : 'bg-slate-800 text-blue-400 border border-slate-700 shadow-xs ring-1 ring-blue-400/20'
                             : isLight
-                              ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                              ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 hover:border hover:border-slate-300/80'
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 hover:border hover:border-slate-700/80'
                         }`}
                       >
-                        <Icon className={`w-4 h-4 ${isActive ? (isLight ? 'text-blue-600' : 'text-blue-400') : ''}`} />
+                        <Icon className={`w-4 h-4 shrink-0 icon-hover-${item.id} transition-transform duration-200 ${
+                          isActive ? (isLight ? 'text-blue-600' : 'text-blue-400') : ''
+                        }`} />
                       </button>
 
                       {/* Tooltip on right */}
@@ -256,25 +259,27 @@ export const Sidebar: React.FC = () => {
                 const isActive = activeTab === item.id;
 
                 if (!isSidebarOpen) {
-                  /* Collapsed Icon-only view with tooltip */
+                  /* Collapsed Icon-only view with tooltip and animated signature icon */
                   return (
                     <div key={item.id} className="relative group flex justify-center">
                       <button
-                        key={item.id}
                         id={`sidebar-nav-${item.id}`}
+                        data-nav-id={item.id}
                         onClick={() => handleNavClick(item.id)}
                         aria-label={item.label}
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                        className={`sidebar-closed-nav-item group w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                           isActive
                             ? isLight
-                              ? 'bg-slate-100 text-blue-600 border border-slate-300 shadow-xs'
-                              : 'bg-slate-800 text-blue-400 border border-slate-700 shadow-xs'
+                              ? 'bg-slate-100 text-blue-600 border border-slate-300 shadow-xs ring-1 ring-blue-500/20'
+                              : 'bg-slate-800 text-blue-400 border border-slate-700 shadow-xs ring-1 ring-blue-400/20'
                             : isLight
-                              ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                              ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 hover:border hover:border-slate-300/80'
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 hover:border hover:border-slate-700/80'
                         }`}
                       >
-                        <Icon className={`w-4 h-4 ${isActive ? (isLight ? 'text-blue-600' : 'text-blue-400') : ''}`} />
+                        <Icon className={`w-4 h-4 shrink-0 icon-hover-${item.id} transition-transform duration-200 ${
+                          isActive ? (isLight ? 'text-blue-600' : 'text-blue-400') : ''
+                        }`} />
                       </button>
 
                       {/* Tooltip on right */}

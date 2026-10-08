@@ -452,9 +452,37 @@ export const INITIAL_SEED_NEWS: AppNewsPost[] = [
     summary: 'Introducing automated asset weightings by age milestones (22, 28, 35, 45, 55+) with live interbank Forex pricing for INR sovereign accounts.',
     content: `We are thrilled to launch the automated asset allocation engine!\n\nKey Release Capabilities:\n1. Age-Milestone Auto Allocation: Young accumulators receive 75% equity exposure, while senior citizens scale into sovereign bonds and Post Office POMIS.\n2. Live INR Standard: Every transaction, asset vault, and projection is denominated with sub-millisecond conversion into ₹ Indian Rupee.\n3. Zero Telemetry Privacy: Calculations execute directly in browser memory without sending balances to remote servers.\n\nExplore this in your Wealth & FinScore tabs today!`,
     author: 'Sudharsan M. (Admin)',
+    imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
+    imageCaption: 'Asset Allocation Engine & Real-Time INR Valuation',
     publishedAt: new Date(Date.now() - 3600000).toISOString(),
     readTimeMinutes: 3,
     isFeatured: true
+  },
+  {
+    id: 'post-fr-2',
+    title: 'New Feature: Automated Indian Tax & Capital Gains Estimator (LTCG / STCG)',
+    category: 'Feature Release',
+    summary: 'Calculate tax liabilities for equity and debt mutual funds under the updated FY 2026-27 Union Budget tax slabs with 1-click harvest reports.',
+    content: `Easily plan your tax outlays with our new Capital Gains & 80C Calculator module.\n\nFeatures Included:\n- Equity LTCG (12.5% above ₹1.25 Lakh exemption limit)\n- Short-Term Capital Gains (STCG @ 20%)\n- Section 80C, 80D, and NPS 80CCD(1B) optimization checks.\n- Download ready PDF / CSV summaries for income tax filing.`,
+    author: 'Sudharsan M. (Lead Admin)',
+    imageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80',
+    imageCaption: 'Automated Capital Gains & Tax Slab Planning',
+    publishedAt: new Date(Date.now() - 7200000).toISOString(),
+    readTimeMinutes: 4,
+    isFeatured: false
+  },
+  {
+    id: 'post-blog-1',
+    title: 'Editorial Blog: The Psychology of Compounding — How Small Habits Beat High Risk Speculation',
+    category: 'Blog',
+    summary: 'Why behavioral discipline and automated monthly index SIPs systematically outperform speculative stock picking over a 15-year wealth accumulation horizon.',
+    content: `Compounding is not merely a financial calculation; it is fundamentally a discipline in emotional regulation and patience.\n\n1. The Habit of Frictionless Automation: Investing the first 25% of your income before paying discretionary expenses guarantees steady momentum regardless of market sentiment.\n2. Avoiding Destructive Drawdowns: A 50% drop requires a 100% gain just to break even. Protecting your principal with balanced debt instruments guarantees you never face catastrophic wipeouts.\n3. The Dividend of Peace: True financial freedom is having enough clarity and safety to sleep peacefully every night without checking intraday ticker symbols.`,
+    author: 'Sudharsan M. (Admin)',
+    imageUrl: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=800&q=80',
+    imageCaption: 'Behavioral Psychology & Long-Term Compounding Habits',
+    publishedAt: new Date(Date.now() - 10800000).toISOString(),
+    readTimeMinutes: 5,
+    isFeatured: false
   },
   {
     id: 'post-mn-1',
@@ -463,6 +491,8 @@ export const INITIAL_SEED_NEWS: AppNewsPost[] = [
     summary: 'A deep-dive into the Reserve Bank of India’s benchmark repo rate decisions and how retail investors should position debt mutual funds vs equities.',
     content: `The Reserve Bank of India (RBI) Monetary Policy Committee maintained status quo on benchmark repo rates, projecting GDP expansion at 7.2% with CPI inflation anchored near 4.5%.\n\nStrategic Takeaways for SIP Accumulators:\n- Debt Mutual Funds & Liquid Funds: Attractive yields across short-duration debt funds provide healthy parking space for emergency funds.\n- Equity SIP Discipline: Sustained domestic institutional inflows continue to provide support during global volatility. Maintain regular monthly index SIPs without timing the market.\n- Sovereign Gold Bonds (SGB) & Gold ETFs: Consider 5% to 10% strategic allocation as a hedge against currency fluctuation.`,
     author: 'Sudharsan M. (Admin)',
+    imageUrl: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80',
+    imageCaption: 'RBI Macro Outlook & Indian Capital Markets',
     publishedAt: new Date(Date.now() - 14400000).toISOString(),
     readTimeMinutes: 4,
     isFeatured: true
@@ -474,7 +504,9 @@ export const INITIAL_SEED_NEWS: AppNewsPost[] = [
     summary: 'Discover why sovereign-backed monthly income schemes protect mental peace and provide guaranteed monthly cash flow for senior wealth accumulators.',
     content: `When investors cross the age of 55, wealth preservation takes absolute precedence over market speculation.\n\nKey Advantages of Sovereign Post Office Schemes:\n1. Sovereign Capital Safety: Backed by the government faith with zero default risk.\n2. Guaranteed Monthly Payouts: POMIS deposits yield steady monthly income directly credited into your savings account.\n3. SCSS Interest Superiority: The Senior Citizen Savings Scheme delivers 8.2% annual interest payable quarterly.\n\nIn our automated asset allocation advisor, senior profiles allocate 85% into bonds, G-Secs, and Post Office schemes to ensure steady living expenses without touching principal equity.`,
     author: 'Sudharsan M. (Lead Admin)',
-    publishedAt: new Date(Date.now() - 7200000).toISOString(),
+    imageUrl: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&w=800&q=80',
+    imageCaption: 'Sovereign Capital Safety & Guaranteed Monthly Cash Flows',
+    publishedAt: new Date(Date.now() - 28800000).toISOString(),
     readTimeMinutes: 4,
     isFeatured: false
   },
@@ -485,6 +517,8 @@ export const INITIAL_SEED_NEWS: AppNewsPost[] = [
     summary: 'Learn about our latest privacy upgrade: transactions and net worth metrics are now stored exclusively on your device, with zero remote financial tracking.',
     content: `We believe financial autonomy requires complete data sovereignty.\n\nIn our latest update:\n- Zero Financial Data Upload: Your daily expenses, liabilities, and bank accounts never leave your device.\n- Database Scope Restricted: The Google Cloud Firestore database stores only user credentials for login, account roles, feedback responses, and news broadcasts.\n- Instant Offline Speed: Since data lives in your browser's local memory, calculations happen in sub-milliseconds with zero server lag.`,
     author: 'Sudharsan M. (Lead Admin)',
+    imageUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
+    imageCaption: 'Zero-Knowledge Client-Side Storage Architecture',
     publishedAt: new Date(Date.now() - 172800000).toISOString(),
     readTimeMinutes: 3,
     isFeatured: false

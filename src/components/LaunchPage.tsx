@@ -926,7 +926,7 @@ export const LaunchPage: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   
                   {/* Interactive Animated Wealth Growth Chart Curve (2 Columns) */}
-                  <div className="lg:col-span-2 p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
+                  <div className="lg:col-span-2 p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 hover:border-slate-300 flex flex-col justify-between transition-all duration-300 shadow-sm">
                     <div>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                         <div>
@@ -934,8 +934,9 @@ export const LaunchPage: React.FC = () => {
                             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
                               {HERO_GRAPH_DATA[graphHorizon].title}
                             </h4>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                              {HERO_GRAPH_DATA[graphHorizon].cagr}
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center gap-1.5 shadow-xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              <span>{HERO_GRAPH_DATA[graphHorizon].cagr}</span>
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-500 mt-0.5">
@@ -991,19 +992,51 @@ export const LaunchPage: React.FC = () => {
                         >
                           <defs>
                             <linearGradient id="growthGradDaylight" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#059669" stopOpacity="0.32" />
-                              <stop offset="50%" stopColor="#10b981" stopOpacity="0.12" />
+                              <stop offset="0%" stopColor="#059669" stopOpacity="0.28" />
+                              <stop offset="60%" stopColor="#10b981" stopOpacity="0.08" />
                               <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
                             </linearGradient>
                           </defs>
-                          
+
+                          {/* Subtle financial horizontal grid guides */}
+                          <line x1="0" y1="45" x2="500" y2="45" stroke="#e2e8f0" strokeDasharray="4 4" strokeWidth="1" opacity="0.6" />
+                          <line x1="0" y1="90" x2="500" y2="90" stroke="#e2e8f0" strokeDasharray="4 4" strokeWidth="1" opacity="0.6" />
+                          <line x1="0" y1="135" x2="500" y2="135" stroke="#e2e8f0" strokeDasharray="4 4" strokeWidth="1" opacity="0.6" />
+
                           {/* Animated Area Fill */}
                           <path
                             d={HERO_GRAPH_DATA[graphHorizon].svgArea}
                             fill="url(#growthGradDaylight)"
+                            className="animate-graph-area"
+                          />
+
+                          {/* Vertical guide line on hovered milestone */}
+                          {hoveredPointIdx !== null && HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx] && (
+                            <line
+                              x1={HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx].x}
+                              y1={HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx].y}
+                              x2={HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx].x}
+                              y2="175"
+                              stroke="#10b981"
+                              strokeDasharray="3 3"
+                              strokeWidth="1.5"
+                              opacity="0.75"
+                              className="transition-all duration-150"
+                            />
+                          )}
+
+                          {/* Soft Neon Underglow Stroke */}
+                          <path
+                            d={HERO_GRAPH_DATA[graphHorizon].svgPath}
+                            fill="none"
+                            stroke="#10b981"
+                            strokeWidth="6"
+                            strokeLinecap="round"
+                            className="animate-graph-line opacity-30"
+                            pathLength={1000}
                           />
                           
-                          {/* Animated Stroke line */}
+                          {/* Main Crisp Animated Stroke line */}
                           <path
                             d={HERO_GRAPH_DATA[graphHorizon].svgPath}
                             fill="none"
@@ -1011,6 +1044,18 @@ export const LaunchPage: React.FC = () => {
                             strokeWidth="3.5"
                             strokeLinecap="round"
                             className="animate-graph-line"
+                            pathLength={1000}
+                          />
+
+                          {/* Traveling live radar pulse trace */}
+                          <path
+                            d={HERO_GRAPH_DATA[graphHorizon].svgPath}
+                            fill="none"
+                            stroke="#34d399"
+                            strokeWidth="4"
+                            strokeLinecap="round"
+                            className="animate-graph-trace pointer-events-none"
+                            pathLength={1000}
                           />
 
                           {/* Reference Nodes along the curve */}
@@ -1025,12 +1070,30 @@ export const LaunchPage: React.FC = () => {
                                 onMouseEnter={() => setHoveredPointIdx(idx)}
                               >
                                 {isEndpoint && (
-                                  <circle 
-                                    cx={pt.x} 
-                                    cy={pt.y} 
-                                    r="14" 
-                                    fill="#10b981" 
-                                    className="animate-ripple" 
+                                  <>
+                                    <circle 
+                                      cx={pt.x} 
+                                      cy={pt.y} 
+                                      r="12" 
+                                      fill="#10b981" 
+                                      className="animate-ripple" 
+                                    />
+                                    <circle 
+                                      cx={pt.x} 
+                                      cy={pt.y} 
+                                      r="12" 
+                                      fill="#10b981" 
+                                      className="animate-ripple-delayed" 
+                                    />
+                                  </>
+                                )}
+                                {isSelected && (
+                                  <circle
+                                    cx={pt.x}
+                                    cy={pt.y}
+                                    r="9"
+                                    fill="#10b981"
+                                    opacity="0.25"
                                   />
                                 )}
                                 <circle

@@ -30,11 +30,54 @@ import {
   Trash2,
   Edit3,
   CornerDownRight,
-  BookOpen
+  BookOpen,
+  Image as ImageIcon,
+  Upload,
+  Link as LinkIcon
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { useAuth } from '../../context/AuthContext';
 import { AppUserProfile, AppFeedback, AppBroadcastNotification, AppNewsPost } from '../../types';
+
+// Curated Fintech & Wealth Feature Release Image Presets
+export const ADMIN_IMAGE_PRESETS = [
+  {
+    name: 'Feature Release: Asset Allocator',
+    category: 'Feature Release' as const,
+    url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
+    desc: 'Wealth analytics, KPIs & dynamic graphs'
+  },
+  {
+    name: 'Feature Release: Tax & Capital Gains',
+    category: 'Feature Release' as const,
+    url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80',
+    desc: 'Tax calculator & Indian slabs'
+  },
+  {
+    name: 'Market News: Trading & Dalal Street',
+    category: 'Market News' as const,
+    url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80',
+    desc: 'Candlestick graphs & market pulse'
+  },
+  {
+    name: 'Personal Finance: Sovereign Savings',
+    category: 'Personal Finance' as const,
+    url: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&w=800&q=80',
+    desc: 'Gold coins & savings runway'
+  },
+  {
+    name: 'Platform Security: Encrypted Vault',
+    category: 'Platform Update' as const,
+    url: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
+    desc: 'Zero-knowledge client encryption'
+  },
+  {
+    name: 'FIRE Planning & Freedom',
+    category: 'Personal Finance' as const,
+    url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
+    desc: 'Retirement horizon & compounding'
+  }
+];
 import { 
   fetchAllUsers, 
   fetchFeedbackList, 
@@ -85,6 +128,7 @@ export const AdminPanelView: React.FC = () => {
   const [notifMessage, setNotifMessage] = useState('');
   const [notifType, setNotifType] = useState<AppBroadcastNotification['type']>('new_feature');
   const [notifBadge, setNotifBadge] = useState('New Release');
+  const [notifImageUrl, setNotifImageUrl] = useState('');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   // News Post Form State
@@ -94,6 +138,9 @@ export const AdminPanelView: React.FC = () => {
   const [newsSummary, setNewsSummary] = useState('');
   const [newsContent, setNewsContent] = useState('');
   const [newsReadTime, setNewsReadTime] = useState('3');
+  const [newsImageUrl, setNewsImageUrl] = useState('');
+  const [newsImageCaption, setNewsImageCaption] = useState('');
+  const [newsImageUploadMode, setNewsImageUploadMode] = useState<'url' | 'upload' | 'preset'>('url');
   const [isPublishingNews, setIsPublishingNews] = useState(false);
 
   // Load all admin data on mount
@@ -186,6 +233,27 @@ export const AdminPanelView: React.FC = () => {
     }
   };
 
+  // Handler: Local image upload via file reader
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (PNG, JPG, WebP).');
+      return;
+    }
+    if (file.size > 1.5 * 1024 * 1024) {
+      showToast('Image file should be under 1.5MB. You can also paste an image URL from Chrome.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setNewsImageUrl(dataUrl);
+      showToast('Image uploaded successfully! Preview shown below.');
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Handler: Create Broadcast Notification
   const handleCreateBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,11 +266,13 @@ export const AdminPanelView: React.FC = () => {
         message: notifMessage.trim(),
         type: notifType,
         badge: notifBadge.trim() || 'New',
+        imageUrl: notifImageUrl.trim() || undefined,
         createdBy: currentUser?.name || 'Admin'
       });
       setNotifications(prev => [created, ...prev]);
       setNotifTitle('');
       setNotifMessage('');
+      setNotifImageUrl('');
       showToast('Notification broadcasted to all users!');
     } catch (err) {
       showToast('Error broadcasting notification.');
@@ -224,14 +294,18 @@ export const AdminPanelView: React.FC = () => {
         summary: newsSummary.trim() || newsContent.slice(0, 140) + '...',
         content: newsContent.trim(),
         author: currentUser?.name || 'Sudharsan M. (Admin)',
+        imageUrl: newsImageUrl.trim() || undefined,
+        imageCaption: newsImageCaption.trim() || undefined,
         readTimeMinutes: parseInt(newsReadTime) || 3
       });
       setNewsPosts(prev => [created, ...prev]);
       setNewsTitle('');
       setNewsSummary('');
       setNewsContent('');
+      setNewsImageUrl('');
+      setNewsImageCaption('');
       setIsCreatingNews(false);
-      showToast('Article published to News & Blog CMS!');
+      showToast('Article published to News & Blog CMS with featured image!');
     } catch (err) {
       showToast('Error publishing article.');
     } finally {
@@ -834,6 +908,23 @@ export const AdminPanelView: React.FC = () => {
               />
             </div>
 
+            {/* Optional Feature Image Link for Broadcast */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-400 mb-1 flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5 text-blue-500" />
+                <span>Feature Image URL / Chrome Link (Optional)</span>
+              </label>
+              <input
+                type="url"
+                value={notifImageUrl}
+                onChange={e => setNotifImageUrl(e.target.value)}
+                placeholder="Paste Chrome image link (e.g. https://images.unsplash.com/...)"
+                className={`w-full px-3 py-2 rounded-xl border text-xs ${
+                  isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'
+                }`}
+              />
+            </div>
+
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-slate-400">
                 📢 Automatically delivered to all user notification bells in the top navbar.
@@ -959,10 +1050,12 @@ export const AdminPanelView: React.FC = () => {
                       isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'
                     }`}
                   >
-                    <option value="Feature Release">Feature Release</option>
+                    <option value="Feature Release">Feature Release (New Features)</option>
+                    <option value="New Features">New Features &amp; Capabilities</option>
+                    <option value="Blog">Editorial Blog / Deep Dive</option>
+                    <option value="Platform Update">Platform Update</option>
                     <option value="Market News">Market News</option>
                     <option value="Personal Finance">Personal Finance</option>
-                    <option value="Platform Update">Platform Update</option>
                     <option value="Holdings News">Holdings News (Stocks &amp; MF)</option>
                   </select>
                 </div>
@@ -986,7 +1079,7 @@ export const AdminPanelView: React.FC = () => {
                 <label className="block text-xs font-bold mb-1">Full Body Content</label>
                 <textarea
                   required
-                  rows={6}
+                  rows={5}
                   value={newsContent}
                   onChange={e => setNewsContent(e.target.value)}
                   placeholder="Write the full article content. You can write paragraphs, bullet points, and guidelines..."
@@ -994,6 +1087,205 @@ export const AdminPanelView: React.FC = () => {
                     isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'
                   }`}
                 />
+              </div>
+
+              {/* ARTICLE COVER IMAGE ATTACHMENT SECTION (Chrome Link / Device Upload / Preset) */}
+              <div className={`p-4 rounded-2xl border space-y-3 ${
+                isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+              }`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <label className="text-xs font-bold flex items-center gap-1.5 text-slate-900 dark:text-white">
+                      <ImageIcon className="w-4 h-4 text-blue-500" />
+                      <span>Article Cover Image (Left Image • Right Text Layout)</span>
+                    </label>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Upload an image file, paste a Chrome web link, or choose a curated fintech banner.
+                    </p>
+                  </div>
+
+                  {/* Attachment Mode Selector */}
+                  <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setNewsImageUploadMode('url')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                        newsImageUploadMode === 'url'
+                          ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                      }`}
+                    >
+                      <LinkIcon className="w-3 h-3" />
+                      <span>Chrome Link</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewsImageUploadMode('upload')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                        newsImageUploadMode === 'upload'
+                          ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                      }`}
+                    >
+                      <Upload className="w-3 h-3" />
+                      <span>Upload File</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewsImageUploadMode('preset')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                        newsImageUploadMode === 'preset'
+                          ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                      }`}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Fintech Presets</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Option 1: Chrome / Web URL link input */}
+                {newsImageUploadMode === 'url' && (
+                  <div className="space-y-1.5">
+                    <div className="relative">
+                      <LinkIcon className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                      <input
+                        type="url"
+                        value={newsImageUrl}
+                        onChange={e => setNewsImageUrl(e.target.value)}
+                        placeholder="Paste Chrome image link (e.g. https://images.unsplash.com/... or any image address)"
+                        className={`w-full pl-8 pr-3 py-2 rounded-xl border text-xs ${
+                          isLight ? 'bg-slate-50 border-slate-300' : 'bg-slate-950 border-slate-700'
+                        }`}
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400">
+                      💡 Tip: Right-click any image in Google Chrome, click "Copy image address", and paste it here.
+                    </p>
+                  </div>
+                )}
+
+                {/* Option 2: Local file upload */}
+                {newsImageUploadMode === 'upload' && (
+                  <div className="space-y-1.5">
+                    <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-xl cursor-pointer hover:border-blue-500 transition-colors border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950">
+                      <Upload className="w-6 h-6 text-slate-400 mb-1" />
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Click to select an image from your device
+                      </span>
+                      <span className="text-[10px] text-slate-400 mt-0.5">
+                        PNG, JPG, WebP up to 1.5MB
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {/* Option 3: Curated Fintech Presets */}
+                {newsImageUploadMode === 'preset' && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {ADMIN_IMAGE_PRESETS.map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setNewsImageUrl(preset.url);
+                          setNewsImageCaption(preset.name);
+                          showToast(`Selected "${preset.name}" image!`);
+                        }}
+                        className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                          newsImageUrl === preset.url
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 ring-2 ring-blue-500/20'
+                            : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                        }`}
+                      >
+                        <img
+                          src={preset.url}
+                          alt={preset.name}
+                          className="w-12 h-10 object-cover rounded-lg shrink-0 border border-slate-200 dark:border-slate-700"
+                        />
+                        <div className="min-w-0">
+                          <span className="text-[11px] font-bold block truncate text-slate-900 dark:text-white">
+                            {preset.name}
+                          </span>
+                          <span className="text-[9px] text-slate-400 block truncate">
+                            {preset.desc}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Live Card Layout Preview (Left Image • Right Text) */}
+                {newsImageUrl && (
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                        <span>Live Card Preview (Left Image • Right Text):</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewsImageUrl('');
+                          setNewsImageCaption('');
+                        }}
+                        className="text-[10px] text-rose-500 hover:underline flex items-center gap-0.5 cursor-pointer font-semibold"
+                      >
+                        <X className="w-3 h-3" />
+                        <span>Remove Image</span>
+                      </button>
+                    </div>
+
+                    <div className={`p-3.5 rounded-xl border flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 ${
+                      isLight ? 'bg-slate-50 border-slate-200 shadow-xs' : 'bg-slate-950 border-slate-800 shadow-xs'
+                    }`}>
+                      {/* Image on Left */}
+                      <div className="w-full sm:w-36 h-24 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 relative bg-slate-200 dark:bg-slate-800">
+                        <img
+                          src={newsImageUrl}
+                          alt="Preview"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80';
+                          }}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      {/* Text on Right */}
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 text-[10px]">
+                          <span className="font-bold text-blue-600 dark:text-blue-400">{newsCategory}</span>
+                          <span className="text-slate-400">•</span>
+                          <span className="text-slate-400">{newsReadTime || 3} min read</span>
+                        </div>
+                        <h5 className="text-xs font-bold truncate text-slate-900 dark:text-white">
+                          {newsTitle || 'Sample Title: New Feature Announcement'}
+                        </h5>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                          {newsSummary || 'Your summary lead text will appear on the right side of the image.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <input
+                      type="text"
+                      value={newsImageCaption}
+                      onChange={e => setNewsImageCaption(e.target.value)}
+                      placeholder="Optional image caption or descriptive credit (e.g. Asset Allocation Engine Preview)"
+                      className={`w-full px-3 py-1.5 rounded-lg border text-[11px] ${
+                        isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-700'
+                      }`}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
@@ -1005,7 +1297,7 @@ export const AdminPanelView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsCreatingNews(false)}
-                    className="px-3 py-1.5 rounded-xl border text-xs font-semibold"
+                    className="px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -1023,52 +1315,76 @@ export const AdminPanelView: React.FC = () => {
             </form>
           )}
 
-          {/* Published Articles List */}
+          {/* Published Articles List with Image on Left, Text on Right */}
           <div className="space-y-3 pt-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Published Articles ({newsPosts.length})
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               {newsPosts.map(post => (
                 <div 
                   key={post.id}
-                  className={`p-5 rounded-2xl border space-y-2.5 ${
-                    isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+                  className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-stretch sm:items-center gap-4 transition-all ${
+                    isLight ? 'bg-white border-slate-200 hover:border-slate-300' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-500 border border-blue-500/30">
-                      {post.category}
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      {new Date(post.publishedAt).toLocaleDateString()}
-                    </span>
+                  {/* Image on Left */}
+                  <div className="w-full sm:w-36 h-28 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800 relative border border-slate-200/80 dark:border-slate-700/80">
+                    {post.imageUrl ? (
+                      <img
+                        src={post.imageUrl}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-blue-500/10 to-emerald-500/10">
+                        <ImageIcon className="w-6 h-6 opacity-40 mb-1" />
+                        <span className="text-[9px] font-mono">No Image</span>
+                      </div>
+                    )}
                   </div>
 
-                  <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1">
-                    {post.title}
-                  </h4>
+                  {/* Text on Right */}
+                  <div className="flex-1 min-w-0 space-y-1.5 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-500 border border-blue-500/30">
+                          {post.category}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {new Date(post.publishedAt).toLocaleDateString()}
+                        </span>
+                      </div>
 
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-                    {post.summary}
-                  </p>
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1 mt-1">
+                        {post.title}
+                      </h4>
 
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                    <span>By {post.author}</span>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">
+                        {post.summary}
+                      </p>
+                    </div>
 
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await deleteNewsPost(post.id);
-                        setNewsPosts(prev => prev.filter(p => p.id !== post.id));
-                        showToast('Article deleted from CMS.');
-                      }}
-                      className="text-rose-500 hover:text-rose-600 font-semibold cursor-pointer flex items-center gap-1"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      <span>Delete</span>
-                    </button>
+                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                      <span>By {post.author}</span>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await deleteNewsPost(post.id);
+                          setNewsPosts(prev => prev.filter(p => p.id !== post.id));
+                          showToast('Article deleted from CMS.');
+                        }}
+                        className="text-rose-500 hover:text-rose-600 font-semibold cursor-pointer flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

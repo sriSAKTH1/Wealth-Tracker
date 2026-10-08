@@ -499,6 +499,7 @@ export interface AppBroadcastNotification {
   message: string;
   type: 'new_feature' | 'announcement' | 'update' | 'maintenance';
   badge?: string;
+  imageUrl?: string;
   createdAt: string;
   createdBy?: string;
   readBy?: string[];
@@ -507,10 +508,12 @@ export interface AppBroadcastNotification {
 export interface AppNewsPost {
   id: string;
   title: string;
-  category: 'Feature Release' | 'Market News' | 'Personal Finance' | 'Platform Update' | 'Holdings News';
+  category: 'Feature Release' | 'New Features' | 'Blog' | 'Market News' | 'Personal Finance' | 'Platform Update' | 'Holdings News';
   summary: string;
   content: string;
   author: string;
+  imageUrl?: string;
+  imageCaption?: string;
   publishedAt: string;
   readTimeMinutes?: number;
   isFeatured?: boolean;
