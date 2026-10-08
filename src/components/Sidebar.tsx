@@ -216,7 +216,7 @@ export const Sidebar: React.FC = () => {
                     key={item.id}
                     id={`sidebar-nav-${item.id}`}
                     onClick={() => handleNavClick(item.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+                    className={`sidebar-open-nav-item group w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
                       isActive
                         ? isLight 
                           ? 'bg-slate-100 text-slate-900 shadow-xs border border-slate-200 font-semibold' 
@@ -227,7 +227,7 @@ export const Sidebar: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <Icon className={`w-4 h-4 shrink-0 ${
+                      <Icon className={`w-4 h-4 shrink-0 icon-hover-${item.id} ${
                         isActive 
                           ? isLight ? 'text-blue-600' : 'text-blue-400' 
                           : isLight ? 'text-slate-500' : 'text-slate-400'
@@ -296,7 +296,7 @@ export const Sidebar: React.FC = () => {
                     key={item.id}
                     id={`sidebar-nav-${item.id}`}
                     onClick={() => handleNavClick(item.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+                    className={`sidebar-open-nav-item group w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
                       isActive
                         ? isLight 
                           ? 'bg-slate-100 text-slate-900 shadow-xs border border-slate-200 font-semibold' 
@@ -307,7 +307,7 @@ export const Sidebar: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <Icon className={`w-4 h-4 shrink-0 ${
+                      <Icon className={`w-4 h-4 shrink-0 icon-hover-${item.id} ${
                         isActive 
                           ? isLight ? 'text-blue-600' : 'text-blue-400' 
                           : isLight ? 'text-slate-500' : 'text-slate-400'
