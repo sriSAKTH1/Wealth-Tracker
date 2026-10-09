@@ -281,32 +281,78 @@ const HERO_FLOATING_FINANCE_ICONS: FloatingFinanceIcon[] = [
 ];
 
 // Interactive Graph Horizons & Compounding Paths
+interface GraphPoint {
+  year: string;
+  value: string;
+  x: number;
+  y: number;
+  detail: string;
+  invested: string;
+  compoundedGain: string;
+  gainPct: string;
+}
+
 interface GraphTrajectory {
   title: string;
   badge: string;
   growth: string;
   curNetWorth: string;
-  points: { year: string; value: string; x: number; y: number; detail: string }[];
+  points: GraphPoint[];
   svgPath: string;
   svgArea: string;
+  investedLinePath: string;
   cagr: string;
+  investedTotal: string;
+  compoundedTotal: string;
+  investedPct: number;
+  compoundedPct: number;
+  multiplier: string;
 }
 
-const HERO_GRAPH_DATA: Record<'1Y' | '3Y' | '5Y' | 'FIRE', GraphTrajectory> = {
-  '1Y': {
-    title: '1-Year Portfolio Trajectory',
-    badge: 'FY 2025-26 Performance',
-    growth: '+14.8% YoY',
+const HERO_GRAPH_DATA: Record<'10Y' | '5Y' | '3Y' | 'FIRE', GraphTrajectory> = {
+  '10Y': {
+    title: '10-Year Wealth Compounding Graph',
+    badge: '10-Year Compounding Horizon',
+    growth: '+450% 10-Yr Compounding',
     curNetWorth: '₹1,24,50,000',
-    cagr: '14.8% Annualized',
-    svgPath: 'M 20 142 Q 135 118 250 88 T 490 24',
-    svgArea: 'M 20 142 Q 135 118 250 88 T 490 24 L 490 180 L 20 180 Z',
+    cagr: '15.2% Compounding CAGR',
+    investedTotal: '₹2.32 Cr (34%)',
+    compoundedTotal: '+₹4.50 Cr (66%)',
+    investedPct: 34,
+    compoundedPct: 66,
+    multiplier: '2.94x',
+    svgPath: 'M 20 152 C 120 142, 200 120, 270 94 S 410 40, 490 14',
+    svgArea: 'M 20 152 C 120 142, 200 120, 270 94 S 410 40, 490 14 L 490 180 L 20 180 Z',
+    investedLinePath: 'M 20 152 L 110 144 L 210 136 L 305 128 L 400 120 L 490 112',
     points: [
-      { year: 'Q1 2025', value: '₹1.08 Cr', x: 20, y: 142, detail: 'Initial Base' },
-      { year: 'Q2 2025', value: '₹1.12 Cr', x: 135, y: 118, detail: '+₹4.0L SIP' },
-      { year: 'Q3 2025', value: '₹1.16 Cr', x: 250, y: 88, detail: 'Market Rally' },
-      { year: 'Q4 2025', value: '₹1.20 Cr', x: 370, y: 56, detail: '+₹4.2L Surplus' },
-      { year: 'Today (2026)', value: '₹1.24 Cr', x: 490, y: 24, detail: 'Current Vault' }
+      { year: 'Yr 1', value: '₹1.24 Cr', x: 20, y: 152, detail: 'Initial Capital Base', invested: '₹1.24 Cr', compoundedGain: '₹0', gainPct: '0%' },
+      { year: 'Yr 2', value: '₹1.52 Cr', x: 110, y: 136, detail: 'Early Momentum', invested: '₹1.36 Cr', compoundedGain: '+₹16.0L', gainPct: '+11.8%' },
+      { year: 'Yr 4', value: '₹2.18 Cr', x: 210, y: 110, detail: 'Compounding Accelerated', invested: '₹1.60 Cr', compoundedGain: '+₹58.0L', gainPct: '+36.3%' },
+      { year: 'Yr 6', value: '₹3.15 Cr', x: 305, y: 78, detail: 'Inflection: Gains > Contributions', invested: '₹1.84 Cr', compoundedGain: '+₹1.31 Cr', gainPct: '+71.2%' },
+      { year: 'Yr 8', value: '₹4.60 Cr', x: 400, y: 44, detail: 'Rapid Compounding Surge', invested: '₹2.08 Cr', compoundedGain: '+₹2.52 Cr', gainPct: '+121.2%' },
+      { year: 'Yr 10', value: '₹6.82 Cr', x: 490, y: 14, detail: '10-Yr Compounding Landmark', invested: '₹2.32 Cr', compoundedGain: '+₹4.50 Cr', gainPct: '+194.0%' }
+    ]
+  },
+  '5Y': {
+    title: '5-Year Wealth Compounding Curve',
+    badge: 'Mid-Term Compounding',
+    growth: '+255.7% Total',
+    curNetWorth: '₹1,24,50,000',
+    cagr: '19.8% CAGR',
+    investedTotal: '₹1.78 Cr (46%)',
+    compoundedTotal: '+₹2.10 Cr (54%)',
+    investedPct: 46,
+    compoundedPct: 54,
+    multiplier: '2.18x',
+    svgPath: 'M 20 166 Q 130 138 250 96 T 380 58 T 490 20',
+    svgArea: 'M 20 166 Q 130 138 250 96 T 380 58 T 490 20 L 490 180 L 20 180 Z',
+    investedLinePath: 'M 20 166 L 135 152 L 250 138 L 375 124 L 490 110',
+    points: [
+      { year: 'Yr 1', value: '₹35.0L', x: 20, y: 166, detail: 'Initial Foundation', invested: '₹35.0L', compoundedGain: '₹0', gainPct: '0%' },
+      { year: 'Yr 2', value: '₹54.2L', x: 135, y: 138, detail: 'Early Compounding', invested: '₹45.0L', compoundedGain: '+₹9.2L', gainPct: '+20.4%' },
+      { year: 'Yr 3', value: '₹78.5L', x: 250, y: 96, detail: 'SIP Boost', invested: '₹55.0L', compoundedGain: '+₹23.5L', gainPct: '+42.7%' },
+      { year: 'Yr 4', value: '₹98.2L', x: 375, y: 58, detail: 'Near ₹1 Cr', invested: '₹65.0L', compoundedGain: '+₹33.2L', gainPct: '+51.1%' },
+      { year: 'Yr 5', value: '₹1.24 Cr', x: 490, y: 20, detail: 'Current Vault', invested: '₹75.0L', compoundedGain: '+₹49.0L', gainPct: '+65.3%' }
     ]
   },
   '3Y': {
@@ -315,45 +361,41 @@ const HERO_GRAPH_DATA: Record<'1Y' | '3Y' | '5Y' | 'FIRE', GraphTrajectory> = {
     growth: '+82.3% Total',
     curNetWorth: '₹1,24,50,000',
     cagr: '17.2% CAGR',
+    investedTotal: '₹82.0L (66%)',
+    compoundedTotal: '+₹42.5L (34%)',
+    investedPct: 66,
+    compoundedPct: 34,
+    multiplier: '1.51x',
     svgPath: 'M 20 156 Q 165 112 320 66 T 490 24',
     svgArea: 'M 20 156 Q 165 112 320 66 T 490 24 L 490 180 L 20 180 Z',
+    investedLinePath: 'M 20 156 L 175 142 L 330 128 L 490 114',
     points: [
-      { year: '2023', value: '₹68.3L', x: 20, y: 156, detail: 'Portfolio Start' },
-      { year: '2024', value: '₹85.6L', x: 175, y: 112, detail: '+₹17.3L Gain' },
-      { year: '2025', value: '₹1.05 Cr', x: 330, y: 66, detail: 'Milestone 1 Cr' },
-      { year: 'Today (2026)', value: '₹1.24 Cr', x: 490, y: 24, detail: 'Current Vault' }
-    ]
-  },
-  '5Y': {
-    title: '5-Year Wealth Compounding Curve',
-    badge: 'Long-term Compounding',
-    growth: '+255.7% Total',
-    curNetWorth: '₹1,24,50,000',
-    cagr: '19.8% CAGR',
-    svgPath: 'M 20 166 Q 130 138 250 96 T 380 58 T 490 20',
-    svgArea: 'M 20 166 Q 130 138 250 96 T 380 58 T 490 20 L 490 180 L 20 180 Z',
-    points: [
-      { year: '2022', value: '₹35.0L', x: 20, y: 166, detail: 'Initial Foundation' },
-      { year: '2023', value: '₹54.2L', x: 135, y: 138, detail: 'Early Compounding' },
-      { year: '2024', value: '₹78.5L', x: 250, y: 96, detail: 'SIP Boost' },
-      { year: '2025', value: '₹98.2L', x: 375, y: 58, detail: 'Near ₹1 Cr' },
-      { year: 'Today (2026)', value: '₹1.24 Cr', x: 490, y: 20, detail: 'Current Vault' }
+      { year: '2023', value: '₹68.3L', x: 20, y: 156, detail: 'Portfolio Start', invested: '₹68.3L', compoundedGain: '₹0', gainPct: '0%' },
+      { year: '2024', value: '₹85.6L', x: 175, y: 112, detail: '+₹17.3L Gain', invested: '₹73.0L', compoundedGain: '+₹12.6L', gainPct: '+17.3%' },
+      { year: '2025', value: '₹1.05 Cr', x: 330, y: 66, detail: 'Milestone 1 Cr', invested: '₹78.0L', compoundedGain: '+₹27.0L', gainPct: '+34.6%' },
+      { year: '2026', value: '₹1.24 Cr', x: 490, y: 24, detail: 'Current Vault', invested: '₹82.0L', compoundedGain: '+₹42.5L', gainPct: '+51.8%' }
     ]
   },
   'FIRE': {
-    title: 'FIRE Freedom Projection (To 2035)',
-    badge: 'Financial Independence Target',
+    title: 'FIRE Freedom Projection (10-Yr+ Compounding)',
+    badge: 'Financial Independence Compounding',
     growth: '+287% Projected',
     curNetWorth: '₹4,80,00,000',
     cagr: '13.5% Expected',
+    investedTotal: '₹1.95 Cr (40%)',
+    compoundedTotal: '+₹2.85 Cr (60%)',
+    investedPct: 40,
+    compoundedPct: 60,
+    multiplier: '2.46x',
     svgPath: 'M 20 155 Q 135 120 250 82 T 375 46 T 490 14',
     svgArea: 'M 20 155 Q 135 120 250 82 T 375 46 T 490 14 L 490 180 L 20 180 Z',
+    investedLinePath: 'M 20 155 L 135 144 L 250 133 L 375 122 L 490 110',
     points: [
-      { year: '2026', value: '₹1.24 Cr', x: 20, y: 155, detail: 'Current Capital' },
-      { year: '2028', value: '₹1.85 Cr', x: 135, y: 120, detail: 'CoastFIRE Safe' },
-      { year: '2030', value: '₹2.65 Cr', x: 250, y: 82, detail: 'LeanFIRE Met' },
-      { year: '2032', value: '₹3.60 Cr', x: 375, y: 46, detail: 'Target Buffer' },
-      { year: '2035 FIRE', value: '₹4.80 Cr', x: 490, y: 14, detail: 'Full Freedom' }
+      { year: '2026', value: '₹1.24 Cr', x: 20, y: 155, detail: 'Current Capital', invested: '₹1.24 Cr', compoundedGain: '₹0', gainPct: '0%' },
+      { year: '2028', value: '₹1.85 Cr', x: 135, y: 120, detail: 'CoastFIRE Safe', invested: '₹1.38 Cr', compoundedGain: '+₹47.0L', gainPct: '+34.1%' },
+      { year: '2030', value: '₹2.65 Cr', x: 250, y: 82, detail: 'LeanFIRE Met', invested: '₹1.56 Cr', compoundedGain: '+₹1.09 Cr', gainPct: '+69.9%' },
+      { year: '2032', value: '₹3.60 Cr', x: 375, y: 46, detail: 'Target Buffer', invested: '₹1.74 Cr', compoundedGain: '+₹1.86 Cr', gainPct: '+106.9%' },
+      { year: '2036', value: '₹4.80 Cr', x: 490, y: 14, detail: 'Full Freedom', invested: '₹1.95 Cr', compoundedGain: '+₹2.85 Cr', gainPct: '+146.2%' }
     ]
   }
 };
@@ -365,10 +407,9 @@ export const LaunchPage: React.FC = () => {
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [activeAllocationTab, setActiveAllocationTab] = useState<'actual' | 'target'>('actual');
 
-  // Interactive Graph & Simulator States for Landing Page
-  const [graphHorizon, setGraphHorizon] = useState<'1Y' | '3Y' | '5Y' | 'FIRE'>('5Y');
-  const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(4);
-  const [interactiveSip, setInteractiveSip] = useState<number>(45000);
+  // Interactive 10-Year Compounding Graph States for Landing Page
+  const [graphHorizon, setGraphHorizon] = useState<'10Y' | '5Y' | '3Y' | 'FIRE'>('10Y');
+  const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(5);
 
   // Launch Page is dedicated Light Mode only.
   // Sets light-theme for landing page, and cleanly restores main page theme when leaving.
@@ -760,7 +801,7 @@ export const LaunchPage: React.FC = () => {
 
                         {/* Interactive Horizon Switcher Tabs */}
                         <div className="inline-flex p-1 rounded-xl bg-white border border-slate-200 shadow-sm gap-1 self-start sm:self-auto">
-                          {(['1Y', '3Y', '5Y', 'FIRE'] as const).map((hz) => (
+                          {(['10Y', '5Y', '3Y', 'FIRE'] as const).map((hz) => (
                             <button
                               key={hz}
                               onClick={() => {
@@ -773,7 +814,7 @@ export const LaunchPage: React.FC = () => {
                                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                               }`}
                             >
-                              {hz}
+                              {hz === '10Y' ? '10Y Compounding' : hz}
                             </button>
                           ))}
                         </div>
@@ -781,20 +822,33 @@ export const LaunchPage: React.FC = () => {
 
                       {/* SVG Animated Chart Preview */}
                       <div className="h-44 sm:h-52 w-full relative mt-2">
+                        {/* In-canvas Graph Legend */}
+                        <div className="absolute top-1 right-2 hidden sm:flex items-center gap-3 text-[10px] font-mono bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs z-10 pointer-events-none">
+                          <span className="flex items-center gap-1.5 text-emerald-800 font-semibold">
+                            <span className="w-2.5 h-1 rounded-full bg-emerald-600 inline-block" /> Compounded Wealth
+                          </span>
+                          <span className="flex items-center gap-1.5 text-slate-500 font-medium">
+                            <span className="w-2.5 h-0.5 border-t border-dashed border-slate-400 inline-block" /> Invested Base
+                          </span>
+                        </div>
                         
                         {/* Dynamic Tooltip on Hovered Point */}
                         {hoveredPointIdx !== null && HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx] && (
                           <div 
-                            className="absolute -top-2 transform -translate-x-1/2 -translate-y-full px-3 py-1.5 rounded-xl bg-slate-900 text-white text-[11px] font-mono shadow-xl border border-slate-700 pointer-events-none z-20 transition-all duration-200 flex items-center gap-2"
+                            className="absolute -top-2 transform -translate-x-1/2 -translate-y-full px-3 py-1.5 rounded-xl bg-slate-900 text-white text-[11px] font-mono shadow-xl border border-slate-700 pointer-events-none z-20 transition-all duration-200"
                             style={{ 
                               left: `${(HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx].x / 500) * 100}%` 
                             }}
                           >
-                            <span className="font-bold text-emerald-400">
-                              {HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx].value}
-                            </span>
-                            <span className="text-slate-400">·</span>
-                            <span>{HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx].detail}</span>
+                            <div className="flex items-center gap-1.5 font-bold text-emerald-400">
+                              <span>{HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx].value}</span>
+                              <span className="text-slate-400 font-normal">·</span>
+                              <span className="text-slate-200 font-normal">{HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx].year}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-300 mt-0.5 flex items-center gap-2">
+                              <span>Invested: {HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx].invested}</span>
+                              <span className="text-emerald-400 font-semibold">{HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx].gainPct}</span>
+                            </div>
                           </div>
                         )}
 
@@ -822,6 +876,16 @@ export const LaunchPage: React.FC = () => {
                             d={HERO_GRAPH_DATA[graphHorizon].svgArea}
                             fill="url(#growthGradDaylight)"
                             className="animate-graph-area"
+                          />
+
+                          {/* Invested Principal Baseline (Linear Track) */}
+                          <path
+                            d={HERO_GRAPH_DATA[graphHorizon].investedLinePath}
+                            fill="none"
+                            stroke="#94a3b8"
+                            strokeDasharray="4 4"
+                            strokeWidth="1.5"
+                            opacity="0.7"
                           />
 
                           {/* Vertical guide line on hovered milestone */}
@@ -942,28 +1006,58 @@ export const LaunchPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Interactive SIP Compounding Simulator Bar */}
-                    <div className="mt-4 pt-3 border-t border-slate-200/80 bg-white p-3 rounded-xl border">
+                    {/* 10-Year Compounding Breakdown & Power Metrics (Replacing SIP simulator) */}
+                    <div className="mt-4 pt-3 border-t border-slate-200/80 bg-white p-3 rounded-xl border shadow-xs">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                         <div className="flex items-center gap-2">
-                          <Calculator className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="font-bold text-slate-800">Interactive SIP Simulator:</span>
-                          <span className="font-mono text-emerald-700 font-bold">₹{interactiveSip.toLocaleString('en-IN')}/mo</span>
+                          <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200">
+                            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-slate-900 block sm:inline">10-Year Compounding Power:</span>{' '}
+                            <span className="font-mono text-emerald-700 font-bold">
+                              {HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx ?? HERO_GRAPH_DATA[graphHorizon].points.length - 1]?.value}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-mono ml-1.5 hidden sm:inline">
+                              ({HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx ?? HERO_GRAPH_DATA[graphHorizon].points.length - 1]?.detail})
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3 text-[11px] font-mono text-slate-600">
-                          <span>10-Yr Corpus: <strong className="text-emerald-700 font-bold">₹{((interactiveSip * 12 * 10 * 1.95) / 10000000).toFixed(2)} Cr</strong></span>
-                          <span>15-Yr Corpus: <strong className="text-emerald-700 font-bold">₹{((interactiveSip * 12 * 15 * 3.1) / 10000000).toFixed(2)} Cr</strong></span>
+                        <div className="flex items-center gap-2.5 text-[11px] font-mono text-slate-600">
+                          <span>Invested: <strong className="text-slate-800 font-bold">{HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx ?? HERO_GRAPH_DATA[graphHorizon].points.length - 1]?.invested}</strong></span>
+                          <span className="text-slate-300">|</span>
+                          <span>Gain: <strong className="text-emerald-700 font-bold">{HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx ?? HERO_GRAPH_DATA[graphHorizon].points.length - 1]?.compoundedGain}</strong></span>
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200">
+                            {HERO_GRAPH_DATA[graphHorizon].points[hoveredPointIdx ?? HERO_GRAPH_DATA[graphHorizon].points.length - 1]?.gainPct}
+                          </span>
                         </div>
                       </div>
-                      <input
-                        type="range"
-                        min="10000"
-                        max="150000"
-                        step="5000"
-                        value={interactiveSip}
-                        onChange={(e) => setInteractiveSip(Number(e.target.value))}
-                        className="w-full mt-2 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
-                      />
+
+                      {/* Visual Compounding Wedge Ratio Bar */}
+                      <div className="mt-2.5 pt-2 border-t border-slate-100">
+                        <div className="flex justify-between items-center text-[10px] font-mono text-slate-500 mb-1">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-slate-400 inline-block" />
+                            Invested Capital: <strong className="text-slate-700">{HERO_GRAPH_DATA[graphHorizon].investedTotal}</strong>
+                          </span>
+                          <span className="flex items-center gap-1.5 font-bold text-emerald-700">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                            Pure Compounding: <strong>{HERO_GRAPH_DATA[graphHorizon].compoundedTotal}</strong> · {HERO_GRAPH_DATA[graphHorizon].multiplier} Multiplier
+                          </span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
+                          <div 
+                            className="h-full bg-slate-400 transition-all duration-300"
+                            style={{ width: `${HERO_GRAPH_DATA[graphHorizon].investedPct}%` }}
+                            title={`Invested Capital: ${HERO_GRAPH_DATA[graphHorizon].investedPct}%`}
+                          />
+                          <div 
+                            className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+                            style={{ width: `${HERO_GRAPH_DATA[graphHorizon].compoundedPct}%` }}
+                            title={`Compounding Wealth: ${HERO_GRAPH_DATA[graphHorizon].compoundedPct}%`}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -1521,7 +1615,7 @@ export const LaunchPage: React.FC = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => enterTestMode('user')}
+                  onClick={() => enterTestMode('user', { calculatorOnly: true })}
                   className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all cursor-pointer shrink-0 shadow-sm"
                 >
                   Test Calculator
@@ -1846,7 +1940,7 @@ export const LaunchPage: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => enterTestMode('user')}
+                onClick={() => enterTestMode('user', { calculatorOnly: true })}
                 className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-sm"
               >
                 <span>Explore Calculators</span>

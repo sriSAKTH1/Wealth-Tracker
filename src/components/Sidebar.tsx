@@ -31,7 +31,7 @@ export const Sidebar: React.FC = () => {
     toggleSidebar
   } = useFinance();
 
-  const { isAdmin } = useAuth();
+  const { isAdmin, isCalculatorOnlyMode, openAuthModal, showNotification } = useAuth();
 
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
@@ -57,6 +57,14 @@ export const Sidebar: React.FC = () => {
   const toolNavItems = allToolNavItems.filter(item => !item.adminOnly || isAdmin);
 
   const handleNavClick = (id: MainTab) => {
+    if (isCalculatorOnlyMode && id !== 'calculators') {
+      openAuthModal('register');
+      showNotification('Sign up or log in to access the full wealth dashboard, net worth tracking, and portfolio tools.');
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+        setIsSidebarOpen(false);
+      }
+      return;
+    }
     setActiveTab(id);
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       setIsSidebarOpen(false);

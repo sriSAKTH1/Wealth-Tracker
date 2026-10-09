@@ -40,12 +40,23 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   signInWithGoogleDemo: (customEmail?: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
-  enterTestMode: (role?: 'user' | 'admin') => void;
+  enterTestMode: (role?: 'user' | 'admin', options?: { calculatorOnly?: boolean }) => void;
+  // Demo Session States & Notifications
+  isDemoMode: boolean;
+  isCalculatorOnlyMode: boolean;
+  demoSecondsRemaining: number;
+  globalNotification: string | null;
+  showNotification: (msg: string) => void;
+  clearNotification: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const LOCAL_AUTH_USER_KEY = 'app_auth_active_user_v5';
+const DEMO_SESSION_ACTIVE_KEY = 'wealth_demo_session_active';
+const DEMO_SESSION_START_KEY = 'wealth_demo_session_start';
+const DEMO_CALC_ONLY_KEY = 'wealth_demo_calc_only';
+const DEMO_TOTAL_DURATION_SEC = 300; // 5 minutes exactly
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
@@ -65,6 +76,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+
+  // Demo Countdown & Restriction States
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(() => {
+    return localStorage.getItem(DEMO_SESSION_ACTIVE_KEY) === 'true';
+  });
+  const [isCalculatorOnlyMode, setIsCalculatorOnlyMode] = useState<boolean>(() => {
+    return localStorage.getItem(DEMO_CALC_ONLY_KEY) === 'true';
+  });
+  const [demoSecondsRemaining, setDemoSecondsRemaining] = useState<number>(() => {
+    const isAct = localStorage.getItem(DEMO_SESSION_ACTIVE_KEY) === 'true';
+    if (!isAct) return DEMO_TOTAL_DURATION_SEC;
+    const startStr = localStorage.getItem(DEMO_SESSION_START_KEY);
+    if (!startStr) return DEMO_TOTAL_DURATION_SEC;
+    const elapsed = Math.floor((Date.now() - Number(startStr)) / 1000);
+    return Math.max(0, DEMO_TOTAL_DURATION_SEC - elapsed);
+  });
+
+  // Global Toast / Action Notification Banner
+  const [globalNotification, setGlobalNotification] = useState<string | null>(null);
+  const notificationTimerRef = React.useRef<any>(null);
+
+  const showNotification = (msg: string) => {
+    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+    setGlobalNotification(msg);
+    notificationTimerRef.current = setTimeout(() => {
+      setGlobalNotification(null);
+    }, 5000);
+  };
+
+  const clearNotification = () => {
+    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+    setGlobalNotification(null);
+  };
 
   // Synchronize Firebase Auth state
   useEffect(() => {
@@ -358,24 +402,79 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn('Sign out error:', e);
     }
     setCurrentUser(null);
+    setIsDemoMode(false);
+    setIsCalculatorOnlyMode(false);
+    setDemoSecondsRemaining(DEMO_TOTAL_DURATION_SEC);
     localStorage.removeItem(LOCAL_AUTH_USER_KEY);
+    localStorage.removeItem(DEMO_SESSION_ACTIVE_KEY);
+    localStorage.removeItem(DEMO_SESSION_START_KEY);
+    localStorage.removeItem(DEMO_CALC_ONLY_KEY);
   };
 
-  const enterTestMode = (targetRole: 'user' | 'admin' = 'user') => {
+  const enterTestMode = (
+    targetRole: 'user' | 'admin' = 'user',
+    options?: { calculatorOnly?: boolean }
+  ) => {
     const isTargetAdmin = targetRole === 'admin';
     const now = new Date().toISOString();
+    const startTime = Date.now();
+    const isCalcOnly = Boolean(options?.calculatorOnly);
+
     const profile: AppUserProfile = {
       id: isTargetAdmin ? 'user-sudharsan' : 'demo.wealthtracker.com',
       email: isTargetAdmin ? 'sudharsan@gmail.com' : 'demo@wealthtracker.com',
-      name: isTargetAdmin ? 'Sudharsan M. (Admin)' : 'Demo Client',
+      name: isTargetAdmin ? 'Sudharsan M. (Admin)' : (isCalcOnly ? 'Calculator Demo User' : 'Demo Client'),
       role: isTargetAdmin ? 'admin' : 'user',
-      deviceInfo: getClientDeviceName() + ' • Client Vault',
+      deviceInfo: getClientDeviceName() + ' • Demo Sandbox',
       lastLoginAt: now,
       createdAt: now
     };
+
+    setIsDemoMode(true);
+    setIsCalculatorOnlyMode(isCalcOnly);
+    setDemoSecondsRemaining(DEMO_TOTAL_DURATION_SEC);
+
+    localStorage.setItem(DEMO_SESSION_ACTIVE_KEY, 'true');
+    localStorage.setItem(DEMO_SESSION_START_KEY, String(startTime));
+    if (isCalcOnly) {
+      localStorage.setItem(DEMO_CALC_ONLY_KEY, 'true');
+    } else {
+      localStorage.removeItem(DEMO_CALC_ONLY_KEY);
+    }
+
     setCurrentUser(profile);
     localStorage.setItem(LOCAL_AUTH_USER_KEY, JSON.stringify(profile));
+
+    if (isCalcOnly) {
+      showNotification('5-Minute Calculator Trial Active · Full vault requires sign up');
+    } else {
+      showNotification('5-Minute Demo Session Active · View-Only Mode');
+    }
   };
+
+  // 5-Minute Demo Countdown Timer
+  useEffect(() => {
+    if (!isDemoMode || !currentUser) return;
+
+    const interval = setInterval(() => {
+      const startStr = localStorage.getItem(DEMO_SESSION_START_KEY);
+      const start = startStr ? Number(startStr) : Date.now();
+      const elapsed = Math.floor((Date.now() - start) / 1000);
+      const remaining = Math.max(0, DEMO_TOTAL_DURATION_SEC - elapsed);
+
+      setDemoSecondsRemaining(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+        // Auto expire demo after 5 minutes
+        signOut();
+        openAuthModal('register');
+        showNotification('Demo session expired (5 minutes completed). Sign up to create your own permanent vault.');
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isDemoMode, currentUser]);
 
   const role: 'admin' | 'user' = currentUser?.role === 'admin' ? 'admin' : 'user';
   const isAdmin = role === 'admin';
@@ -400,7 +499,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signInWithGoogle,
         signInWithGoogleDemo,
         signOut,
-        enterTestMode
+        enterTestMode,
+        isDemoMode,
+        isCalculatorOnlyMode,
+        demoSecondsRemaining,
+        globalNotification,
+        showNotification,
+        clearNotification
       }}
     >
       {children}

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { useAuth } from './AuthContext';
 import { 
   Asset, 
   Liability, 
@@ -234,8 +235,39 @@ const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 const LOCAL_STORAGE_KEY = 'aura_wealth_data_v2';
 
 export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { 
+    currentUser, 
+    isDemoMode, 
+    isCalculatorOnlyMode, 
+    openAuthModal, 
+    showNotification 
+  } = useAuth();
+
+  const isDemoUser = !currentUser || currentUser.id === 'demo.wealthtracker.com' || isDemoMode;
+  const userVaultPrefix = isDemoUser 
+    ? 'aura_wealth_demo_v2' 
+    : `aura_vault_user_${currentUser?.id || 'guest'}_v2`;
+
   // Navigation State
-  const [activeTab, setActiveTab] = useState<MainTab>('overview');
+  const [activeTab, setActiveTabState] = useState<MainTab>(() => {
+    return isCalculatorOnlyMode ? 'calculators' : 'overview';
+  });
+
+  const setActiveTab = (tab: MainTab) => {
+    if (isCalculatorOnlyMode && tab !== 'calculators') {
+      openAuthModal('register');
+      showNotification('Sign up or log in to access the full wealth dashboard, net worth tracking, and portfolio tools.');
+      return;
+    }
+    setActiveTabState(tab);
+  };
+
+  useEffect(() => {
+    if (isCalculatorOnlyMode && activeTab !== 'calculators') {
+      setActiveTabState('calculators');
+    }
+  }, [isCalculatorOnlyMode]);
+
   const [wealthSubTab, setWealthSubTab] = useState<WealthSubTab>('assets');
   const [goalsSubTab, setGoalsSubTab] = useState<GoalsSubTab>('essential');
   const [accountSubTab, setAccountSubTab] = useState<AccountSubTab>('money');
@@ -527,34 +559,95 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     loadStoredArray(`${LOCAL_STORAGE_KEY}_history`, INITIAL_NET_WORTH_HISTORY)
   );
 
-  // Sync to local storage
+  // User Vault State Synchronization & Brand-New User Zero-Initialization
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_assets`, JSON.stringify(assets));
-  }, [assets]);
+    if (!currentUser) return;
+
+    if (isDemoUser) {
+      // Demo Mode: Load sample showcase portfolio
+      const loaded = loadStoredArray<Asset>(`${userVaultPrefix}_assets`, INITIAL_ASSETS);
+      setAssets(loaded);
+      setLiabilities(loadStoredArray(`${userVaultPrefix}_liabilities`, INITIAL_LIABILITIES));
+      setAccounts(loadStoredArray(`${userVaultPrefix}_accounts`, INITIAL_ACCOUNTS));
+      setTransactions(loadStoredArray(`${userVaultPrefix}_transactions`, INITIAL_TRANSACTIONS));
+      setBudgets(loadStoredArray(`${userVaultPrefix}_budgets`, INITIAL_BUDGETS));
+      setEssentialGoals(loadStoredArray(`${userVaultPrefix}_essential_goals`, INITIAL_ESSENTIAL_GOALS));
+      setCustomGoals(loadStoredArray(`${userVaultPrefix}_custom_goals`, INITIAL_CUSTOM_GOALS));
+      setScheduledItems(loadStoredArray(`${userVaultPrefix}_scheduled`, INITIAL_SCHEDULED_ITEMS));
+      setNetWorthHistory(loadStoredArray(`${userVaultPrefix}_history`, INITIAL_NET_WORTH_HISTORY));
+    } else {
+      // Real authenticated user: check if user's personal vault is already initialized
+      const isInitialized = localStorage.getItem(`${userVaultPrefix}_initialized`);
+      if (!isInitialized) {
+        // Brand new registered user: fully empty, all zero!
+        const zeroHistory = [
+          { date: new Date().toISOString().split('T')[0], netWorth: 0, totalAssets: 0, totalLiabilities: 0 }
+        ];
+        setAssets([]);
+        setLiabilities([]);
+        setAccounts([]);
+        setTransactions([]);
+        setBudgets([]);
+        setEssentialGoals([]);
+        setCustomGoals([]);
+        setScheduledItems([]);
+        setNetWorthHistory(zeroHistory);
+
+        localStorage.setItem(`${userVaultPrefix}_initialized`, 'true');
+        localStorage.setItem(`${userVaultPrefix}_assets`, JSON.stringify([]));
+        localStorage.setItem(`${userVaultPrefix}_liabilities`, JSON.stringify([]));
+        localStorage.setItem(`${userVaultPrefix}_accounts`, JSON.stringify([]));
+        localStorage.setItem(`${userVaultPrefix}_transactions`, JSON.stringify([]));
+        localStorage.setItem(`${userVaultPrefix}_budgets`, JSON.stringify([]));
+        localStorage.setItem(`${userVaultPrefix}_essential_goals`, JSON.stringify([]));
+        localStorage.setItem(`${userVaultPrefix}_custom_goals`, JSON.stringify([]));
+        localStorage.setItem(`${userVaultPrefix}_scheduled`, JSON.stringify([]));
+        localStorage.setItem(`${userVaultPrefix}_history`, JSON.stringify(zeroHistory));
+      } else {
+        // Returning user: Load saved personal records
+        setAssets(loadStoredArray<Asset>(`${userVaultPrefix}_assets`, []));
+        setLiabilities(loadStoredArray(`${userVaultPrefix}_liabilities`, []));
+        setAccounts(loadStoredArray(`${userVaultPrefix}_accounts`, []));
+        setTransactions(loadStoredArray(`${userVaultPrefix}_transactions`, []));
+        setBudgets(loadStoredArray(`${userVaultPrefix}_budgets`, []));
+        setEssentialGoals(loadStoredArray(`${userVaultPrefix}_essential_goals`, []));
+        setCustomGoals(loadStoredArray(`${userVaultPrefix}_custom_goals`, []));
+        setScheduledItems(loadStoredArray(`${userVaultPrefix}_scheduled`, []));
+        setNetWorthHistory(loadStoredArray(`${userVaultPrefix}_history`, [
+          { date: new Date().toISOString().split('T')[0], netWorth: 0, totalAssets: 0, totalLiabilities: 0 }
+        ]));
+      }
+    }
+  }, [currentUser?.id, isDemoMode, userVaultPrefix]);
+
+  // Sync state to local storage under user-isolated vault key
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_liabilities`, JSON.stringify(liabilities));
-  }, [liabilities]);
+    localStorage.setItem(`${userVaultPrefix}_assets`, JSON.stringify(assets));
+  }, [assets, userVaultPrefix]);
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_accounts`, JSON.stringify(accounts));
-  }, [accounts]);
+    localStorage.setItem(`${userVaultPrefix}_liabilities`, JSON.stringify(liabilities));
+  }, [liabilities, userVaultPrefix]);
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_transactions`, JSON.stringify(transactions));
-  }, [transactions]);
+    localStorage.setItem(`${userVaultPrefix}_accounts`, JSON.stringify(accounts));
+  }, [accounts, userVaultPrefix]);
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_budgets`, JSON.stringify(budgets));
-  }, [budgets]);
+    localStorage.setItem(`${userVaultPrefix}_transactions`, JSON.stringify(transactions));
+  }, [transactions, userVaultPrefix]);
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_essential_goals`, JSON.stringify(essentialGoals));
-  }, [essentialGoals]);
+    localStorage.setItem(`${userVaultPrefix}_budgets`, JSON.stringify(budgets));
+  }, [budgets, userVaultPrefix]);
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_custom_goals`, JSON.stringify(customGoals));
-  }, [customGoals]);
+    localStorage.setItem(`${userVaultPrefix}_essential_goals`, JSON.stringify(essentialGoals));
+  }, [essentialGoals, userVaultPrefix]);
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_scheduled`, JSON.stringify(scheduledItems));
-  }, [scheduledItems]);
+    localStorage.setItem(`${userVaultPrefix}_custom_goals`, JSON.stringify(customGoals));
+  }, [customGoals, userVaultPrefix]);
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_history`, JSON.stringify(netWorthHistory));
-  }, [netWorthHistory]);
+    localStorage.setItem(`${userVaultPrefix}_scheduled`, JSON.stringify(scheduledItems));
+  }, [scheduledItems, userVaultPrefix]);
+  useEffect(() => {
+    localStorage.setItem(`${userVaultPrefix}_history`, JSON.stringify(netWorthHistory));
+  }, [netWorthHistory, userVaultPrefix]);
 
   // Local-First Privacy Storage State (Zero-knowledge: No financial data sent to remote database)
   const [isCloudSynced, setIsCloudSynced] = useState<boolean>(true);
@@ -676,6 +769,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const openQuickAdd = (type: 'income' | 'expense' | 'asset' | 'liability' = 'income') => {
+    if (isDemoMode) {
+      openAuthModal('register');
+      showNotification('Sign up and act.');
+      return;
+    }
     if (isOnboardingOpen) {
       setIsOnboardingOpen(false);
     }
@@ -963,6 +1061,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Asset CRUD
   const addAsset = (data: Omit<Asset, 'id' | 'lastUpdated'>) => {
+    if (isDemoMode) {
+      openAuthModal('register');
+      showNotification('Sign up and act.');
+      return;
+    }
     const today = new Date().toISOString().split('T')[0];
 
     // Check if user already holds this asset by masterAssetId, ISIN, or (ticker + exchange)
@@ -1025,6 +1128,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Liability CRUD
   const addLiability = (data: Omit<Liability, 'id' | 'lastUpdated'>) => {
+    if (isDemoMode) {
+      openAuthModal('register');
+      showNotification('Sign up and act.');
+      return;
+    }
     const newLiab: Liability = {
       ...data,
       currency: data.currency || currency,
@@ -1044,6 +1152,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Transaction CRUD (100% Local-First Privacy)
   const addTransaction = (data: Omit<Transaction, 'id'>) => {
+    if (isDemoMode) {
+      openAuthModal('register');
+      showNotification('Sign up and act.');
+      return;
+    }
     const newTx: Transaction = {
       ...data,
       currency: data.currency || currency,
@@ -1073,6 +1186,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Account CRUD
   const addAccount = (data: Omit<AccountItem, 'id' | 'lastSynced'>) => {
+    if (isDemoMode) {
+      openAuthModal('register');
+      showNotification('Sign up and act.');
+      return;
+    }
     const newAcc: AccountItem = {
       ...data,
       currency: data.currency || currency,

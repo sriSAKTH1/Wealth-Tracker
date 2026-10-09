@@ -11,8 +11,10 @@ import {
   HelpCircle,
   Clock,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Lock
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { ThankYouFeedbackModal } from '../ThankYouFeedbackModal';
 
 interface FeedbackItem {
@@ -72,6 +74,9 @@ export const ToolsFeedbackSection: React.FC<ToolsFeedbackSectionProps> = ({
   isLight,
   onSelectCalculator,
 }) => {
+  const { isDemoMode, isCalculatorOnlyMode, openAuthModal, showNotification } = useAuth();
+  const isSubmissionLocked = isDemoMode || isCalculatorOnlyMode;
+
   // Form State
   const [rating, setRating] = useState<number>(5);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
@@ -127,6 +132,11 @@ export const ToolsFeedbackSection: React.FC<ToolsFeedbackSectionProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmissionLocked) {
+      openAuthModal('register');
+      showNotification('Sign up and act.');
+      return;
+    }
     if (!title.trim() || !message.trim()) return;
 
     const newItem: FeedbackItem = {
@@ -177,6 +187,11 @@ export const ToolsFeedbackSection: React.FC<ToolsFeedbackSectionProps> = ({
   };
 
   const handleToggleUpvote = (ideaId: string) => {
+    if (isSubmissionLocked) {
+      openAuthModal('register');
+      showNotification('Sign up and act.');
+      return;
+    }
     const current = !!upvotedIdeas[ideaId];
     const updated = { ...upvotedIdeas, [ideaId]: !current };
     setUpvotedIdeas(updated);
@@ -236,6 +251,23 @@ export const ToolsFeedbackSection: React.FC<ToolsFeedbackSectionProps> = ({
             </span>
             <h3 className="text-base font-bold mt-1">What would make our calculators even better for you?</h3>
           </div>
+
+          {/* Locked in Demo/Trial Mode */}
+          {isSubmissionLocked && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5 text-amber-300 font-medium">
+                <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>Feature requests and community idea voting are locked in trial mode.</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => openAuthModal('register')}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold transition-all cursor-pointer shrink-0 shadow-xs active:scale-95"
+              >
+                Sign Up and Act
+              </button>
+            </div>
+          )}
 
           {/* Success Banner */}
           {isSubmittedSuccess && (

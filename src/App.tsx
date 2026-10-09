@@ -29,6 +29,8 @@ import { AdminPanelView } from './components/views/AdminPanelView';
 import { NewsUpdatesView } from './components/views/NewsUpdatesView';
 import { AppFooter } from './components/AppFooter';
 import { LaunchPage } from './components/LaunchPage';
+import { DemoCountdownBanner } from './components/common/DemoCountdownBanner';
+import { GlobalToast } from './components/common/GlobalToast';
 
 const MainLayout: React.FC = () => {
   const { activeTab, setActiveTab, theme, accentColor, isMobileFrameSimulated, openQuickAdd, transactions = [] } = useFinance();
@@ -115,6 +117,9 @@ const MainLayout: React.FC = () => {
 
       {/* Main Right Column: Top Navbar + Scrollable Content */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        {/* 5-Minute Demo Session Countdown Banner */}
+        <DemoCountdownBanner />
+
         {/* Top Navbar */}
         <Navbar />
 
@@ -235,6 +240,7 @@ export default function App() {
       <FinanceProvider>
         <RootAppContent />
         <AuthModal />
+        <GlobalToast />
         <TextHighlightController />
       </FinanceProvider>
     </AuthProvider>
