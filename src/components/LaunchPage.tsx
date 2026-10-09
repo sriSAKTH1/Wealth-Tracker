@@ -433,42 +433,49 @@ export const LaunchPage: React.FC = () => {
 
       {/* =========================================================================
           TOP HEADER BAR: Clean brand logo on left, Try Demo / Sign Up / Login on top right only
+          Glass finish removed so the background and floating icons show through cleanly
           ========================================================================= */}
-      <header className="sticky top-0 z-50 w-full bg-white/85 backdrop-blur-md border-b border-slate-200/80 transition-colors">
+      <header className="sticky top-0 z-50 w-full bg-transparent backdrop-blur-none border-b border-transparent shadow-none transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
-          {/* Brand Logo (Transparent SVG, no white background) */}
+          {/* Brand Logo & Name (Transparent SVG, zero white box background artifact) */}
           <a
             href="#root"
             onClick={(e) => {
               e.preventDefault();
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className="flex items-center gap-2.5 sm:gap-3 group focus:outline-none cursor-pointer"
+            className="flex items-center gap-2.5 sm:gap-3.5 group focus:outline-none cursor-pointer select-none"
             aria-label="FIX Wealth Home"
           >
-            <div className="relative flex items-center justify-center">
-              <FixWealthLogo className="w-8 h-8 sm:w-9 sm:h-9" showRoots={true} interactive={true} />
+            <div className="relative flex items-center justify-center shrink-0">
+              <FixWealthLogo className="w-9 h-9 sm:w-10 sm:h-10" showRoots={true} interactive={true} />
             </div>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight leading-none group-hover:text-emerald-700 transition-colors">
-                FIX Wealth
-              </span>
-              <span className="text-[10px] font-medium text-slate-500 tracking-wider uppercase mt-0.5 hidden xs:inline-block">
+            <div className="flex flex-col justify-center">
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-base sm:text-xl text-slate-900 tracking-tight leading-none group-hover:text-emerald-700 transition-colors">
+                  FIX Wealth
+                </span>
+                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-100/80 text-emerald-800 border border-emerald-300/60 hidden sm:inline-block">
+                  ₹-Native
+                </span>
+              </div>
+              <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 tracking-wide uppercase mt-0.5 hidden xs:inline-block">
                 Financial Intelligence
               </span>
             </div>
           </a>
 
-          {/* Top Right: Try Demo, signup and login only */}
+          {/* Top Right: Try Demo, Login, and Sign Up actions */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Try Demo */}
             <button
               type="button"
               id="btn-launch-try-demo"
               onClick={() => enterTestMode('user')}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center gap-1.5"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl text-emerald-800 bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-200/90 shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              title="Explore full dashboard with dummy data in 1 click"
             >
-              <FlaskConical className="w-3.5 h-3.5 text-emerald-600" />
+              <FlaskConical className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
               <span>Try Demo</span>
             </button>
 
@@ -477,7 +484,7 @@ export const LaunchPage: React.FC = () => {
               type="button"
               id="btn-launch-login"
               onClick={() => openAuthModal('login')}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+              className="inline-flex items-center justify-center px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 border border-transparent hover:border-slate-200 transition-all cursor-pointer"
             >
               Login
             </button>
@@ -487,7 +494,7 @@ export const LaunchPage: React.FC = () => {
               type="button"
               id="btn-launch-signup"
               onClick={() => openAuthModal('register')}
-              className="px-3.5 sm:px-4.5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm shadow-emerald-600/25 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center justify-center px-3.5 sm:px-5 py-2 text-xs sm:text-sm font-bold rounded-xl text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-sm shadow-emerald-600/25 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               Sign Up
             </button>
@@ -581,6 +588,19 @@ export const LaunchPage: React.FC = () => {
           </div>
 
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            {/* 0% Tracking & 100% Private Local Storage Trust Badge */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-200/90 bg-emerald-50/90 text-emerald-950 text-xs sm:text-sm font-medium mb-6 shadow-xs select-none">
+              <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-emerald-600 text-white font-mono text-[11px] font-bold">
+                0%
+              </span>
+              <span className="font-semibold text-slate-800">Zero Data Sold</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span className="text-emerald-700 font-semibold flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                100% Private Local Storage
+              </span>
+            </div>
+
             {/* Hero Heading (Strict Light Mode) */}
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1] max-w-4xl mx-auto">
               Your Complete Wealth.{' '}
