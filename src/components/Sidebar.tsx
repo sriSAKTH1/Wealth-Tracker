@@ -19,6 +19,7 @@ import { useFinance } from '../context/FinanceContext';
 import { useAuth } from '../context/AuthContext';
 import { MainTab } from '../types';
 import { SidebarProfile } from './SidebarProfile';
+import { FixWealthLogo } from './common/FixWealthLogo';
 
 export const Sidebar: React.FC = () => {
   const { 
@@ -111,27 +112,27 @@ export const Sidebar: React.FC = () => {
                 onClick={() => handleNavClick('overview')}
                 className="flex items-center gap-3 cursor-pointer group min-w-0"
               >
-                <div className="w-9.5 h-9.5 rounded-xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/25 group-hover:scale-105 transition-transform ring-1 ring-blue-400/30 shrink-0">
-                  <Sparkles className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/10 via-emerald-600/15 to-teal-700/20 flex items-center justify-center p-1 group-hover:scale-105 transition-transform ring-1 ring-emerald-500/30 shrink-0">
+                  <FixWealthLogo className="w-8 h-8" showRoots={true} />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className={`font-black text-xl sm:text-[22px] tracking-tight group-hover:text-blue-500 transition-colors ${
+                    <span className={`font-black text-xl sm:text-[22px] tracking-tight group-hover:text-emerald-500 transition-colors ${
                       isLight ? 'text-slate-900' : 'text-white'
                     }`}>
                       FIX
                     </span>
-                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-500 border border-blue-500/30 tracking-wider">
+                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 tracking-wider">
                       WEALTH
                     </span>
                   </div>
                   {/* Palette Dots */}
                   <div className="flex items-center gap-1.5 mt-1">
-                    <div className="w-2 h-2 rounded-full bg-[#F59E0B]" />
-                    <div className="w-2 h-2 rounded-full bg-[#FA5F55]" />
-                    <div className="w-2 h-2 rounded-full bg-[#3B82F6]" />
                     <div className="w-2 h-2 rounded-full bg-[#10B981]" />
+                    <div className="w-2 h-2 rounded-full bg-[#F59E0B]" />
+                    <div className="w-2 h-2 rounded-full bg-[#3B82F6]" />
                     <div className="w-2 h-2 rounded-full bg-[#8B5CF6]" />
+                    <div className="w-2 h-2 rounded-full bg-[#FA5F55]" />
                   </div>
                 </div>
               </div>
@@ -159,9 +160,9 @@ export const Sidebar: React.FC = () => {
                 onClick={() => setIsSidebarOpen(true)}
                 title="Open sidebar"
                 aria-label="Open sidebar"
-                className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/25 hover:scale-110 active:scale-95 transition-all ring-1 ring-blue-400/30 cursor-pointer group"
+                className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500/10 via-emerald-600/15 to-teal-700/20 flex items-center justify-center p-1 hover:scale-110 active:scale-95 transition-all ring-1 ring-emerald-500/30 cursor-pointer group"
               >
-                <Sparkles className="w-5 h-5 text-white group-hover:rotate-12 transition-transform" />
+                <FixWealthLogo className="w-9 h-9" showRoots={true} />
               </button>
             </div>
           )}

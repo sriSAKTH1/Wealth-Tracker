@@ -26,7 +26,6 @@ import {
   FileSpreadsheet,
   Download,
   Trash2,
-  Menu,
   X,
   Target,
   Clock,
@@ -46,6 +45,7 @@ import {
   Smartphone
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { FixWealthLogo } from './common/FixWealthLogo';
 
 // Floating Translucent Financial Icons for Hero Entry (Matching reference line-art icons)
 interface FloatingFinanceIcon {
@@ -361,34 +361,14 @@ const HERO_GRAPH_DATA: Record<'1Y' | '3Y' | '5Y' | 'FIRE', GraphTrajectory> = {
 export const LaunchPage: React.FC = () => {
   const { openAuthModal, enterTestMode } = useAuth();
 
-  // Navigation and popover states
-  const [isTestMenuOpen, setIsTestMenuOpen] = useState(false);
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  // Dialog and allocation states
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [activeAllocationTab, setActiveAllocationTab] = useState<'actual' | 'target'>('actual');
-  const [scrolled, setScrolled] = useState(false);
 
   // Interactive Graph & Simulator States for Landing Page
   const [graphHorizon, setGraphHorizon] = useState<'1Y' | '3Y' | '5Y' | 'FIRE'>('5Y');
   const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(4);
   const [interactiveSip, setInteractiveSip] = useState<number>(45000);
-
-  const testMenuRef = useRef<HTMLDivElement>(null);
-
-  // Close test dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (testMenuRef.current && !testMenuRef.current.contains(event.target as Node)) {
-        setIsTestMenuOpen(false);
-      }
-    };
-    if (isTestMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isTestMenuOpen]);
 
   // Launch Page is dedicated Light Mode only.
   // Sets light-theme for landing page, and cleanly restores main page theme when leaving.
@@ -426,17 +406,7 @@ export const LaunchPage: React.FC = () => {
     };
   }, []);
 
-  // Track header scroll state for sticky backdrop saturation
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   const scrollToSection = (id: string) => {
-    setIsMobileNavOpen(false);
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -462,246 +432,67 @@ export const LaunchPage: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          1. STICKY HEADER NAVIGATION (Light Mode Only)
+          TOP HEADER BAR: Clean brand logo on left, Try Demo / Sign Up / Login on top right only
           ========================================================================= */}
-      <header className={`sticky top-0 z-50 w-full transition-all duration-300 border-b ${
-        scrolled
-          ? 'bg-white/95 backdrop-blur-xl border-slate-200 shadow-sm shadow-slate-900/5'
-          : 'bg-white/85 backdrop-blur-md border-slate-200/80'
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
-          
-          {/* Brand Logo & Name */}
-          <div className="flex items-center gap-3">
-            <a href="#" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 ring-1 ring-emerald-500/30 transition-transform group-hover:scale-105 shrink-0">
-                <Coins className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 group-hover:text-emerald-600 transition-colors">
-                    FIX Wealth
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 hidden sm:inline-flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    ₹ INR Native
-                  </span>
-                </div>
-              </div>
-            </a>
-          </div>
-
-          {/* Desktop Center Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1 text-xs font-semibold text-slate-600">
-            <button 
-              onClick={() => scrollToSection('overview')}
-              className="px-3 py-1.5 rounded-lg hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              Overview
-            </button>
-            <button 
-              onClick={() => scrollToSection('wealth')}
-              className="px-3 py-1.5 rounded-lg hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              Wealth
-            </button>
-            <button 
-              onClick={() => scrollToSection('goals')}
-              className="px-3 py-1.5 rounded-lg hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              Goals
-            </button>
-            <button 
-              onClick={() => scrollToSection('cashflow')}
-              className="px-3 py-1.5 rounded-lg hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              Cash Flow
-            </button>
-            <button 
-              onClick={() => scrollToSection('calculators')}
-              className="px-3 py-1.5 rounded-lg hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              Calculators
-            </button>
-            <button 
-              onClick={() => scrollToSection('security')}
-              className="px-3 py-1.5 rounded-lg hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              Security
-            </button>
-          </nav>
-
-          {/* Header Action Buttons & Privacy Pill */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Small Privacy Pill Badge */}
-            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[11px] font-mono text-emerald-700">
-              <Lock className="w-3 h-3 text-emerald-600" />
-              <span>Local Privacy</span>
+      <header className="sticky top-0 z-50 w-full bg-white/85 backdrop-blur-md border-b border-slate-200/80 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+          {/* Brand Logo (Transparent SVG, no white background) */}
+          <a
+            href="#root"
+            onClick={(e) => {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="flex items-center gap-2.5 sm:gap-3 group focus:outline-none cursor-pointer"
+            aria-label="FIX Wealth Home"
+          >
+            <div className="relative flex items-center justify-center">
+              <FixWealthLogo className="w-8 h-8 sm:w-9 sm:h-9" showRoots={true} interactive={true} />
             </div>
-
-            {/* Try Demo Dropdown Trigger */}
-            <div className="relative" ref={testMenuRef}>
-              <button
-                type="button"
-                id="btn-launch-test-mode"
-                onClick={() => setIsTestMenuOpen(!isTestMenuOpen)}
-                className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
-                title="Explore 1-Click Interactive Demo"
-              >
-                <FlaskConical className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Try Demo</span>
-                <ChevronDown className={`w-3 h-3 transition-transform text-slate-400 ${isTestMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isTestMenuOpen && (
-                <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Instant 1-Click Demo Sandbox
-                  </div>
-                  <button
-                    type="button"
-                    id="btn-header-test-user"
-                    onClick={() => {
-                      setIsTestMenuOpen(false);
-                      enterTestMode('user');
-                    }}
-                    className="w-full text-left p-2.5 rounded-xl transition-all cursor-pointer flex items-start gap-2.5 hover:bg-slate-50 text-slate-700 hover:text-slate-900"
-                  >
-                    <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 shrink-0 mt-0.5 border border-emerald-200/60">
-                      <UserCheck className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold flex items-center gap-1 text-slate-900">
-                        <span>👤 Test as Client User</span>
-                      </div>
-                      <p className="text-[10px] text-slate-500 leading-tight mt-0.5">
-                        Pre-seeded ₹1.24 Cr portfolio, assets, cash flows &amp; goals
-                      </p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    id="btn-header-test-admin"
-                    onClick={() => {
-                      setIsTestMenuOpen(false);
-                      enterTestMode('admin');
-                    }}
-                    className="w-full text-left p-2.5 rounded-xl transition-all cursor-pointer flex items-start gap-2.5 mt-1 hover:bg-slate-50 text-slate-700 hover:text-slate-900"
-                  >
-                    <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 shrink-0 mt-0.5 border border-blue-200/60">
-                      <Shield className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold flex items-center gap-1 text-slate-900">
-                        <span>👑 Test as Admin</span>
-                      </div>
-                      <p className="text-[10px] text-slate-500 leading-tight mt-0.5">
-                        sudharsan@gmail.com with Master Admin Panel
-                      </p>
-                    </div>
-                  </button>
-                </div>
-              )}
+            <div className="flex flex-col">
+              <span className="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight leading-none group-hover:text-emerald-700 transition-colors">
+                FIX Wealth
+              </span>
+              <span className="text-[10px] font-medium text-slate-500 tracking-wider uppercase mt-0.5 hidden xs:inline-block">
+                Financial Intelligence
+              </span>
             </div>
+          </a>
 
-            {/* Login Button */}
+          {/* Top Right: Try Demo, signup and login only */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Try Demo */}
+            <button
+              type="button"
+              id="btn-launch-try-demo"
+              onClick={() => enterTestMode('user')}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center gap-1.5"
+            >
+              <FlaskConical className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Try Demo</span>
+            </button>
+
+            {/* Login */}
             <button
               type="button"
               id="btn-launch-login"
               onClick={() => openAuthModal('login')}
-              className="px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold border border-transparent hover:border-slate-200 hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-all cursor-pointer"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
             >
               Login
             </button>
 
-            {/* Primary Get Started Button */}
+            {/* Signup */}
             <button
               type="button"
               id="btn-launch-signup"
               onClick={() => openAuthModal('register')}
-              className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all cursor-pointer flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98]"
+              className="px-3.5 sm:px-4.5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm shadow-emerald-600/25 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
-              <span>Get Started</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Mobile Navigation Toggle */}
-            <button
-              type="button"
-              onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
-              className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 lg:hidden cursor-pointer"
-              aria-label="Toggle navigation"
-            >
-              {isMobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              Sign Up
             </button>
           </div>
         </div>
-
-        {/* Mobile Dropdown Navigation */}
-        {isMobileNavOpen && (
-          <div className="lg:hidden border-b border-slate-200 bg-white px-4 pt-3 pb-5 space-y-3 shadow-lg animate-in fade-in slide-in-from-top-4 duration-200">
-            <div className="grid grid-cols-2 gap-2 text-xs font-medium">
-              <button 
-                onClick={() => scrollToSection('overview')}
-                className="text-left px-3 py-2 rounded-lg bg-slate-50 border border-slate-200/60 text-slate-700 hover:text-slate-900 hover:bg-slate-100"
-              >
-                Overview
-              </button>
-              <button 
-                onClick={() => scrollToSection('wealth')}
-                className="text-left px-3 py-2 rounded-lg bg-slate-50 border border-slate-200/60 text-slate-700 hover:text-slate-900 hover:bg-slate-100"
-              >
-                Wealth
-              </button>
-              <button 
-                onClick={() => scrollToSection('goals')}
-                className="text-left px-3 py-2 rounded-lg bg-slate-50 border border-slate-200/60 text-slate-700 hover:text-slate-900 hover:bg-slate-100"
-              >
-                Goals
-              </button>
-              <button 
-                onClick={() => scrollToSection('cashflow')}
-                className="text-left px-3 py-2 rounded-lg bg-slate-50 border border-slate-200/60 text-slate-700 hover:text-slate-900 hover:bg-slate-100"
-              >
-                Cash Flow
-              </button>
-              <button 
-                onClick={() => scrollToSection('calculators')}
-                className="text-left px-3 py-2 rounded-lg bg-slate-50 border border-slate-200/60 text-slate-700 hover:text-slate-900 hover:bg-slate-100"
-              >
-                Calculators
-              </button>
-              <button 
-                onClick={() => scrollToSection('security')}
-                className="text-left px-3 py-2 rounded-lg bg-slate-50 border border-slate-200/60 text-slate-700 hover:text-slate-900 hover:bg-slate-100"
-              >
-                Security
-              </button>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex gap-2">
-              <button
-                onClick={() => {
-                  setIsMobileNavOpen(false);
-                  enterTestMode('user');
-                }}
-                className="flex-1 py-2 text-center text-xs font-bold rounded-xl bg-slate-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-50"
-              >
-                Try User Demo
-              </button>
-              <button
-                onClick={() => {
-                  setIsMobileNavOpen(false);
-                  openAuthModal('login');
-                }}
-                className="flex-1 py-2 text-center text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white"
-              >
-                Sign In
-              </button>
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Main Content Body */}
@@ -790,13 +581,6 @@ export const LaunchPage: React.FC = () => {
           </div>
 
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-            
-            {/* Small Trust Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-300 bg-emerald-50 text-xs font-semibold text-emerald-800 mb-6 shadow-sm backdrop-blur-md animate-in fade-in duration-500">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Zero-Knowledge Architecture • 100% Client-Side Privacy</span>
-            </div>
-
             {/* Hero Heading (Strict Light Mode) */}
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1] max-w-4xl mx-auto">
               Your Complete Wealth.{' '}
@@ -833,9 +617,19 @@ export const LaunchPage: React.FC = () => {
               </button>
             </div>
 
-            <p className="mt-3 text-xs text-slate-500 font-mono">
-              No financial data or credit card required to try the demo.
-            </p>
+            {/* Direct Sign-In Link */}
+            <div className="mt-4 flex items-center justify-center gap-3 text-xs text-slate-500 flex-wrap">
+              <button
+                type="button"
+                id="btn-hero-signin-link"
+                onClick={() => openAuthModal('login')}
+                className="hover:text-emerald-700 text-slate-700 font-semibold underline underline-offset-4 cursor-pointer transition-colors"
+              >
+                Already have an account? Sign in
+              </button>
+              <span aria-hidden="true">•</span>
+              <span className="font-mono">No credit card required</span>
+            </div>
 
             {/* =========================================================================
                 7. HERO VISUAL (Interactive Fintech Command Center & Animated Graph)
@@ -2327,9 +2121,7 @@ export const LaunchPage: React.FC = () => {
             {/* Brand column */}
             <div className="col-span-2 space-y-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold shadow-sm">
-                  <Coins className="w-4 h-4" />
-                </div>
+                <FixWealthLogo className="w-8 h-8" showRoots={true} />
                 <span className="font-extrabold text-base text-slate-900 tracking-tight">FIX Wealth</span>
               </div>
               <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
