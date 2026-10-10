@@ -409,6 +409,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem(DEMO_SESSION_ACTIVE_KEY);
     localStorage.removeItem(DEMO_SESSION_START_KEY);
     localStorage.removeItem(DEMO_CALC_ONLY_KEY);
+
+    // Immediately restore clean white light theme on landing page
+    if (typeof document !== 'undefined') {
+      const allThemeClasses = [
+        'coolors-theme',
+        'dark-theme',
+        'midnight-theme',
+        'emerald-theme',
+        'slate-theme',
+        'flavorfit-theme',
+        'nature-theme',
+        'retro-theme',
+        'dark'
+      ];
+      document.documentElement.classList.remove(...allThemeClasses);
+      document.body.classList.remove(...allThemeClasses);
+      document.documentElement.classList.add('light-theme');
+      document.body.classList.add('light-theme');
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.body.setAttribute('data-theme', 'light');
+    }
   };
 
   const enterTestMode = (
@@ -430,6 +451,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: now
     };
 
+    if (isTargetAdmin) {
+      // MASTER ADMIN SESSION: UNLIMITED FULL ACCESS WITHOUT TIMING, NO DEMO COUNTDOWN
+      setIsDemoMode(false);
+      setIsCalculatorOnlyMode(false);
+      setDemoSecondsRemaining(DEMO_TOTAL_DURATION_SEC);
+      localStorage.removeItem(DEMO_SESSION_ACTIVE_KEY);
+      localStorage.removeItem(DEMO_SESSION_START_KEY);
+      localStorage.removeItem(DEMO_CALC_ONLY_KEY);
+
+      setCurrentUser(profile);
+      localStorage.setItem(LOCAL_AUTH_USER_KEY, JSON.stringify(profile));
+      showNotification('👑 Master Administrator Active (sudharsan@gmail.com) • Full Access Without Timer');
+      return;
+    }
+
+    // Regular non-admin demo user: 5-minute timed sandbox
     setIsDemoMode(true);
     setIsCalculatorOnlyMode(isCalcOnly);
     setDemoSecondsRemaining(DEMO_TOTAL_DURATION_SEC);
@@ -452,9 +489,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // 5-Minute Demo Countdown Timer
+  // 5-Minute Demo Countdown Timer (strictly for non-admin demo users only)
   useEffect(() => {
-    if (!isDemoMode || !currentUser) return;
+    if (!isDemoMode || !currentUser || currentUser.role === 'admin') return;
 
     const interval = setInterval(() => {
       const startStr = localStorage.getItem(DEMO_SESSION_START_KEY);
@@ -500,8 +537,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signInWithGoogleDemo,
         signOut,
         enterTestMode,
-        isDemoMode,
-        isCalculatorOnlyMode,
+        isDemoMode: isDemoMode && !isAdmin,
+        isCalculatorOnlyMode: isCalculatorOnlyMode && !isAdmin,
         demoSecondsRemaining,
         globalNotification,
         showNotification,

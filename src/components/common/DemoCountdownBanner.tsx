@@ -8,10 +8,13 @@ export const DemoCountdownBanner: React.FC = () => {
     demoSecondsRemaining, 
     isCalculatorOnlyMode, 
     openAuthModal, 
-    signOut 
+    signOut,
+    isAdmin,
+    role
   } = useAuth();
 
-  if (!isDemoMode) return null;
+  // Strictly hide demo timer for Admins - admins always have unlimited access without timing
+  if (!isDemoMode || isAdmin || role === 'admin') return null;
 
   const minutes = Math.floor(demoSecondsRemaining / 60);
   const seconds = demoSecondsRemaining % 60;

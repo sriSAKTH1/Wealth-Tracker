@@ -761,6 +761,88 @@
 }
 
 /* =========================================================================
+   LAUNCH PAGE PERMANENT LIGHT THEME ISOLATION
+   The Landing Page (Launch Page) is strictly and permanently locked to clean
+   White / Light theme only. Website dashboard themes (dark, midnight, coolors,
+   emerald, slate, nature, retro, flavorfit) apply ONLY to the website dashboard
+   and MUST NEVER leak into or alter the Launch Page.
+   ========================================================================= */
+.launch-page-root {
+  color-scheme: light !important;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.launch-page-root .bg-white {
+  background-color: #ffffff !important;
+  color: inherit !important;
+}
+
+.launch-page-root .bg-slate-50 {
+  background-color: #f8fafc !important;
+}
+
+.launch-page-root .bg-slate-100 {
+  background-color: #f1f5f9 !important;
+}
+
+.launch-page-root .bg-slate-200 {
+  background-color: #e2e8f0 !important;
+}
+
+.launch-page-root .bg-emerald-50 {
+  background-color: #ecfdf5 !important;
+}
+
+.launch-page-root .bg-emerald-50\/80 {
+  background-color: rgba(236, 253, 245, 0.8) !important;
+}
+
+.launch-page-root .border-slate-200 {
+  border-color: #e2e8f0 !important;
+}
+
+.launch-page-root .border-slate-300 {
+  border-color: #cbd5e1 !important;
+}
+
+.launch-page-root .text-slate-900 {
+  color: #0f172a !important;
+}
+
+.launch-page-root .text-slate-800 {
+  color: #1e293b !important;
+}
+
+.launch-page-root .text-slate-700 {
+  color: #334155 !important;
+}
+
+.launch-page-root .text-slate-600 {
+  color: #475569 !important;
+}
+
+.launch-page-root .text-slate-500 {
+  color: #64748b !important;
+}
+
+.launch-page-root .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.launch-page-root .text-white {
+  color: #ffffff !important;
+}
+
+.launch-page-root input,
+.launch-page-root select,
+.launch-page-root textarea {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* =========================================================================
    ACCENT COLOR THEMES & DYNAMIC WEB APP HIGHLIGHT ENGINE
    Supports: blue (Electric Blue), indigo (Royal Indigo), emerald (Emerald Vault),
    purple (Amethyst Purple), rose (Rose Wealth), amber (Sunset Amber)

@@ -243,7 +243,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     showNotification 
   } = useAuth();
 
-  const isDemoUser = !currentUser || currentUser.id === 'demo.wealthtracker.com' || isDemoMode;
+  const isDemoUser = (!currentUser || currentUser.id === 'demo.wealthtracker.com' || isDemoMode) && currentUser?.role !== 'admin';
   const userVaultPrefix = isDemoUser 
     ? 'aura_wealth_demo_v2' 
     : `aura_vault_user_${currentUser?.id || 'guest'}_v2`;
@@ -576,33 +576,57 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setScheduledItems(loadStoredArray(`${userVaultPrefix}_scheduled`, INITIAL_SCHEDULED_ITEMS));
       setNetWorthHistory(loadStoredArray(`${userVaultPrefix}_history`, INITIAL_NET_WORTH_HISTORY));
     } else {
-      // Real authenticated user: check if user's personal vault is already initialized
       const isInitialized = localStorage.getItem(`${userVaultPrefix}_initialized`);
       if (!isInitialized) {
-        // Brand new registered user: fully empty, all zero!
-        const zeroHistory = [
-          { date: new Date().toISOString().split('T')[0], netWorth: 0, totalAssets: 0, totalLiabilities: 0 }
-        ];
-        setAssets([]);
-        setLiabilities([]);
-        setAccounts([]);
-        setTransactions([]);
-        setBudgets([]);
-        setEssentialGoals([]);
-        setCustomGoals([]);
-        setScheduledItems([]);
-        setNetWorthHistory(zeroHistory);
+        if (currentUser.role === 'admin') {
+          // Master Admin: Seed with rich master financial portfolio for complete unrestricted admin management
+          const loaded = loadStoredArray<Asset>(`${userVaultPrefix}_assets`, INITIAL_ASSETS);
+          setAssets(loaded);
+          setLiabilities(loadStoredArray(`${userVaultPrefix}_liabilities`, INITIAL_LIABILITIES));
+          setAccounts(loadStoredArray(`${userVaultPrefix}_accounts`, INITIAL_ACCOUNTS));
+          setTransactions(loadStoredArray(`${userVaultPrefix}_transactions`, INITIAL_TRANSACTIONS));
+          setBudgets(loadStoredArray(`${userVaultPrefix}_budgets`, INITIAL_BUDGETS));
+          setEssentialGoals(loadStoredArray(`${userVaultPrefix}_essential_goals`, INITIAL_ESSENTIAL_GOALS));
+          setCustomGoals(loadStoredArray(`${userVaultPrefix}_custom_goals`, INITIAL_CUSTOM_GOALS));
+          setScheduledItems(loadStoredArray(`${userVaultPrefix}_scheduled`, INITIAL_SCHEDULED_ITEMS));
+          setNetWorthHistory(loadStoredArray(`${userVaultPrefix}_history`, INITIAL_NET_WORTH_HISTORY));
 
-        localStorage.setItem(`${userVaultPrefix}_initialized`, 'true');
-        localStorage.setItem(`${userVaultPrefix}_assets`, JSON.stringify([]));
-        localStorage.setItem(`${userVaultPrefix}_liabilities`, JSON.stringify([]));
-        localStorage.setItem(`${userVaultPrefix}_accounts`, JSON.stringify([]));
-        localStorage.setItem(`${userVaultPrefix}_transactions`, JSON.stringify([]));
-        localStorage.setItem(`${userVaultPrefix}_budgets`, JSON.stringify([]));
-        localStorage.setItem(`${userVaultPrefix}_essential_goals`, JSON.stringify([]));
-        localStorage.setItem(`${userVaultPrefix}_custom_goals`, JSON.stringify([]));
-        localStorage.setItem(`${userVaultPrefix}_scheduled`, JSON.stringify([]));
-        localStorage.setItem(`${userVaultPrefix}_history`, JSON.stringify(zeroHistory));
+          localStorage.setItem(`${userVaultPrefix}_initialized`, 'true');
+          localStorage.setItem(`${userVaultPrefix}_assets`, JSON.stringify(loaded));
+          localStorage.setItem(`${userVaultPrefix}_liabilities`, JSON.stringify(INITIAL_LIABILITIES));
+          localStorage.setItem(`${userVaultPrefix}_accounts`, JSON.stringify(INITIAL_ACCOUNTS));
+          localStorage.setItem(`${userVaultPrefix}_transactions`, JSON.stringify(INITIAL_TRANSACTIONS));
+          localStorage.setItem(`${userVaultPrefix}_budgets`, JSON.stringify(INITIAL_BUDGETS));
+          localStorage.setItem(`${userVaultPrefix}_essential_goals`, JSON.stringify(INITIAL_ESSENTIAL_GOALS));
+          localStorage.setItem(`${userVaultPrefix}_custom_goals`, JSON.stringify(INITIAL_CUSTOM_GOALS));
+          localStorage.setItem(`${userVaultPrefix}_scheduled`, JSON.stringify(INITIAL_SCHEDULED_ITEMS));
+          localStorage.setItem(`${userVaultPrefix}_history`, JSON.stringify(INITIAL_NET_WORTH_HISTORY));
+        } else {
+          // Brand new registered regular user: fully empty, all zero!
+          const zeroHistory = [
+            { date: new Date().toISOString().split('T')[0], netWorth: 0, totalAssets: 0, totalLiabilities: 0 }
+          ];
+          setAssets([]);
+          setLiabilities([]);
+          setAccounts([]);
+          setTransactions([]);
+          setBudgets([]);
+          setEssentialGoals([]);
+          setCustomGoals([]);
+          setScheduledItems([]);
+          setNetWorthHistory(zeroHistory);
+
+          localStorage.setItem(`${userVaultPrefix}_initialized`, 'true');
+          localStorage.setItem(`${userVaultPrefix}_assets`, JSON.stringify([]));
+          localStorage.setItem(`${userVaultPrefix}_liabilities`, JSON.stringify([]));
+          localStorage.setItem(`${userVaultPrefix}_accounts`, JSON.stringify([]));
+          localStorage.setItem(`${userVaultPrefix}_transactions`, JSON.stringify([]));
+          localStorage.setItem(`${userVaultPrefix}_budgets`, JSON.stringify([]));
+          localStorage.setItem(`${userVaultPrefix}_essential_goals`, JSON.stringify([]));
+          localStorage.setItem(`${userVaultPrefix}_custom_goals`, JSON.stringify([]));
+          localStorage.setItem(`${userVaultPrefix}_scheduled`, JSON.stringify([]));
+          localStorage.setItem(`${userVaultPrefix}_history`, JSON.stringify(zeroHistory));
+        }
       } else {
         // Returning user: Load saved personal records
         setAssets(loadStoredArray<Asset>(`${userVaultPrefix}_assets`, []));
@@ -679,8 +703,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const syncThemeDOM = (t: AppTheme) => {
     if (typeof document === 'undefined') return;
-    document.documentElement.setAttribute('data-theme', t);
-    document.body.setAttribute('data-theme', t);
     
     const allThemeClasses = [
       'coolors-theme',
@@ -694,6 +716,23 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       'retro-theme',
       'dark'
     ];
+
+    // If no user is logged in (i.e. Launch Page is being viewed),
+    // strictly enforce pure white/light theme. Launch page NEVER inherits dashboard themes!
+    if (!currentUser) {
+      document.documentElement.classList.remove(...allThemeClasses);
+      document.body.classList.remove(...allThemeClasses);
+      document.documentElement.classList.add('light-theme');
+      document.body.classList.add('light-theme');
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.body.setAttribute('data-theme', 'light');
+      return;
+    }
+
+    // Inside the website dashboard (user is authenticated):
+    document.documentElement.setAttribute('data-theme', t);
+    document.body.setAttribute('data-theme', t);
+    
     document.documentElement.classList.remove(...allThemeClasses);
     document.body.classList.remove(...allThemeClasses);
 
@@ -734,7 +773,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     syncThemeDOM(theme);
-  }, [theme]);
+  }, [theme, currentUser]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {

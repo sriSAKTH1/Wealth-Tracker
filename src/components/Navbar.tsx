@@ -272,8 +272,8 @@ export const Navbar: React.FC = () => {
             </span>
           </div>
 
-          {/* Active Demo Session Header Indicator */}
-          {isDemoMode && (
+          {/* Active Demo Session Header Indicator (Never shown for Admin) */}
+          {isDemoMode && !isAdmin && role !== 'admin' && (
             <div 
               onClick={() => {
                 const el = document.getElementById('demo-countdown-footer-banner');

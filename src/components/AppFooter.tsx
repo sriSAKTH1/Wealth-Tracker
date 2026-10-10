@@ -5,7 +5,7 @@ import { ShieldCheck, Clock, Sparkles, ArrowRight } from 'lucide-react';
 
 export const AppFooter: React.FC = () => {
   const { isLight } = useFinance();
-  const { isDemoMode, demoSecondsRemaining, openAuthModal } = useAuth();
+  const { isDemoMode, demoSecondsRemaining, openAuthModal, isAdmin, role } = useAuth();
 
   const minutes = Math.floor(demoSecondsRemaining / 60);
   const seconds = demoSecondsRemaining % 60;
@@ -20,8 +20,8 @@ export const AppFooter: React.FC = () => {
           : 'border-zinc-800/80 bg-zinc-950/30 text-zinc-400'
       }`}
     >
-      {/* Demo Mode Notice in Footer */}
-      {isDemoMode && (
+      {/* Demo Mode Notice in Footer (Never shown for Admin) */}
+      {isDemoMode && !isAdmin && role !== 'admin' && (
         <div className="mb-4 p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-emerald-300 font-medium">
             <Clock className="w-4 h-4 text-emerald-400 animate-pulse shrink-0" />

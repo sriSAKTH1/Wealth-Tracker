@@ -14,18 +14,25 @@
     <script>
       (function() {
         try {
-          var userExplicit = localStorage.getItem('user_explicit_theme');
-          var t = (userExplicit && localStorage.getItem('aura_theme')) || 'dark';
-          document.documentElement.setAttribute('data-theme', t);
-          document.documentElement.classList.add(t + '-theme');
-          if (t !== 'light' && t !== 'nature' && t !== 'retro') {
-            document.documentElement.classList.add('dark');
-          }
-          if (t === 'dark' || t === 'midnight') {
-            document.documentElement.classList.add('dark-theme');
-          }
-          if (t === 'midnight') {
-            document.documentElement.classList.add('midnight-theme');
+          var hasUser = localStorage.getItem('aura_auth_user_v2');
+          if (hasUser) {
+            var userExplicit = localStorage.getItem('user_explicit_theme');
+            var t = (userExplicit && localStorage.getItem('aura_theme')) || 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+            document.documentElement.classList.add(t + '-theme');
+            if (t !== 'light' && t !== 'nature' && t !== 'retro') {
+              document.documentElement.classList.add('dark');
+            }
+            if (t === 'dark' || t === 'midnight') {
+              document.documentElement.classList.add('dark-theme');
+            }
+            if (t === 'midnight') {
+              document.documentElement.classList.add('midnight-theme');
+            }
+          } else {
+            // Landing page default is strictly white light theme
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.classList.add('light-theme');
           }
           var acc = localStorage.getItem('fix_accent_color') || 'blue';
           document.documentElement.setAttribute('data-accent', acc);
@@ -33,7 +40,7 @@
       })();
     </script>
   </head>
-  <body class="bg-zinc-950 text-zinc-100 antialiased selection:bg-emerald-500 selection:text-white font-['Plus_Jakarta_Sans',sans-serif]">
+  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-emerald-500 selection:text-white font-['Plus_Jakarta_Sans',sans-serif]">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

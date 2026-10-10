@@ -455,7 +455,10 @@ export const LaunchPage: React.FC = () => {
   };
 
   return (
-    <div className="launch-page-root min-h-screen font-sans antialiased relative overflow-x-hidden bg-slate-50 text-slate-900 selection:bg-emerald-500/30 selection:text-emerald-800 transition-colors duration-300">
+    <div 
+      data-theme="light"
+      className="launch-page-root min-h-screen font-sans antialiased relative overflow-x-hidden bg-slate-50 text-slate-900 selection:bg-emerald-500/30 selection:text-emerald-800 transition-colors duration-300"
+    >
       
       {/* Dynamic Background Noise / Gradient Grids */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-40">
