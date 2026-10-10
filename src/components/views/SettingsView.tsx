@@ -732,7 +732,7 @@ export const SettingsView: React.FC = () => {
               className="px-4 py-2.5 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-colors flex items-center gap-2"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Restore Demo Portfolio Sample</span>
+              <span>Refill Demo Account (₹10L Portfolio, ₹70k Salary)</span>
             </button>
 
             <button
@@ -846,13 +846,13 @@ export const SettingsView: React.FC = () => {
                 <RefreshCw className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-black">Restore Demo Portfolio?</h3>
-                <p className="text-xs text-slate-500">Reload realistic demonstration portfolio</p>
+                <h3 className="text-base font-black">Refill Demo Account?</h3>
+                <p className="text-xs text-slate-500">Restore realistic ₹10 Lakh portfolio &amp; ₹70,000/mo salary</p>
               </div>
             </div>
 
             <p className="text-xs text-slate-600 dark:text-slate-300">
-              This will populate sample liquid cash, investments, real estate, debts, and budgets to explore the application features.
+              This will refill the demo ledger with the standardized ₹10 Lakh (₹10,00,000) middle-class family portfolio: ₹70,000 monthly salary, essential living expenses, mutual funds, EPF/PPF, and emergency savings.
             </p>
 
             <div className="flex items-center justify-end gap-2.5 pt-2 text-xs">
@@ -866,11 +866,11 @@ export const SettingsView: React.FC = () => {
                 onClick={() => {
                   resetToDefaultData();
                   setIsResetDefaultModalOpen(false);
-                  setActionSuccessNotice('Demo portfolio restored successfully.');
+                  setActionSuccessNotice('Demo account refilled with ₹10 Lakh portfolio & ₹70,000/mo salary.');
                 }}
                 className="px-5 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30"
               >
-                Restore Demo Data
+                Refill Demo Data
               </button>
             </div>
           </div>

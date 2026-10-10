@@ -685,15 +685,15 @@ export const MoreView: React.FC = () => {
                 <button
                   id="btn-restore-sample-data"
                   onClick={() => {
-                    if (window.confirm('Restore default sample portfolio data?')) {
+                    if (window.confirm('Refill demo account with ₹10 Lakh portfolio and ₹70,000/mo salary data?')) {
                       resetToDefaultData();
-                      setResetDoneStatus('Restored default demo portfolio data.');
+                      setResetDoneStatus('Refilled demo account with ₹10 Lakh portfolio & ₹70,000/mo salary.');
                     }
                   }}
                   className="shrink-0 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Load Sample Demo Data</span>
+                  <span>Refill Demo Data (₹10L)</span>
                 </button>
               </div>
             </div>

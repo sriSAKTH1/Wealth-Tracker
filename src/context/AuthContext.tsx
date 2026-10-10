@@ -471,6 +471,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsCalculatorOnlyMode(isCalcOnly);
     setDemoSecondsRemaining(DEMO_TOTAL_DURATION_SEC);
 
+    // Refill demo account with fresh 10 Lakh salaried family portfolio
+    const oldDemoKeys = [
+      'aura_wealth_demo_v2_assets', 'aura_wealth_demo_v2_liabilities', 'aura_wealth_demo_v2_accounts', 'aura_wealth_demo_v2_transactions',
+      'aura_wealth_demo_v2_budgets', 'aura_wealth_demo_v2_essential_goals', 'aura_wealth_demo_v2_custom_goals', 'aura_wealth_demo_v2_scheduled', 'aura_wealth_demo_v2_history',
+      'aura_wealth_demo_v3_assets', 'aura_wealth_demo_v3_liabilities', 'aura_wealth_demo_v3_accounts', 'aura_wealth_demo_v3_transactions',
+      'aura_wealth_demo_v3_budgets', 'aura_wealth_demo_v3_essential_goals', 'aura_wealth_demo_v3_custom_goals', 'aura_wealth_demo_v3_scheduled', 'aura_wealth_demo_v3_history',
+      'aura_wealth_demo_v4_assets', 'aura_wealth_demo_v4_liabilities', 'aura_wealth_demo_v4_accounts', 'aura_wealth_demo_v4_transactions',
+      'aura_wealth_demo_v4_budgets', 'aura_wealth_demo_v4_essential_goals', 'aura_wealth_demo_v4_custom_goals', 'aura_wealth_demo_v4_scheduled', 'aura_wealth_demo_v4_history'
+    ];
+    oldDemoKeys.forEach(k => {
+      try { localStorage.removeItem(k); } catch {}
+    });
+
     localStorage.setItem(DEMO_SESSION_ACTIVE_KEY, 'true');
     localStorage.setItem(DEMO_SESSION_START_KEY, String(startTime));
     if (isCalcOnly) {

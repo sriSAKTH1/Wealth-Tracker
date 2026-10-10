@@ -193,6 +193,7 @@ interface FinanceContextType {
   exportDataJSON: () => void;
   exportTransactionsCSV: () => void;
   resetToDefaultData: () => void;
+  refillDemoAccount: () => void;
   resetAllDataToZero: () => void;
 
   // FinScore Direct Sync to Account UI
@@ -232,7 +233,7 @@ interface FinanceContextType {
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_KEY = 'aura_wealth_data_v2';
+const LOCAL_STORAGE_KEY = 'aura_wealth_data_v3';
 
 export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { 
@@ -245,7 +246,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const isDemoUser = (!currentUser || currentUser.id === 'demo.wealthtracker.com' || isDemoMode) && currentUser?.role !== 'admin';
   const userVaultPrefix = isDemoUser 
-    ? 'aura_wealth_demo_v2' 
+    ? 'aura_wealth_demo_v4' 
     : `aura_vault_user_${currentUser?.id || 'guest'}_v2`;
 
   // Navigation State
@@ -512,19 +513,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Primary Data State
   const [assets, setAssets] = useState<Asset[]>(() => {
-    const loaded = loadStoredArray<Asset>(`${LOCAL_STORAGE_KEY}_assets`, INITIAL_ASSETS);
-    const migrated = loaded.map(a => {
-      if (a.subType === 'Art, Wine & Luxury Collectibles' || a.subType === 'art-wine-luxury') {
-        return { ...a, subType: 'P2P Lending' };
-      }
-      return a;
-    });
-    const hasNippon = migrated.some(a => a.id === 'ast-12' || a.name.includes('Nippon India Growth Mid Cap'));
-    if (!hasNippon) {
-      const nippon = INITIAL_ASSETS.find(a => a.id === 'ast-12');
-      if (nippon) return [nippon, ...migrated];
-    }
-    return migrated;
+    return loadStoredArray<Asset>(`${LOCAL_STORAGE_KEY}_assets`, INITIAL_ASSETS);
   });
 
   const [liabilities, setLiabilities] = useState<Liability[]>(() => 
@@ -1419,7 +1408,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     URL.revokeObjectURL(url);
   };
 
-  const resetToDefaultData = () => {
+  const refillDemoAccount = () => {
     setAssets(INITIAL_ASSETS);
     setLiabilities(INITIAL_LIABILITIES);
     setAccounts(INITIAL_ACCOUNTS);
@@ -1429,6 +1418,22 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setCustomGoals(INITIAL_CUSTOM_GOALS);
     setScheduledItems(INITIAL_SCHEDULED_ITEMS);
     setNetWorthHistory(INITIAL_NET_WORTH_HISTORY);
+    try {
+      localStorage.setItem(`${userVaultPrefix}_assets`, JSON.stringify(INITIAL_ASSETS));
+      localStorage.setItem(`${userVaultPrefix}_liabilities`, JSON.stringify(INITIAL_LIABILITIES));
+      localStorage.setItem(`${userVaultPrefix}_accounts`, JSON.stringify(INITIAL_ACCOUNTS));
+      localStorage.setItem(`${userVaultPrefix}_transactions`, JSON.stringify(INITIAL_TRANSACTIONS));
+      localStorage.setItem(`${userVaultPrefix}_budgets`, JSON.stringify(INITIAL_BUDGETS));
+      localStorage.setItem(`${userVaultPrefix}_essential_goals`, JSON.stringify(INITIAL_ESSENTIAL_GOALS));
+      localStorage.setItem(`${userVaultPrefix}_custom_goals`, JSON.stringify(INITIAL_CUSTOM_GOALS));
+      localStorage.setItem(`${userVaultPrefix}_scheduled`, JSON.stringify(INITIAL_SCHEDULED_ITEMS));
+      localStorage.setItem(`${userVaultPrefix}_history`, JSON.stringify(INITIAL_NET_WORTH_HISTORY));
+    } catch {}
+    showNotification('Demo account refilled: ₹10 Lakh portfolio & ₹70,000/mo salary restored.');
+  };
+
+  const resetToDefaultData = () => {
+    refillDemoAccount();
   };
 
   const resetAllDataToZero = () => {
@@ -1565,6 +1570,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         exportDataJSON,
         exportTransactionsCSV,
         resetToDefaultData,
+        refillDemoAccount,
         resetAllDataToZero,
         totalAssets,
         totalLiabilities,
