@@ -23,7 +23,8 @@ import {
   Database,
   User,
   Radio,
-  ExternalLink
+  ExternalLink,
+  Clock
 } from 'lucide-react';
 import { useFinance, CURRENCY_CONFIGS } from '../context/FinanceContext';
 import { useAuth } from '../context/AuthContext';
@@ -54,7 +55,22 @@ export const Navbar: React.FC = () => {
     toggleSidebar
   } = useFinance();
 
-  const { currentUser, role, isAdmin, isUser, openAuthModal, isAuthenticated } = useAuth();
+  const { 
+    currentUser, 
+    role, 
+    isAdmin, 
+    isUser, 
+    openAuthModal, 
+    isAuthenticated,
+    isDemoMode,
+    demoSecondsRemaining,
+    isCalculatorOnlyMode
+  } = useAuth();
+
+  const demoMins = Math.floor(demoSecondsRemaining / 60);
+  const demoSecs = demoSecondsRemaining % 60;
+  const formattedDemoTime = `${String(demoMins).padStart(2, '0')}:${String(demoSecs).padStart(2, '0')}`;
+  const isDemoUrgent = demoSecondsRemaining <= 60;
 
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
@@ -255,6 +271,26 @@ export const Navbar: React.FC = () => {
               {tabTitles[activeTab]?.subtitle || 'Capital & Net Worth'}
             </span>
           </div>
+
+          {/* Active Demo Session Header Indicator */}
+          {isDemoMode && (
+            <div 
+              onClick={() => {
+                const el = document.getElementById('demo-countdown-footer-banner');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              title="5-minute demo session active. Fixed countdown timer is pinned in the footer below."
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold border transition-all cursor-pointer shadow-xs ${
+                isDemoUrgent 
+                  ? 'bg-rose-500/20 border-rose-500/50 text-rose-300 animate-pulse' 
+                  : 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300'
+              }`}
+            >
+              <Clock className={`w-3.5 h-3.5 ${isDemoUrgent ? 'text-rose-400 animate-bounce' : 'text-emerald-400 animate-pulse'}`} />
+              <span>Demo: {formattedDemoTime}</span>
+              <span className="text-[10px] font-sans opacity-75 hidden sm:inline">↓ Footer</span>
+            </div>
+          )}
         </div>
 
         {/* Center: Live Net Worth summary pill (Quick glance) */}

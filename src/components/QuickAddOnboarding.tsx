@@ -11,6 +11,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
+import { useAuth } from '../context/AuthContext';
 
 export const QuickAddOnboarding: React.FC = () => {
   const { 
@@ -20,6 +21,7 @@ export const QuickAddOnboarding: React.FC = () => {
     theme,
     isLight 
   } = useFinance();
+  const { isDemoMode } = useAuth();
 
   // Subtle entrance delay after mount for a smooth arrival effect
   const [mounted, setMounted] = useState(false);
@@ -47,7 +49,7 @@ export const QuickAddOnboarding: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOnboardingOpen, setIsOnboardingOpen]);
 
-  if (!isOnboardingOpen || !mounted) return null;
+  if (isDemoMode || !isOnboardingOpen || !mounted) return null;
 
   const handleSkip = () => {
     setIsOnboardingOpen(false);

@@ -34,7 +34,7 @@ import { GlobalToast } from './components/common/GlobalToast';
 
 const MainLayout: React.FC = () => {
   const { activeTab, setActiveTab, theme, accentColor, isMobileFrameSimulated, openQuickAdd, transactions = [] } = useFinance();
-  const { isUser, isAdmin } = useAuth();
+  const { isUser, isAdmin, isDemoMode } = useAuth();
   const hasNoTransactions = !transactions || transactions.length === 0;
 
   // Render current active view
@@ -117,9 +117,6 @@ const MainLayout: React.FC = () => {
 
       {/* Main Right Column: Top Navbar + Scrollable Content */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* 5-Minute Demo Session Countdown Banner */}
-        <DemoCountdownBanner />
-
         {/* Top Navbar */}
         <Navbar />
 
@@ -156,6 +153,9 @@ const MainLayout: React.FC = () => {
             </div>
           </main>
         )}
+
+        {/* 5-Minute Demo Session Fixed Footer Timer Bar */}
+        <DemoCountdownBanner />
       </div>
 
       {/* Mobile Bottom Footer Navigation (shown on native mobile screens < 1024px) */}
@@ -166,7 +166,7 @@ const MainLayout: React.FC = () => {
       )}
 
       {/* Floating Action (+) Button in the Bottom Right Corner */}
-      <div className="fixed bottom-20 sm:bottom-6 right-5 sm:right-6 z-40 flex items-center gap-2.5">
+      <div className={`fixed ${isDemoMode ? 'bottom-28 sm:bottom-16' : 'bottom-20 sm:bottom-6'} right-5 sm:right-6 z-40 flex items-center gap-2.5 transition-all`}>
         {/* Helper invite badge on empty transactions state */}
         {hasNoTransactions && (
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-600/90 text-white text-xs font-semibold shadow-lg shadow-blue-500/25 border border-blue-400/30 animate-pulse backdrop-blur-md">
