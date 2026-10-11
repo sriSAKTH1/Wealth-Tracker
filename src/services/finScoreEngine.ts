@@ -76,7 +76,7 @@ export const INITIAL_FINSCORE_INCOMES: FinScoreIncomeSource[] = [
 ];
 
 export const INITIAL_FINSCORE_PROFILE: FinScoreProfile = {
-  name: 'Sudharsan',
+  name: 'Sudharsan (User)',
   age: 28,
   monthlyIncome: 50000,
   occupation: 'Software Engineer',
@@ -237,6 +237,8 @@ export function calculateFinScore(
         lifeCoverageMultiplier: 0,
         emergencyMonthsAvailable: 0,
         totalGoalRequiredMonthlySavings: 0,
+        insuranceHealthMarks: 0,
+        insuranceLifeMarks: 0,
       },
       monthlyActionPlan: [
         {
@@ -343,49 +345,95 @@ export function calculateFinScore(
   emergencyFundScore = Math.min(100, Math.max(0, Math.round(emergencyFundScore)));
 
   // 4. Insurance Score
+  // Check if insurance is present / configured
+  const hasLifePolicy = Boolean(
+    (insurance.hasLifeInsurance || insurance.hasTermInsurance) &&
+    ((Number(insurance.lifeCoverage) || 0) > 0 || (Number(insurance.termCoverage) || 0) > 0)
+  );
+  const hasHealthPolicy = Boolean(
+    insurance.hasHealthInsurance &&
+    (Number(insurance.healthCoverage) || 0) > 0
+  );
+  const hasAnyInsurance = hasLifePolicy || hasHealthPolicy;
+
   // Recommended life cover: ~10x to 15x annual income + total outstanding debt
   const annualIncome = income * 12;
-  const multiplier = adminConfig.lifeInsuranceAnnualIncomeMultiplier;
-  const recommendedLifeCoverage = profile.dependents > 0
+  const multiplier = adminConfig.lifeInsuranceAnnualIncomeMultiplier || 12;
+  const dependents = Math.max(0, profile.dependents || 0);
+  const recommendedLifeCoverage = dependents > 0
     ? (annualIncome * multiplier) + totalDebt
     : (annualIncome * 5) + totalDebt;
 
   const totalLifeCoverage = Math.max(
-    insurance.lifeCoverage || 0,
-    insurance.termCoverage || 0
+    Number(insurance.lifeCoverage) || 0,
+    Number(insurance.termCoverage) || 0
   );
   const lifeCoverageShortfall = Math.max(0, recommendedLifeCoverage - totalLifeCoverage);
-  const lifeCoverRatio = totalLifeCoverage / (recommendedLifeCoverage || 1);
+  const lifeCoverRatio = recommendedLifeCoverage > 0
+    ? totalLifeCoverage / recommendedLifeCoverage
+    : 1;
 
-  // Health insurance adequacy: Recommended min ₹5-10 Lakh / $50k+
-  const minRecommendedHealth = profile.currency === 'INR' ? 500000 : 50000;
-  const healthRatio = (insurance.healthCoverage || 0) / minRecommendedHealth;
+  // A. Health Insurance calculation (0 to 60 marks)
+  let insuranceHealthMarks = 0;
+  const healthCoverage = Number(insurance.healthCoverage) || 0;
 
-  let insuranceScore = 0;
-  // Life / Term weight: 55%, Health weight: 45%
-  let lifeScore = 0;
-  if (!profile.dependents || profile.dependents === 0) {
-    lifeScore = 85; // Less critical if no dependents
+  if (hasHealthPolicy) {
+    if (healthCoverage >= 500000) {
+      // 5 Lakh or more gives 50 to 60 marks
+      if (healthCoverage >= 1000000 || insurance.hasPersonalHealthPolicy) {
+        insuranceHealthMarks = 60;
+      } else if (healthCoverage > 500000) {
+        insuranceHealthMarks = 50 + Math.min(10, Math.round(((healthCoverage - 500000) / 500000) * 10));
+      } else {
+        // Exactly 5 Lakh (50 to 60 marks baseline)
+        insuranceHealthMarks = 50;
+      }
+    } else if (healthCoverage >= 1000) {
+      // 1,000+ basic health insurance gives 60 marks
+      insuranceHealthMarks = 60;
+    } else if (healthCoverage > 0) {
+      insuranceHealthMarks = 50;
+    } else {
+      insuranceHealthMarks = 50;
+    }
   } else {
-    if (insurance.hasTermInsurance && lifeCoverRatio >= 1.0) lifeScore = 100;
-    else if (lifeCoverRatio >= 0.75) lifeScore = 80 + (lifeCoverRatio - 0.75) * 80;
-    else if (lifeCoverRatio >= 0.4) lifeScore = 50 + ((lifeCoverRatio - 0.4) / 0.35) * 30;
-    else if (totalLifeCoverage > 0) lifeScore = 25 + (lifeCoverRatio / 0.4) * 25;
-    else lifeScore = 10;
+    // Neither health policy nor coverage: 0 marks
+    insuranceHealthMarks = 0;
   }
 
-  let healthScore = 0;
-  if (insurance.hasHealthInsurance && (insurance.healthCoverage || 0) >= minRecommendedHealth) {
-    healthScore = 85;
-    if (insurance.hasPersonalHealthPolicy) healthScore += 15; // Independent from employer
-    else healthScore += 5;
-  } else if (insurance.hasHealthInsurance) {
-    healthScore = 50 + Math.min(35, healthRatio * 35);
+  // B. Life Insurance calculation based on dependency (0 to 40 marks)
+  // "If a user doesn't have a dependency, at that time you can give the score 40.
+  //  If a user has a dependency and they don't have life insurance, you can mark 0."
+  let insuranceLifeMarks = 0;
+
+  if (dependents === 0) {
+    // User does not have a dependency: give score 40
+    insuranceLifeMarks = 40;
   } else {
-    healthScore = 10;
+    // User has dependency:
+    if (!hasLifePolicy || totalLifeCoverage === 0) {
+      // User has dependency and does NOT have life insurance -> mark 0
+      insuranceLifeMarks = 0;
+    } else {
+      // User has life insurance for dependents
+      if (lifeCoverRatio >= 1.0) {
+        insuranceLifeMarks = 40;
+      } else if (lifeCoverRatio >= 0.75) {
+        insuranceLifeMarks = 35;
+      } else if (lifeCoverRatio >= 0.5) {
+        insuranceLifeMarks = 30;
+      } else if (lifeCoverRatio >= 0.25) {
+        insuranceLifeMarks = 20;
+      } else {
+        insuranceLifeMarks = 10;
+      }
+    }
   }
 
-  insuranceScore = Math.min(100, Math.max(0, Math.round(lifeScore * 0.55 + healthScore * 0.45)));
+  // Combined Total Insurance Score
+  // "Yeah the health and life insurance, we don't have this too. You can mark a score as 0 in the total insurance score."
+  const combinedScore = Math.round(insuranceHealthMarks + insuranceLifeMarks);
+  const insuranceScore = Math.min(100, Math.max(0, combinedScore));
 
   // 5. Future Goals Score
   let totalGoalRequiredMonthlySavings = 0;
@@ -544,14 +592,44 @@ export function calculateFinScore(
   }
 
   // Insurance Alert
-  if (!insurance.hasTermInsurance && profile.dependents > 0) {
+  // Insurance Alert
+  if (!hasHealthPolicy && (!hasLifePolicy || totalLifeCoverage === 0)) {
+    if (dependents > 0) {
+      alerts.push({
+        id: 'alert-ins-none',
+        type: 'insurance',
+        severity: 'critical',
+        title: '🚨 No Insurance Protection (0/100)',
+        message: `Neither health nor life insurance is recorded for your ${dependents} dependent(s). Insurance score is 0/100. Securing ₹5 Lakh+ health insurance and pure term life protection is urgent.`,
+        actionRecommendation: 'Add ₹5 Lakh+ health insurance (up to 60 marks) and term life insurance to protect dependents (up to 40 marks).',
+      });
+    } else {
+      alerts.push({
+        id: 'alert-ins-zero-dep',
+        type: 'insurance',
+        severity: 'info',
+        title: '🛡️ Zero Dependents (40/100 Insurance Score)',
+        message: 'No family dependents recorded (40 marks awarded for zero dependency risk), but personal health insurance is not present (0/60 marks).',
+        actionRecommendation: 'Add ₹5 Lakh+ personal health insurance to elevate your score to 90-100.',
+      });
+    }
+  } else if (!hasLifePolicy && dependents > 0) {
     alerts.push({
       id: 'alert-ins-1',
       type: 'insurance',
+      severity: 'critical',
+      title: '🚨 Term Life Insurance Missing (0/40 Life Marks)',
+      message: `You have ${dependents} dependent(s) but no active life insurance policy. Life insurance score is 0 marks. Your family is exposed to severe income loss.`,
+      actionRecommendation: 'Secure an affordable pure term life plan covering at least 10x-15x annual income.',
+    });
+  } else if (!hasHealthPolicy) {
+    alerts.push({
+      id: 'alert-ins-health-missing',
+      type: 'insurance',
       severity: 'warning',
-      title: '🟡 Insurance Protection Alert',
-      message: 'You have dependents but lack a pure term life insurance policy. Your family may be exposed to income disruption.',
-      actionRecommendation: 'Explore an affordable pure term life plan covering at least 10x-15x annual income.',
+      title: '🏥 Health Insurance Missing (0/60 Health Marks)',
+      message: 'You do not have active health insurance. Hospitalization expenses can deplete your savings.',
+      actionRecommendation: 'Obtain at least ₹5 Lakh health insurance cover (earns 50 to 60 marks).',
     });
   } else if (!insurance.hasPersonalHealthPolicy && insurance.hasEmployerInsurance) {
     alerts.push({
@@ -559,7 +637,7 @@ export function calculateFinScore(
       type: 'insurance',
       severity: 'info',
       title: '🏥 Health Insurance Notice',
-      message: 'You currently rely exclusively on employer group health insurance. Consider a personal super-topup or family floater.',
+      message: 'You currently rely exclusively on employer group health insurance. Consider an independent personal policy or super-topup.',
     });
   }
 
@@ -661,6 +739,8 @@ export function calculateFinScore(
       lifeCoverageMultiplier: annualIncome > 0 ? Math.round((totalLifeCoverage / annualIncome) * 10) / 10 : 0,
       emergencyMonthsAvailable: monthlyEssentialBasis > 0 ? Math.round((currentEmergencySavings / monthlyEssentialBasis) * 10) / 10 : 0,
       totalGoalRequiredMonthlySavings,
+      insuranceHealthMarks,
+      insuranceLifeMarks,
     },
     monthlyActionPlan,
     alerts,

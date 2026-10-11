@@ -42,10 +42,12 @@ import {
   Umbrella,
   Home,
   Car,
-  Smartphone
+  Smartphone,
+  Film
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { FixWealthLogo } from './common/FixWealthLogo';
+import { ProductTourVideo } from './common/ProductTourVideo';
 
 // Floating Translucent Financial Icons for Hero Entry (Matching reference line-art icons)
 interface FloatingFinanceIcon {
@@ -681,7 +683,7 @@ export const LaunchPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Direct Sign-In Link */}
+            {/* Direct Sign-In Link & Video Tour Shortcut */}
             <div className="mt-4 flex items-center justify-center gap-3 text-xs text-slate-500 flex-wrap">
               <button
                 type="button"
@@ -690,6 +692,16 @@ export const LaunchPage: React.FC = () => {
                 className="hover:text-emerald-700 text-slate-700 font-semibold underline underline-offset-4 cursor-pointer transition-colors"
               >
                 Already have an account? Sign in
+              </button>
+              <span aria-hidden="true">•</span>
+              <button
+                type="button"
+                id="btn-hero-watch-tour"
+                onClick={() => scrollToSection('product-tour-video')}
+                className="hover:text-emerald-700 text-emerald-800 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <Film className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Watch 60s Tour Video ↓</span>
               </button>
               <span aria-hidden="true">•</span>
               <span className="font-mono">No credit card required</span>
@@ -1192,6 +1204,12 @@ export const LaunchPage: React.FC = () => {
             </div>
           </div>
         </section>
+
+        {/* =========================================================================
+            9B. PRODUCT TOUR VIDEO SHOWCASE SECTION
+            Interactive Video Showcase with Direct Navigation to Website & Demo
+            ========================================================================= */}
+        <ProductTourVideo onEnterApp={() => enterTestMode('user')} />
 
         {/* =========================================================================
             10. CORE VALUE SECTION (4-Card Bento Grid)

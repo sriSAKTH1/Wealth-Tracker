@@ -2080,10 +2080,14 @@ Strategic Focus: ${result.biggestPriority}`;
                 </span>
               </div>
               <div className="text-2xl font-extrabold font-mono">
-                {insurance.hasTermInsurance ? 'Protected' : 'Underinsured'}
+                {(!insurance.hasHealthInsurance && !insurance.hasTermInsurance && (insurance.healthCoverage || 0) === 0 && (insurance.lifeCoverage || 0) === 0)
+                  ? (profile.dependents > 0 ? 'No Insurance (0)' : 'Zero Dependents (40)')
+                  : (result.scores.insurance >= 80 ? 'Protected' : (result.scores.insurance >= 60 ? 'Adequate' : (result.scores.insurance > 0 ? 'Partial Cover' : 'Unprotected (0)')))}
               </div>
               <div className="text-xs text-slate-400 mt-0.5">
-                Life: {currSym}{(insurance.lifeCoverage || 0).toLocaleString()} • Health: {currSym}{(insurance.healthCoverage || 0).toLocaleString()}
+                {(!insurance.hasHealthInsurance && !insurance.hasTermInsurance && (insurance.healthCoverage || 0) === 0 && (insurance.lifeCoverage || 0) === 0)
+                  ? (profile.dependents > 0 ? '0/100 score (Dependents unprotected)' : '40/100 score (0 dependency risk)')
+                  : `Health: ${result.metrics.insuranceHealthMarks ?? 0}/60 • Life: ${result.metrics.insuranceLifeMarks ?? 0}/40`}
               </div>
               <div className="w-full bg-slate-800/40 rounded-full h-2 mt-3 overflow-hidden">
                 <div 
@@ -2092,7 +2096,9 @@ Strategic Focus: ${result.biggestPriority}`;
                 />
               </div>
               <div className="text-[11px] text-slate-400 mt-2 font-medium">
-                {insurance.hasPersonalHealthPolicy ? 'Personal health policy active' : 'Needs independent health policy'}
+                {(!insurance.hasHealthInsurance && !insurance.hasTermInsurance && (insurance.healthCoverage || 0) === 0 && (insurance.lifeCoverage || 0) === 0)
+                  ? (profile.dependents > 0 ? 'Add ₹5L+ health policy & term life to protect dependents' : 'Add personal health policy to reach 100/100')
+                  : (insurance.hasPersonalHealthPolicy ? 'Personal health policy active' : 'Needs independent health policy')}
               </div>
             </div>
 
@@ -4792,22 +4798,143 @@ Strategic Focus: ${result.biggestPriority}`;
             <div>
               <h2 className="text-lg font-bold">Step 4 — 🛡️ Insurance Protection Score ({result.scores.insurance}/100)</h2>
               <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Assesses Life (Term) and Health insurance adequacy relative to your annual income, liabilities, and dependents.
+                Assesses Health insurance (up to 60 marks; 50-60 for ₹5L+) and Life insurance (up to 40 marks based on dependents). If a user doesn't have a dependency, life insurance score is 40. If a user has a dependency and no life insurance, life score is 0. If both health and life are absent with dependents, score is 0.
               </p>
             </div>
-            <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
-              Recommended Life Cover: {currSym}{(result.metrics.recommendedLifeCoverage ?? 0).toLocaleString()}
-            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                Recommended Life Cover: {currSym}{(result.metrics.recommendedLifeCoverage ?? 0).toLocaleString()}
+              </span>
+            </div>
           </div>
 
-          {/* Educational Disclaimer Banner */}
-          <div className={`p-3.5 rounded-2xl border text-xs flex items-start gap-2.5 ${
-            isLight ? 'bg-amber-50/70 border-amber-200 text-amber-900' : 'bg-amber-500/10 border-amber-500/20 text-amber-200'
-          }`}>
-            <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-            <p>
-              <strong>Educational Estimate:</strong> These calculations represent standard financial planning rules of thumb (10x-15x income + liabilities) for informational purposes, not regulated insurance or solicitation advice.
-            </p>
+          {/* Quick Presets Bar */}
+          <div className="flex flex-wrap gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setInsurance({
+                  hasLifeInsurance: false,
+                  lifeCoverage: 0,
+                  hasTermInsurance: false,
+                  termCoverage: 0,
+                  hasHealthInsurance: false,
+                  healthCoverage: 0,
+                  isFamilyCovered: false,
+                  hasEmployerInsurance: false,
+                  hasPersonalHealthPolicy: false,
+                });
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                !insurance.hasHealthInsurance && !insurance.hasTermInsurance && (insurance.healthCoverage || 0) === 0 && (insurance.lifeCoverage || 0) === 0
+                  ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
+                  : (isLight ? 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700')
+              }`}
+            >
+              🛡️ No Insurance (Score: {profile.dependents > 0 ? '0' : '40'})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setInsurance({
+                  hasLifeInsurance: true,
+                  lifeCoverage: 3000000,
+                  hasTermInsurance: true,
+                  termCoverage: 3000000,
+                  hasHealthInsurance: true,
+                  healthCoverage: 500000,
+                  isFamilyCovered: true,
+                  hasEmployerInsurance: true,
+                  hasPersonalHealthPolicy: false,
+                });
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                insurance.hasHealthInsurance && insurance.healthCoverage === 500000 && insurance.lifeCoverage === 3000000
+                  ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
+                  : (isLight ? 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700')
+              }`}
+            >
+              🏥 Standard Cover (₹5L Health + ₹30L Term)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const idealLife = Math.max(5000000, (result.metrics.recommendedLifeCoverage || 5000000));
+                setInsurance({
+                  hasLifeInsurance: true,
+                  lifeCoverage: idealLife,
+                  hasTermInsurance: true,
+                  termCoverage: idealLife,
+                  hasHealthInsurance: true,
+                  healthCoverage: 1000000,
+                  isFamilyCovered: true,
+                  hasEmployerInsurance: true,
+                  hasPersonalHealthPolicy: true,
+                });
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                insurance.healthCoverage >= 1000000 && insurance.hasPersonalHealthPolicy
+                  ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm'
+                  : (isLight ? 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700')
+              }`}
+            >
+              ⭐ Comprehensive Protection (₹10L+ Health & Full Term Cover)
+            </button>
+          </div>
+
+          {/* Active Marks Breakdown Indicator */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className={`p-3.5 rounded-2xl border text-xs ${
+              isLight ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200'
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className="font-bold flex items-center gap-1.5">
+                  <HeartHandshake className="w-4 h-4 text-emerald-500" />
+                  Health Marks:
+                </span>
+                <span className="font-mono font-black text-sm text-emerald-500">
+                  {result.metrics.insuranceHealthMarks ?? 0} / 60
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] opacity-80">
+                ₹5 Lakh or more awards 50 to 60 marks (up to 60 max).
+              </p>
+            </div>
+
+            <div className={`p-3.5 rounded-2xl border text-xs ${
+              isLight ? 'bg-blue-50/70 border-blue-200 text-blue-900' : 'bg-blue-500/10 border-blue-500/20 text-blue-200'
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className="font-bold flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-blue-500" />
+                  Life Marks:
+                </span>
+                <span className="font-mono font-black text-sm text-blue-500">
+                  {result.metrics.insuranceLifeMarks ?? 0} / 40
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] opacity-80">
+                Calculated based on {profile.dependents} dependent{profile.dependents === 1 ? '' : 's'}.
+              </p>
+            </div>
+
+            <div className={`p-3.5 rounded-2xl border text-xs ${
+              !insurance.hasHealthInsurance && !insurance.hasTermInsurance && (insurance.healthCoverage || 0) === 0 && (insurance.lifeCoverage || 0) === 0
+                ? (isLight ? 'bg-amber-50/80 border-amber-300 text-amber-900' : 'bg-amber-500/15 border-amber-500/30 text-amber-200')
+                : (isLight ? 'bg-slate-100 border-slate-200 text-slate-800' : 'bg-slate-800/60 border-slate-700 text-slate-200')
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className="font-bold">Total Insurance Score:</span>
+                <span className="font-mono font-black text-sm text-blue-400">
+                  {result.scores.insurance} / 100
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] opacity-80">
+                {!insurance.hasHealthInsurance && !insurance.hasTermInsurance && (insurance.healthCoverage || 0) === 0 && (insurance.lifeCoverage || 0) === 0
+                  ? (profile.dependents > 0 ? 'No insurance with dependents: 0/100 score awarded.' : 'Zero dependents: 40 marks awarded for zero dependency risk.')
+                  : `${(result.metrics.insuranceHealthMarks ?? 0)} health + ${(result.metrics.insuranceLifeMarks ?? 0)} life marks.`}
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -4829,8 +4956,17 @@ Strategic Focus: ${result.biggestPriority}`;
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={insurance.hasTermInsurance}
-                    onChange={e => setInsurance({ ...insurance, hasTermInsurance: e.target.checked })}
+                    checked={insurance.hasTermInsurance || insurance.hasLifeInsurance}
+                    onChange={e => {
+                      const checked = e.target.checked;
+                      setInsurance({
+                        ...insurance,
+                        hasTermInsurance: checked,
+                        hasLifeInsurance: checked,
+                        lifeCoverage: checked ? (insurance.lifeCoverage > 0 ? insurance.lifeCoverage : 3000000) : 0,
+                        termCoverage: checked ? (insurance.termCoverage > 0 ? insurance.termCoverage : 3000000) : 0,
+                      });
+                    }}
                     className="w-4 h-4 rounded text-blue-600 accent-blue-500"
                   />
                   <span>I have an active pure Term Life Insurance policy</span>
@@ -4841,7 +4977,15 @@ Strategic Focus: ${result.biggestPriority}`;
                     id="insurance-life-coverage"
                     label={`Total Life Cover Sum Assured (${currSym})`}
                     value={insurance.lifeCoverage}
-                    onChange={val => setInsurance({ ...insurance, lifeCoverage: val })}
+                    onChange={val => {
+                      setInsurance({
+                        ...insurance,
+                        lifeCoverage: val,
+                        termCoverage: val,
+                        hasTermInsurance: val > 0,
+                        hasLifeInsurance: val > 0,
+                      });
+                    }}
                     currSym={currSym}
                     isLight={isLight}
                     placeholder="10000000"
@@ -4862,6 +5006,10 @@ Strategic Focus: ${result.biggestPriority}`;
                         : 'Fully Protected'}
                     </span>
                   </div>
+                  <div className="flex justify-between pt-1 border-t border-slate-800/60 text-slate-400">
+                    <span>Life Insurance Score:</span>
+                    <span className="font-mono font-bold text-blue-400">{result.metrics.insuranceLifeMarks ?? 0} / 40 marks</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -4875,6 +5023,9 @@ Strategic Focus: ${result.biggestPriority}`;
                   <HeartHandshake className="w-4 h-4" />
                   Health Insurance
                 </h4>
+                <span className="text-[10px] font-mono text-emerald-400">
+                  {result.metrics.insuranceHealthMarks ?? 0} / 60 marks
+                </span>
               </div>
 
               <div className="space-y-3 text-xs">
@@ -4882,7 +5033,16 @@ Strategic Focus: ${result.biggestPriority}`;
                   <input
                     type="checkbox"
                     checked={insurance.hasHealthInsurance}
-                    onChange={e => setInsurance({ ...insurance, hasHealthInsurance: e.target.checked })}
+                    onChange={e => {
+                      const checked = e.target.checked;
+                      setInsurance({
+                        ...insurance,
+                        hasHealthInsurance: checked,
+                        healthCoverage: checked ? (insurance.healthCoverage > 0 ? insurance.healthCoverage : 500000) : 0,
+                        hasPersonalHealthPolicy: checked ? insurance.hasPersonalHealthPolicy : false,
+                        hasEmployerInsurance: checked ? insurance.hasEmployerInsurance : false,
+                      });
+                    }}
                     className="w-4 h-4 rounded text-emerald-600 accent-emerald-500"
                   />
                   <span>I have Health Insurance protection</span>
@@ -4893,7 +5053,13 @@ Strategic Focus: ${result.biggestPriority}`;
                     id="insurance-health-coverage"
                     label={`Health Sum Insured (${currSym})`}
                     value={insurance.healthCoverage}
-                    onChange={val => setInsurance({ ...insurance, healthCoverage: val })}
+                    onChange={val => {
+                      setInsurance({
+                        ...insurance,
+                        healthCoverage: val,
+                        hasHealthInsurance: val > 0,
+                      });
+                    }}
                     currSym={currSym}
                     isLight={isLight}
                     placeholder="1000000"
@@ -4906,7 +5072,15 @@ Strategic Focus: ${result.biggestPriority}`;
                     <input
                       type="checkbox"
                       checked={insurance.hasPersonalHealthPolicy}
-                      onChange={e => setInsurance({ ...insurance, hasPersonalHealthPolicy: e.target.checked })}
+                      onChange={e => {
+                        const checked = e.target.checked;
+                        setInsurance({
+                          ...insurance,
+                          hasPersonalHealthPolicy: checked,
+                          hasHealthInsurance: checked || insurance.hasHealthInsurance,
+                          healthCoverage: checked && (!insurance.healthCoverage || insurance.healthCoverage === 0) ? 500000 : insurance.healthCoverage,
+                        });
+                      }}
                       className="w-3.5 h-3.5 rounded accent-emerald-500"
                     />
                     <span>Independent personal/family policy (Not just employer group cover)</span>
@@ -4916,11 +5090,35 @@ Strategic Focus: ${result.biggestPriority}`;
                     <input
                       type="checkbox"
                       checked={insurance.hasEmployerInsurance}
-                      onChange={e => setInsurance({ ...insurance, hasEmployerInsurance: e.target.checked })}
+                      onChange={e => {
+                        const checked = e.target.checked;
+                        setInsurance({
+                          ...insurance,
+                          hasEmployerInsurance: checked,
+                          hasHealthInsurance: checked || insurance.hasHealthInsurance,
+                        });
+                      }}
                       className="w-3.5 h-3.5 rounded accent-emerald-500"
                     />
                     <span>Corporate / Employer Group Health cover active</span>
                   </label>
+                </div>
+
+                <div className="p-3 rounded-xl bg-black/20 text-[11px] space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Health Coverage Tier:</span>
+                    <span className="font-mono font-bold text-emerald-400">
+                      {(insurance.healthCoverage || 0) >= 1000000 
+                        ? 'Optimal (₹10L+ Comprehensive)' 
+                        : ((insurance.healthCoverage || 0) >= 500000 
+                            ? 'Adequate (₹5L+ Standard: 50-60 marks)' 
+                            : ((insurance.healthCoverage || 0) > 0 ? 'Basic / Partial' : 'No Cover'))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Health Insurance Score:</span>
+                    <span className="font-mono font-bold text-emerald-400">{result.metrics.insuranceHealthMarks ?? 0} / 60 marks</span>
+                  </div>
                 </div>
               </div>
             </div>

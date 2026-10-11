@@ -50,9 +50,10 @@ export const SidebarProfile: React.FC<SidebarProfileProps> = ({ isCollapsed = fa
 
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
-  // Dynamic user profile from AuthContext
-  const userName = currentUser?.name || 'Sudharsan';
-  const userEmail = currentUser?.email || 'sudharsan014@gamil.com';
+  // Dynamic user profile from AuthContext (admin is only sudharsan014@gamil.com)
+  const isMasterAdmin = currentUser?.email === 'sudharsan014@gamil.com' || currentUser?.email === 'sudharsan014@gmail.com' || currentUser?.role === 'admin';
+  const userName = currentUser?.name || (isMasterAdmin ? 'Sudharsan (Admin)' : 'Sudharsan (User)');
+  const userEmail = currentUser?.email || (isMasterAdmin ? 'sudharsan014@gamil.com' : 'sudharsan@gmail.com');
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);

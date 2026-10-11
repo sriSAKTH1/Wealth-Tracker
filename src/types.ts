@@ -409,6 +409,8 @@ export interface FinScoreResult {
     lifeCoverageMultiplier?: number;
     emergencyMonthsAvailable?: number;
     totalGoalRequiredMonthlySavings: number;
+    insuranceHealthMarks?: number;
+    insuranceLifeMarks?: number;
   };
   monthlyActionPlan: {
     monthNumber: number;
