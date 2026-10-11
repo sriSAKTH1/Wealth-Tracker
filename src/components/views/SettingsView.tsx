@@ -123,8 +123,8 @@ export const SettingsView: React.FC = () => {
   };
 
   // Persistent User profile fields
-  const [name, setName] = useState(() => localStorage.getItem('fix_user_name') || 'Sudharsan M.');
-  const [email, setEmail] = useState(() => localStorage.getItem('fix_user_email') || 'sudharsanm014@gmail.com');
+  const [name, setName] = useState(() => localStorage.getItem('fix_user_name') || currentUser?.name || 'Sudharsan');
+  const [email, setEmail] = useState(() => localStorage.getItem('fix_user_email') || currentUser?.email || 'sudharsan014@gamil.com');
   const [role, setRole] = useState(() => localStorage.getItem('fix_user_role') || 'Pro Investor / Software Engineer');
   const [profileSaved, setProfileSaved] = useState(false);
   const [isSettingsSaved, setIsSettingsSaved] = useState(false);
@@ -384,7 +384,7 @@ export const SettingsView: React.FC = () => {
                 type="text"
                 value={name}
                 onChange={(e) => updateName(e.target.value)}
-                placeholder="Sudharsan M."
+                placeholder="Sudharsan"
                 required
                 className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                   isLight ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'
@@ -400,7 +400,7 @@ export const SettingsView: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={(e) => updateEmail(e.target.value)}
-                placeholder="sudharsanm014@gmail.com"
+                placeholder="sudharsan014@gamil.com"
                 required
                 className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                   isLight ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'

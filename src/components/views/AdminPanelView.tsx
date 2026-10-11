@@ -189,7 +189,7 @@ export const AdminPanelView: React.FC = () => {
 
   // Delete user permanently from Firestore database and UI
   const handleDeleteUser = async (targetUser: AppUserProfile) => {
-    if (targetUser.email === 'sudharsanm014@gmail.com' || targetUser.email === 'sudharsan@gmail.com') {
+    if (targetUser.email === 'sudharsan014@gamil.com' || targetUser.email === 'sudharsan014@gmail.com' || targetUser.email === 'sudharsanm014@gmail.com') {
       showToast('The Master Administrator account cannot be deleted.');
       return;
     }
@@ -293,7 +293,7 @@ export const AdminPanelView: React.FC = () => {
         category: newsCategory,
         summary: newsSummary.trim() || newsContent.slice(0, 140) + '...',
         content: newsContent.trim(),
-        author: currentUser?.name || 'Sudharsan M. (Admin)',
+        author: currentUser?.name || 'Sudharsan (Admin)',
         imageUrl: newsImageUrl.trim() || undefined,
         imageCaption: newsImageCaption.trim() || undefined,
         readTimeMinutes: parseInt(newsReadTime) || 3
@@ -568,7 +568,7 @@ export const AdminPanelView: React.FC = () => {
                 {filteredUsers.map(user => {
                   const isAdminUser = user.role === 'admin';
                   const isDemoUser = user.id === 'demo.wealthtracker.com' || user.email === 'demo@wealthtracker.com';
-                  const isMasterAdmin = user.email === 'sudharsanm014@gmail.com' || user.email === 'sudharsan@gmail.com';
+                  const isMasterAdmin = user.email === 'sudharsan014@gamil.com' || user.email === 'sudharsan014@gmail.com' || user.email === 'sudharsanm014@gmail.com';
                   return (
                     <tr key={user.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                       <td className="py-3.5 pl-2">

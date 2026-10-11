@@ -101,13 +101,13 @@ export function getClientDeviceName(): string {
 }
 
 // Default super admin email
-export const SUPER_ADMIN_EMAIL = 'sudharsan@gmail.com';
+export const SUPER_ADMIN_EMAIL = 'sudharsan014@gamil.com';
 
 // Seed user accounts - only the real administrator and the single requested demo user
 export const INITIAL_SEED_USERS: AppUserProfile[] = [
   {
-    id: 'user-sudharsan',
-    email: 'sudharsan@gmail.com',
+    id: 'user-sudharsan014-admin',
+    email: 'sudharsan014@gamil.com',
     name: 'Sudharsan (Admin)',
     role: 'admin',
     deviceInfo: 'Web Browser • Admin Station',
@@ -116,6 +116,18 @@ export const INITIAL_SEED_USERS: AppUserProfile[] = [
     finScore: 88,
     monthlyIncome: 65000,
     savingsRatio: 35
+  },
+  {
+    id: 'user-sudharsan',
+    email: 'sudharsan@gmail.com',
+    name: 'Sudharsan (User)',
+    role: 'user',
+    deviceInfo: 'Web Browser • Personal Vault',
+    lastLoginAt: new Date().toISOString(),
+    createdAt: new Date(Date.now() - 15 * 86400000).toISOString(),
+    finScore: 80,
+    monthlyIncome: 70000,
+    savingsRatio: 30
   },
   {
     id: 'demo.wealthtracker.com',
@@ -201,24 +213,34 @@ export async function fetchAllUsers(): Promise<AppUserProfile[]> {
         const email = (u.email || '').toLowerCase().trim();
         const id = docSnap.id || u.id;
 
-        const isAdmin = email === 'sudharsan@gmail.com' || email === 'sudharsanm014@gmail.com' || id === 'user-sudharsan' || id === 'user-sudharsan-admin';
+        const isAdmin = email === 'sudharsan014@gamil.com' || email === 'sudharsan014@gmail.com' || email === 'sudharsanm014@gmail.com' || id === 'user-sudharsan014-admin';
+        const isSudharsanUser = email === 'sudharsan@gmail.com' || id === 'user-sudharsan';
         const isDemo = id === 'demo.wealthtracker.com' || email === 'demo@wealthtracker.com';
 
-        // Delete any non-admin, non-demo users from Firestore
-        if (!isAdmin && !isDemo) {
+        // Delete any non-admin, non-demo, non-whitelisted users from Firestore
+        if (!isAdmin && !isDemo && !isSudharsanUser) {
           deleteDoc(doc(db, 'users', id)).catch(() => {});
+          continue;
+        }
+
+        // If user is sudharsan@gmail.com, ensure role is 'user'
+        if (isSudharsanUser && !isAdmin) {
+          users.push({ ...u, id, role: 'user', name: u.name?.replace('(Admin)', '(User)') || 'Sudharsan (User)' });
           continue;
         }
 
         users.push({ ...u, id });
       }
 
-      // Ensure admin and demo user are always present in the returned list
-      if (!users.some(u => u.email === 'sudharsan@gmail.com' || u.email === 'sudharsanm014@gmail.com' || u.id === 'user-sudharsan')) {
+      // Ensure admin, user Sudharsan, and demo user are always present in the returned list
+      if (!users.some(u => u.email === 'sudharsan014@gamil.com' || u.email === 'sudharsan014@gmail.com' || u.id === 'user-sudharsan014-admin')) {
         users.unshift(INITIAL_SEED_USERS[0]);
       }
-      if (!users.some(u => u.id === 'demo.wealthtracker.com' || u.email === 'demo@wealthtracker.com')) {
+      if (!users.some(u => u.email === 'sudharsan@gmail.com' || u.id === 'user-sudharsan')) {
         users.push(INITIAL_SEED_USERS[1]);
+      }
+      if (!users.some(u => u.id === 'demo.wealthtracker.com' || u.email === 'demo@wealthtracker.com')) {
+        users.push(INITIAL_SEED_USERS[2]);
       }
 
       localStorage.setItem('app_admin_all_users', JSON.stringify(users));
@@ -228,10 +250,11 @@ export async function fetchAllUsers(): Promise<AppUserProfile[]> {
     console.warn("Error fetching remote users, using cached/seed list:", err);
   }
 
-  // Ensure demo user is persisted in Firestore if missing
+  // Ensure demo user & seed accounts are persisted in Firestore if missing
   try {
-    setDoc(doc(db, 'users', 'demo.wealthtracker.com'), INITIAL_SEED_USERS[1], { merge: true }).catch(() => {});
-    setDoc(doc(db, 'users', 'user-sudharsan'), INITIAL_SEED_USERS[0], { merge: true }).catch(() => {});
+    setDoc(doc(db, 'users', 'user-sudharsan014-admin'), INITIAL_SEED_USERS[0], { merge: true }).catch(() => {});
+    setDoc(doc(db, 'users', 'user-sudharsan'), INITIAL_SEED_USERS[1], { merge: true }).catch(() => {});
+    setDoc(doc(db, 'users', 'demo.wealthtracker.com'), INITIAL_SEED_USERS[2], { merge: true }).catch(() => {});
   } catch {}
 
   localStorage.setItem('app_admin_all_users', JSON.stringify(INITIAL_SEED_USERS));
@@ -247,7 +270,7 @@ export async function deleteUserAccount(userId: string): Promise<void> {
   }
 }
 
-// Purge all non-real users from database and keep only Admin and demo.wealthtracker.com
+// Purge all non-real users from database and keep only Admin, Sudharsan (User), and demo.wealthtracker.com
 export async function purgeNonRealUsers(): Promise<AppUserProfile[]> {
   try {
     const snapshot = await getDocs(collection(db, 'users'));
@@ -255,9 +278,10 @@ export async function purgeNonRealUsers(): Promise<AppUserProfile[]> {
       const data = d.data();
       const email = (data.email || '').toLowerCase().trim();
       const id = d.id;
-      const isAdmin = email === 'sudharsan@gmail.com' || email === 'sudharsanm014@gmail.com' || id === 'user-sudharsan' || id === 'user-sudharsan-admin';
+      const isAdmin = email === 'sudharsan014@gamil.com' || email === 'sudharsan014@gmail.com' || email === 'sudharsanm014@gmail.com' || id === 'user-sudharsan014-admin';
+      const isSudharsanUser = email === 'sudharsan@gmail.com' || id === 'user-sudharsan';
       const isDemo = id === 'demo.wealthtracker.com' || email === 'demo@wealthtracker.com';
-      if (!isAdmin && !isDemo) {
+      if (!isAdmin && !isDemo && !isSudharsanUser) {
         await deleteDoc(doc(db, 'users', id)).catch(() => {});
       }
     }

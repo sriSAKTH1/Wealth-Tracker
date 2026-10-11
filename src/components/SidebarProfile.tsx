@@ -51,8 +51,8 @@ export const SidebarProfile: React.FC<SidebarProfileProps> = ({ isCollapsed = fa
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   // Dynamic user profile from AuthContext
-  const userName = currentUser?.name || 'Sudharsan M.';
-  const userEmail = currentUser?.email || 'sudharsanm014@gmail.com';
+  const userName = currentUser?.name || 'Sudharsan';
+  const userEmail = currentUser?.email || 'sudharsan014@gamil.com';
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
@@ -148,7 +148,7 @@ export const SidebarProfile: React.FC<SidebarProfileProps> = ({ isCollapsed = fa
 
     // Sync to Firestore database
     submitUserFeedback({
-      userId: 'user-sudharsan',
+      userId: currentUser?.id || 'user-feedback',
       userName: userName,
       userEmail: userEmail,
       category: (currentCategory.toLowerCase().replace(' ', '_') as any) || 'feature_request',

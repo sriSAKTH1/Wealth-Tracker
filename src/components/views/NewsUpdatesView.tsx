@@ -108,7 +108,7 @@ export const NewsUpdatesView: React.FC = () => {
   const [activeArticle, setActiveArticle] = useState<AppNewsPost | null>(null);
 
   // Admin direct feature release & blog authoring state
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.email === 'sudharsanm014@gmail.com';
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.email === 'sudharsan014@gamil.com' || currentUser?.email === 'sudharsan014@gmail.com' || currentUser?.email === 'sudharsanm014@gmail.com';
   const [isAdminCreateOpen, setIsAdminCreateOpen] = useState(false);
   const [adminPostTitle, setAdminPostTitle] = useState('');
   const [adminPostCategory, setAdminPostCategory] = useState<AppNewsPost['category']>('Feature Release');
@@ -247,7 +247,7 @@ export const NewsUpdatesView: React.FC = () => {
         category: adminPostCategory,
         summary: adminPostSummary.trim() || adminPostContent.slice(0, 140) + '...',
         content: adminPostContent.trim(),
-        author: currentUser?.name || 'Sudharsan M. (Admin)',
+        author: currentUser?.name || 'Sudharsan (Admin)',
         imageUrl: adminPostImageUrl.trim() || undefined,
         imageCaption: adminPostImageCaption.trim() || undefined,
         readTimeMinutes: parseInt(adminPostReadTime) || 3

@@ -14,9 +14,12 @@ import { auth, db, getClientDeviceName, SUPER_ADMIN_EMAIL } from '../services/fi
 import { AppUserProfile, AppUserRole } from '../types';
 
 export const ADMIN_EMAILS = [
-  'sudharsan@gmail.com',
+  'sudharsan014@gamil.com',
+  'sudharsan014@gmail.com',
   'sudharsanm014@gmail.com'
 ];
+
+export const ADMIN_PASSWORD = 'FIXwithME';
 
 export const isAdminEmail = (email?: string | null): boolean => {
   if (!email) return false;
@@ -66,7 +69,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const parsed = JSON.parse(cached);
         if (parsed && parsed.email) {
-          parsed.role = isAdminEmail(parsed.email) ? 'admin' : 'user';
+          const isAdm = isAdminEmail(parsed.email);
+          parsed.role = isAdm ? 'admin' : 'user';
+          if (!isAdm && parsed.name && parsed.name.includes('(Admin)')) {
+            parsed.name = parsed.name.replace('(Admin)', '(User)');
+          }
           return parsed;
         }
       } catch {}
@@ -129,7 +136,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             userProfile = {
               id: fbUser.uid,
               email: cleanEmail,
-              name: isTargetAdmin ? 'Sudharsan M. (Admin)' : (data.name || fbUser.displayName || cleanEmail.split('@')[0] || 'User'),
+              name: isTargetAdmin 
+                ? 'Sudharsan (Admin)' 
+                : (cleanEmail === 'sudharsan@gmail.com' ? 'Sudharsan (User)' : (data.name || fbUser.displayName || cleanEmail.split('@')[0] || 'User')),
               role,
               deviceInfo: getClientDeviceName(),
               lastLoginAt: now,
@@ -143,7 +152,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             userProfile = {
               id: fbUser.uid,
               email: cleanEmail,
-              name: isTargetAdmin ? 'Sudharsan M. (Admin)' : (fbUser.displayName || cleanEmail.split('@')[0] || 'User'),
+              name: isTargetAdmin 
+                ? 'Sudharsan (Admin)' 
+                : (cleanEmail === 'sudharsan@gmail.com' ? 'Sudharsan (User)' : (fbUser.displayName || cleanEmail.split('@')[0] || 'User')),
               role,
               deviceInfo: getClientDeviceName(),
               lastLoginAt: now,
@@ -178,6 +189,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const role: 'admin' | 'user' = isTargetAdmin ? 'admin' : 'user';
     const now = new Date().toISOString();
 
+    // STRICT ADMIN VERIFICATION: Only sudharsan014@gamil.com / sudharsan014@gmail.com with password "FIXwithME"
+    if (isTargetAdmin) {
+      if (pass !== ADMIN_PASSWORD) {
+        return { 
+          success: false, 
+          error: `Incorrect administrator password for ${cleanEmail}. Enter password "FIXwithME".` 
+        };
+      }
+      const adminProfile: AppUserProfile = {
+        id: 'user-sudharsan014-admin',
+        email: cleanEmail,
+        name: 'Sudharsan (Admin)',
+        role: 'admin',
+        deviceInfo: getClientDeviceName(),
+        lastLoginAt: now,
+        createdAt: now
+      };
+      try {
+        const userRef = doc(db, 'users', adminProfile.id);
+        await setDoc(userRef, adminProfile, { merge: true }).catch(() => {});
+      } catch {}
+
+      setCurrentUser(adminProfile);
+      localStorage.setItem(LOCAL_AUTH_USER_KEY, JSON.stringify(adminProfile));
+      closeAuthModal();
+      showNotification(`👑 Master Administrator Active (${cleanEmail}) • Full Access Without Timer`);
+      return { success: true };
+    }
+
     try {
       const cred = await signInWithEmailAndPassword(auth, cleanEmail, pass);
       const userRef = doc(db, 'users', cred.user.uid);
@@ -189,8 +229,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         profile = {
           id: cred.user.uid,
           email: cleanEmail,
-          name: isTargetAdmin ? 'Sudharsan M. (Admin)' : (data.name || cleanEmail.split('@')[0]),
-          role,
+          name: cleanEmail === 'sudharsan@gmail.com' ? 'Sudharsan (User)' : (data.name || cleanEmail.split('@')[0]),
+          role: 'user',
           deviceInfo: getClientDeviceName(),
           lastLoginAt: now,
           createdAt: data.createdAt || now
@@ -200,8 +240,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         profile = {
           id: cred.user.uid,
           email: cleanEmail,
-          name: isTargetAdmin ? 'Sudharsan M. (Admin)' : (cred.user.displayName || cleanEmail.split('@')[0]),
-          role,
+          name: cleanEmail === 'sudharsan@gmail.com' ? 'Sudharsan (User)' : (cred.user.displayName || cleanEmail.split('@')[0]),
+          role: 'user',
           deviceInfo: getClientDeviceName(),
           lastLoginAt: now,
           createdAt: now
@@ -215,22 +255,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: true };
     } catch (err: any) {
       console.warn('Firebase signIn notice:', err?.message || err);
-      // Seamless sign in for administrator (sudharsan@gmail.com)
-      if (isTargetAdmin) {
-        const adminProfile: AppUserProfile = {
-          id: 'user-sudharsan-admin',
-          email: cleanEmail,
-          name: 'Sudharsan M. (Admin)',
-          role: 'admin',
-          deviceInfo: getClientDeviceName(),
-          lastLoginAt: now,
-          createdAt: now
-        };
-        setCurrentUser(adminProfile);
-        localStorage.setItem(LOCAL_AUTH_USER_KEY, JSON.stringify(adminProfile));
-        closeAuthModal();
-        return { success: true };
-      }
 
       // Check registered users in local storage
       try {
@@ -240,7 +264,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const userProfile: AppUserProfile = {
               id: regCache[cleanEmail].id || ('user-' + Date.now()),
               email: cleanEmail,
-              name: regCache[cleanEmail].name || cleanEmail.split('@')[0],
+              name: cleanEmail === 'sudharsan@gmail.com' ? 'Sudharsan (User)' : (regCache[cleanEmail].name || cleanEmail.split('@')[0]),
               role: 'user',
               deviceInfo: getClientDeviceName(),
               lastLoginAt: now,
@@ -257,9 +281,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // If user provided standard password >= 6, allow smooth local entry
       if (pass && pass.length >= 6) {
         const autoProfile: AppUserProfile = {
-          id: 'user-' + Date.now(),
+          id: cleanEmail === 'sudharsan@gmail.com' ? 'user-sudharsan' : ('user-' + Date.now()),
           email: cleanEmail,
-          name: cleanEmail.split('@')[0],
+          name: cleanEmail === 'sudharsan@gmail.com' ? 'Sudharsan (User)' : cleanEmail.split('@')[0],
           role: 'user',
           deviceInfo: getClientDeviceName(),
           lastLoginAt: now,
@@ -303,7 +327,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profile: AppUserProfile = {
         id: cred.user.uid,
         email: cleanEmail,
-        name: isTargetAdmin ? 'Sudharsan M. (Admin)' : cleanName,
+        name: isTargetAdmin 
+          ? 'Sudharsan (Admin)' 
+          : (cleanEmail === 'sudharsan@gmail.com' ? 'Sudharsan (User)' : cleanName),
         role,
         deviceInfo: getClientDeviceName(),
         lastLoginAt: now,
@@ -323,7 +349,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const localProfile: AppUserProfile = {
         id: 'user-' + Date.now(),
         email: cleanEmail,
-        name: isTargetAdmin ? 'Sudharsan M. (Admin)' : cleanName,
+        name: isTargetAdmin 
+          ? 'Sudharsan (Admin)' 
+          : (cleanEmail === 'sudharsan@gmail.com' ? 'Sudharsan (User)' : cleanName),
         role,
         deviceInfo: getClientDeviceName(),
         lastLoginAt: now,
@@ -356,7 +384,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profile: AppUserProfile = {
         id: fbUser.uid,
         email: cleanEmail,
-        name: isTargetAdmin ? 'Sudharsan M. (Admin)' : (fbUser.displayName || cleanEmail.split('@')[0] || 'User'),
+        name: isTargetAdmin 
+          ? 'Sudharsan (Admin)' 
+          : (cleanEmail === 'sudharsan@gmail.com' ? 'Sudharsan (User)' : (fbUser.displayName || cleanEmail.split('@')[0] || 'User')),
         role,
         deviceInfo: getClientDeviceName(),
         lastLoginAt: now,
@@ -381,9 +411,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isTargetAdmin = isAdminEmail(cleanEmail);
     const now = new Date().toISOString();
     const profile: AppUserProfile = {
-      id: 'google-demo-' + (isTargetAdmin ? 'sudharsan' : 'user'),
+      id: 'google-demo-' + (isTargetAdmin ? 'sudharsan014-admin' : 'user'),
       email: cleanEmail,
-      name: isTargetAdmin ? 'Sudharsan M. (Admin)' : 'Alex Rivera (User)',
+      name: isTargetAdmin 
+        ? 'Sudharsan (Admin)' 
+        : (cleanEmail === 'sudharsan@gmail.com' ? 'Sudharsan (User)' : 'Alex Rivera (User)'),
       role: isTargetAdmin ? 'admin' : 'user',
       deviceInfo: getClientDeviceName() + ' • Google Auth',
       lastLoginAt: now,
@@ -442,9 +474,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isCalcOnly = Boolean(options?.calculatorOnly);
 
     const profile: AppUserProfile = {
-      id: isTargetAdmin ? 'user-sudharsan' : 'demo.wealthtracker.com',
-      email: isTargetAdmin ? 'sudharsan@gmail.com' : 'demo@wealthtracker.com',
-      name: isTargetAdmin ? 'Sudharsan M. (Admin)' : (isCalcOnly ? 'Calculator Demo User' : 'Demo Client'),
+      id: isTargetAdmin ? 'user-sudharsan014-admin' : 'demo.wealthtracker.com',
+      email: isTargetAdmin ? 'sudharsan014@gamil.com' : 'demo@wealthtracker.com',
+      name: isTargetAdmin ? 'Sudharsan (Admin)' : (isCalcOnly ? 'Calculator Demo User' : 'Demo Client'),
       role: isTargetAdmin ? 'admin' : 'user',
       deviceInfo: getClientDeviceName() + ' • Demo Sandbox',
       lastLoginAt: now,
@@ -462,7 +494,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setCurrentUser(profile);
       localStorage.setItem(LOCAL_AUTH_USER_KEY, JSON.stringify(profile));
-      showNotification('👑 Master Administrator Active (sudharsan@gmail.com) • Full Access Without Timer');
+      showNotification('👑 Master Administrator Active (sudharsan014@gamil.com) • Full Access Without Timer');
       return;
     }
 

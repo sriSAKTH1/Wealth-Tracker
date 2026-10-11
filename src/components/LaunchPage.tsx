@@ -2143,7 +2143,7 @@ export const LaunchPage: React.FC = () => {
                 id="btn-hero-test-admin"
                 onClick={() => enterTestMode('admin')}
                 className="w-full sm:w-auto px-6 py-3 rounded-2xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 text-blue-800 hover:text-blue-900 font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-                title="Test as sudharsan@gmail.com (Master Administrator)"
+                title="Test as sudharsan014@gamil.com (Master Administrator)"
               >
                 <Shield className="w-4 h-4 text-blue-600" />
                 <span>👑 Test as Admin</span>
