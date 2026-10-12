@@ -11,13 +11,13 @@ import {
 } from '../types';
 
 /**
- * Realistic 10 Lakh (₹10,00,000) Salaried Family Demo Data
+ * Realistic 1,042,931 Salaried Family Demo Data
  * - Monthly Salary: ₹70,000/mo
  * - Monthly Living Expenses: ~₹42,000/mo
  * - Monthly SIP Investments: ₹15,000/mo
- * - Total Assets: ₹11,60,000 (Liquid Bank, Mutual Funds, EPF/PPF, Gold, Equities)
+ * - Total Assets: ₹1,202,931 (Liquid Bank, Mutual Funds, EPF/PPF, Gold, Equities)
  * - Total Liabilities: ₹1,60,000 (Two-Wheeler/Car Loan & Credit Card cycle)
- * - Net Worth: ₹10,00,000 (Exact 10 Lakhs)
+ * - Net Worth: ₹1,042,931 (Exact 1,042,931)
  */
 
 export const INITIAL_ASSETS: Asset[] = [
@@ -27,8 +27,8 @@ export const INITIAL_ASSETS: Asset[] = [
     category: 'Cash & Bank',
     subType: 'Savings Account',
     institution: 'HDFC Bank',
-    value: 40000,
-    costBasis: 40000,
+    value: 82931,
+    costBasis: 82931,
     currency: 'INR',
     isLiquid: true,
     tags: ['Liquid Cash', 'Salary Account'],
@@ -241,7 +241,7 @@ export const INITIAL_ACCOUNTS: AccountItem[] = [
     name: 'HDFC Bank Salary Account',
     institution: 'HDFC Bank',
     type: 'checking',
-    balance: 40000,
+    balance: 82931,
     accountNumberMasked: '•••• 4821',
     currency: 'INR',
     lastSynced: '2026-08-14 09:30',
@@ -640,13 +640,13 @@ export const INITIAL_SCHEDULED_ITEMS: ScheduledCalendarItem[] = [
 ];
 
 export const INITIAL_NET_WORTH_HISTORY: NetWorthSnapshot[] = [
-  { date: '2025-09', netWorth: 845000, totalAssets: 1025000, totalLiabilities: 180000 },
-  { date: '2025-10', netWorth: 875000, totalAssets: 1050000, totalLiabilities: 175000 },
-  { date: '2025-11', netWorth: 905000, totalAssets: 1077000, totalLiabilities: 172000 },
-  { date: '2025-12', netWorth: 930000, totalAssets: 1098000, totalLiabilities: 168000 },
-  { date: '2026-01', netWorth: 952000, totalAssets: 1117000, totalLiabilities: 165000 },
-  { date: '2026-02', netWorth: 970000, totalAssets: 1133000, totalLiabilities: 163000 },
-  { date: '2026-03', netWorth: 985000, totalAssets: 1146000, totalLiabilities: 161000 },
-  { date: '2026-04', netWorth: 995000, totalAssets: 1156000, totalLiabilities: 161000 },
-  { date: '2026-05', netWorth: 1000000, totalAssets: 1160000, totalLiabilities: 160000 },
+  { date: '2025-09', netWorth: 887931, totalAssets: 1067931, totalLiabilities: 180000 },
+  { date: '2025-10', netWorth: 917931, totalAssets: 1092931, totalLiabilities: 175000 },
+  { date: '2025-11', netWorth: 947931, totalAssets: 1119931, totalLiabilities: 172000 },
+  { date: '2025-12', netWorth: 972931, totalAssets: 1140931, totalLiabilities: 168000 },
+  { date: '2026-01', netWorth: 994931, totalAssets: 1159931, totalLiabilities: 165000 },
+  { date: '2026-02', netWorth: 1012931, totalAssets: 1175931, totalLiabilities: 163000 },
+  { date: '2026-03', netWorth: 1027931, totalAssets: 1188931, totalLiabilities: 161000 },
+  { date: '2026-04', netWorth: 1037931, totalAssets: 1198931, totalLiabilities: 161000 },
+  { date: '2026-05', netWorth: 1042931, totalAssets: 1202931, totalLiabilities: 160000 },
 ];

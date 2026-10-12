@@ -732,7 +732,7 @@ export const SettingsView: React.FC = () => {
               className="px-4 py-2.5 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-colors flex items-center gap-2"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Refill Demo Account (₹10L Portfolio, ₹70k Salary)</span>
+              <span>Refill Demo Account (₹1,042,931 Net Worth, ₹70k Salary)</span>
             </button>
 
             <button

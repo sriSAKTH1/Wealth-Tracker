@@ -140,7 +140,10 @@ export const FinScoreView: React.FC = () => {
     assets = [], 
     liabilities = [], 
     customGoals = [],
-    essentialGoals = []
+    essentialGoals = [],
+    netWorth: appNetWorth,
+    totalAssets: appTotalAssets,
+    totalLiabilities: appTotalLiabilities,
   } = useFinance();
   const appGoals = customGoals || [];
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
@@ -1112,14 +1115,17 @@ Strategic Focus: ${result.biggestPriority}`;
 
     // 3. Loans from liabilities
     if (liabilities && liabilities.length > 0) {
-      const mappedLoans: FinScoreLoan[] = liabilities.map((l, idx) => ({
-        id: `loan-sync-${idx}`,
-        type: l.category || 'Loan',
-        outstandingAmount: l.value,
-        monthlyEmi: l.monthlyPayment || Math.round(l.value * 0.03),
-        interestRate: l.interestRate || 10.5,
-        remainingTenureMonths: 36,
-      }));
+      const mappedLoans: FinScoreLoan[] = liabilities.map((l, idx) => {
+        const bal = Number(l.balance ?? (l as any).value) || 0;
+        return {
+          id: `loan-sync-${idx}`,
+          type: l.name || l.category || 'Loan',
+          outstandingAmount: bal,
+          monthlyEmi: Number(l.monthlyPayment || l.minimumPayment) || Math.round(bal * 0.03),
+          interestRate: Number(l.interestRate) || 8.5,
+          remainingTenureMonths: Number(l.remainingMonths) || 24,
+        };
+      });
       setLoans(mappedLoans);
     }
 
@@ -2675,65 +2681,34 @@ Strategic Focus: ${result.biggestPriority}`;
             </div>
           </div>
 
-          {/* Interactive What-If Simulator */}
-          <div className={`p-6 rounded-3xl border ${finScoreTheme.banner}`}>
-            <div className="flex items-center gap-2 mb-2">
-              <Sliders className="w-4 h-4 text-blue-500" />
-              <h4 className="text-sm font-bold uppercase tracking-wider">
-                Interactive What-If Score Simulator
-              </h4>
-            </div>
-            <p className={`text-xs mb-4 ${finScoreTheme.muted}`}>
-              Test how taking concrete actions will immediately boost your FinScore.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <div className="flex justify-between text-xs font-semibold mb-1">
-                  <span>Add to Emergency Savings:</span>
-                  <span className="font-mono font-bold text-blue-500">+{currSym}{(simEmergencyAdd ?? 0).toLocaleString()}</span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100000}
-                  step={5000}
-                  value={simEmergencyAdd}
-                  onChange={e => setSimEmergencyAdd(Number(e.target.value))}
-                  className="w-full accent-blue-500"
-                />
+          {/* Interactive What-If Simulator (Coming Soon) */}
+          <div className={`p-6 sm:p-7 rounded-3xl border shadow-sm transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${finScoreTheme.banner}`}>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
+                <Sliders className="w-6 h-6" />
               </div>
-
               <div>
-                <div className="flex justify-between text-xs font-semibold mb-1">
-                  <span>Prepay Outstanding Debt:</span>
-                  <span className="font-mono font-bold text-purple-500">+{currSym}{(simPrepayDebt ?? 0).toLocaleString()}</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-base font-extrabold tracking-tight">
+                    Interactive What-If Score Simulator
+                  </h4>
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1.5 font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    Coming Soon....
+                  </span>
                 </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={150000}
-                  step={10000}
-                  value={simPrepayDebt}
-                  onChange={e => setSimPrepayDebt(Number(e.target.value))}
-                  className="w-full accent-purple-500"
-                />
+                <p className={`text-xs mt-1 ${finScoreTheme.muted}`}>
+                  Scenario testing and dynamic debt-prepayment impact simulator coming soon....
+                </p>
               </div>
             </div>
 
-            {(simEmergencyAdd > 0 || simPrepayDebt > 0) && (
-              <div className="mt-4 pt-3 border-t border-blue-500/20 flex items-center justify-between text-xs">
-                <span className="font-medium">
-                  Simulated Impact: Projected score moves to <strong className="font-mono text-emerald-400 font-bold">{result.overallScore}/100</strong>
-                </span>
-                <button
-                  onClick={() => { setSimEmergencyAdd(0); setSimPrepayDebt(0); }}
-                  className="text-slate-400 hover:text-white underline text-[11px]"
-                >
-                  Reset Simulator
-                </button>
-              </div>
-            )}
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+              <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                <span>Coming Soon....</span>
+              </span>
+            </div>
           </div>
 
           {/* Automatic Alerts Feed (Step 11) */}

@@ -246,7 +246,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const isDemoUser = (!currentUser || currentUser.id === 'demo.wealthtracker.com' || isDemoMode) && currentUser?.role !== 'admin';
   const userVaultPrefix = isDemoUser 
-    ? 'aura_wealth_demo_v4' 
+    ? 'aura_wealth_demo_v5' 
     : `aura_vault_user_${currentUser?.id || 'guest'}_v2`;
 
   // Navigation State
@@ -567,68 +567,44 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } else {
       const isInitialized = localStorage.getItem(`${userVaultPrefix}_initialized`);
       if (!isInitialized) {
-        if (currentUser.role === 'admin') {
-          // Master Admin: Seed with rich master financial portfolio for complete unrestricted admin management
-          const loaded = loadStoredArray<Asset>(`${userVaultPrefix}_assets`, INITIAL_ASSETS);
-          setAssets(loaded);
-          setLiabilities(loadStoredArray(`${userVaultPrefix}_liabilities`, INITIAL_LIABILITIES));
-          setAccounts(loadStoredArray(`${userVaultPrefix}_accounts`, INITIAL_ACCOUNTS));
-          setTransactions(loadStoredArray(`${userVaultPrefix}_transactions`, INITIAL_TRANSACTIONS));
-          setBudgets(loadStoredArray(`${userVaultPrefix}_budgets`, INITIAL_BUDGETS));
-          setEssentialGoals(loadStoredArray(`${userVaultPrefix}_essential_goals`, INITIAL_ESSENTIAL_GOALS));
-          setCustomGoals(loadStoredArray(`${userVaultPrefix}_custom_goals`, INITIAL_CUSTOM_GOALS));
-          setScheduledItems(loadStoredArray(`${userVaultPrefix}_scheduled`, INITIAL_SCHEDULED_ITEMS));
-          setNetWorthHistory(loadStoredArray(`${userVaultPrefix}_history`, INITIAL_NET_WORTH_HISTORY));
+        // Seed user vault with rich financial portfolio (Exact ₹1,042,931 Net Worth)
+        const loaded = INITIAL_ASSETS;
+        setAssets(loaded);
+        setLiabilities(INITIAL_LIABILITIES);
+        setAccounts(INITIAL_ACCOUNTS);
+        setTransactions(INITIAL_TRANSACTIONS);
+        setBudgets(INITIAL_BUDGETS);
+        setEssentialGoals(INITIAL_ESSENTIAL_GOALS);
+        setCustomGoals(INITIAL_CUSTOM_GOALS);
+        setScheduledItems(INITIAL_SCHEDULED_ITEMS);
+        setNetWorthHistory(INITIAL_NET_WORTH_HISTORY);
 
-          localStorage.setItem(`${userVaultPrefix}_initialized`, 'true');
-          localStorage.setItem(`${userVaultPrefix}_assets`, JSON.stringify(loaded));
-          localStorage.setItem(`${userVaultPrefix}_liabilities`, JSON.stringify(INITIAL_LIABILITIES));
-          localStorage.setItem(`${userVaultPrefix}_accounts`, JSON.stringify(INITIAL_ACCOUNTS));
-          localStorage.setItem(`${userVaultPrefix}_transactions`, JSON.stringify(INITIAL_TRANSACTIONS));
-          localStorage.setItem(`${userVaultPrefix}_budgets`, JSON.stringify(INITIAL_BUDGETS));
-          localStorage.setItem(`${userVaultPrefix}_essential_goals`, JSON.stringify(INITIAL_ESSENTIAL_GOALS));
-          localStorage.setItem(`${userVaultPrefix}_custom_goals`, JSON.stringify(INITIAL_CUSTOM_GOALS));
-          localStorage.setItem(`${userVaultPrefix}_scheduled`, JSON.stringify(INITIAL_SCHEDULED_ITEMS));
-          localStorage.setItem(`${userVaultPrefix}_history`, JSON.stringify(INITIAL_NET_WORTH_HISTORY));
-        } else {
-          // Brand new registered regular user: fully empty, all zero!
-          const zeroHistory = [
-            { date: new Date().toISOString().split('T')[0], netWorth: 0, totalAssets: 0, totalLiabilities: 0 }
-          ];
-          setAssets([]);
-          setLiabilities([]);
-          setAccounts([]);
-          setTransactions([]);
-          setBudgets([]);
-          setEssentialGoals([]);
-          setCustomGoals([]);
-          setScheduledItems([]);
-          setNetWorthHistory(zeroHistory);
-
-          localStorage.setItem(`${userVaultPrefix}_initialized`, 'true');
-          localStorage.setItem(`${userVaultPrefix}_assets`, JSON.stringify([]));
-          localStorage.setItem(`${userVaultPrefix}_liabilities`, JSON.stringify([]));
-          localStorage.setItem(`${userVaultPrefix}_accounts`, JSON.stringify([]));
-          localStorage.setItem(`${userVaultPrefix}_transactions`, JSON.stringify([]));
-          localStorage.setItem(`${userVaultPrefix}_budgets`, JSON.stringify([]));
-          localStorage.setItem(`${userVaultPrefix}_essential_goals`, JSON.stringify([]));
-          localStorage.setItem(`${userVaultPrefix}_custom_goals`, JSON.stringify([]));
-          localStorage.setItem(`${userVaultPrefix}_scheduled`, JSON.stringify([]));
-          localStorage.setItem(`${userVaultPrefix}_history`, JSON.stringify(zeroHistory));
-        }
+        localStorage.setItem(`${userVaultPrefix}_initialized`, 'true');
+        localStorage.setItem(`${userVaultPrefix}_assets`, JSON.stringify(INITIAL_ASSETS));
+        localStorage.setItem(`${userVaultPrefix}_liabilities`, JSON.stringify(INITIAL_LIABILITIES));
+        localStorage.setItem(`${userVaultPrefix}_accounts`, JSON.stringify(INITIAL_ACCOUNTS));
+        localStorage.setItem(`${userVaultPrefix}_transactions`, JSON.stringify(INITIAL_TRANSACTIONS));
+        localStorage.setItem(`${userVaultPrefix}_budgets`, JSON.stringify(INITIAL_BUDGETS));
+        localStorage.setItem(`${userVaultPrefix}_essential_goals`, JSON.stringify(INITIAL_ESSENTIAL_GOALS));
+        localStorage.setItem(`${userVaultPrefix}_custom_goals`, JSON.stringify(INITIAL_CUSTOM_GOALS));
+        localStorage.setItem(`${userVaultPrefix}_scheduled`, JSON.stringify(INITIAL_SCHEDULED_ITEMS));
+        localStorage.setItem(`${userVaultPrefix}_history`, JSON.stringify(INITIAL_NET_WORTH_HISTORY));
       } else {
-        // Returning user: Load saved personal records
-        setAssets(loadStoredArray<Asset>(`${userVaultPrefix}_assets`, []));
-        setLiabilities(loadStoredArray(`${userVaultPrefix}_liabilities`, []));
-        setAccounts(loadStoredArray(`${userVaultPrefix}_accounts`, []));
-        setTransactions(loadStoredArray(`${userVaultPrefix}_transactions`, []));
-        setBudgets(loadStoredArray(`${userVaultPrefix}_budgets`, []));
-        setEssentialGoals(loadStoredArray(`${userVaultPrefix}_essential_goals`, []));
-        setCustomGoals(loadStoredArray(`${userVaultPrefix}_custom_goals`, []));
-        setScheduledItems(loadStoredArray(`${userVaultPrefix}_scheduled`, []));
-        setNetWorthHistory(loadStoredArray(`${userVaultPrefix}_history`, [
-          { date: new Date().toISOString().split('T')[0], netWorth: 0, totalAssets: 0, totalLiabilities: 0 }
-        ]));
+        // Returning user: Load saved personal records; fallback to ₹1,042,931 portfolio if empty
+        const storedAssets = loadStoredArray<Asset>(`${userVaultPrefix}_assets`, INITIAL_ASSETS);
+        const storedLiabilities = loadStoredArray<Liability>(`${userVaultPrefix}_liabilities`, INITIAL_LIABILITIES);
+        const finalAssets = (storedAssets && storedAssets.length > 0) ? storedAssets : INITIAL_ASSETS;
+        const finalLiabilities = (storedLiabilities && storedLiabilities.length > 0) ? storedLiabilities : INITIAL_LIABILITIES;
+
+        setAssets(finalAssets);
+        setLiabilities(finalLiabilities);
+        setAccounts(loadStoredArray(`${userVaultPrefix}_accounts`, INITIAL_ACCOUNTS));
+        setTransactions(loadStoredArray(`${userVaultPrefix}_transactions`, INITIAL_TRANSACTIONS));
+        setBudgets(loadStoredArray(`${userVaultPrefix}_budgets`, INITIAL_BUDGETS));
+        setEssentialGoals(loadStoredArray(`${userVaultPrefix}_essential_goals`, INITIAL_ESSENTIAL_GOALS));
+        setCustomGoals(loadStoredArray(`${userVaultPrefix}_custom_goals`, INITIAL_CUSTOM_GOALS));
+        setScheduledItems(loadStoredArray(`${userVaultPrefix}_scheduled`, INITIAL_SCHEDULED_ITEMS));
+        setNetWorthHistory(loadStoredArray(`${userVaultPrefix}_history`, INITIAL_NET_WORTH_HISTORY));
       }
     }
   }, [currentUser?.id, isDemoMode, userVaultPrefix]);
@@ -1429,7 +1405,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       localStorage.setItem(`${userVaultPrefix}_scheduled`, JSON.stringify(INITIAL_SCHEDULED_ITEMS));
       localStorage.setItem(`${userVaultPrefix}_history`, JSON.stringify(INITIAL_NET_WORTH_HISTORY));
     } catch {}
-    showNotification('Demo account refilled: ₹10 Lakh portfolio & ₹70,000/mo salary restored.');
+    showNotification('Demo account refilled: ₹1,042,931 net worth & ₹70,000/mo salary restored.');
   };
 
   const resetToDefaultData = () => {

@@ -97,11 +97,19 @@ export const INITIAL_FINSCORE_EXPENSES: FinScoreExpenseCategory[] = [
 export const INITIAL_FINSCORE_LOANS: FinScoreLoan[] = [
   {
     id: 'loan-1',
-    type: 'Personal Loan',
-    outstandingAmount: 240000,
-    monthlyEmi: 8000,
-    interestRate: 12.5,
-    remainingTenureMonths: 36,
+    type: 'Two-Wheeler / Pre-Owned Car Loan',
+    outstandingAmount: 128000,
+    monthlyEmi: 5800,
+    interestRate: 8.75,
+    remainingTenureMonths: 24,
+  },
+  {
+    id: 'loan-2',
+    type: 'ICICI Coral Credit Card (Current Cycle)',
+    outstandingAmount: 32000,
+    monthlyEmi: 1600,
+    interestRate: 0,
+    remainingTenureMonths: 1,
   },
 ];
 
@@ -119,39 +127,39 @@ export const INITIAL_FINSCORE_INSURANCE: FinScoreInsurance = {
 
 export const INITIAL_FINSCORE_EMERGENCY: FinScoreEmergency = {
   targetMonths: 6,
-  currentEmergencySavings: 80000,
+  currentEmergencySavings: 232931, // Liquid Bank (₹82,931) + Emergency FD (₹1,50,000)
 };
 
 export const INITIAL_FINSCORE_GOALS: FinScoreGoal[] = [
   {
     id: 'goal-1',
-    name: 'Buy Car',
-    category: 'Car',
+    name: 'Index & Mutual Funds Corpus (Nifty 50 & Flexi Cap)',
+    category: 'Mutual Funds & Equity',
     targetAmount: 800000,
-    currentSavings: 150000,
+    currentSavings: 480000,
     targetYear: 2030,
     tenureYears: 4,
-    expectedReturnRate: 10,
+    expectedReturnRate: 12,
   },
   {
     id: 'goal-2',
-    name: 'House Downpayment',
-    category: 'House',
+    name: 'Long-Term Compounding & Retirement (EPF/PPF/Sukanya)',
+    category: 'Retirement & Fixed Income',
     targetAmount: 1500000,
-    currentSavings: 300000,
+    currentSavings: 370000,
     targetYear: 2032,
     tenureYears: 6,
-    expectedReturnRate: 11,
+    expectedReturnRate: 8.5,
   },
   {
     id: 'goal-3',
-    name: 'Higher Education / Skills',
-    category: 'Higher Education',
+    name: 'Direct Equities & Gold Reserve (MMTC Gold & Bluechips)',
+    category: 'Equities & Gold',
     targetAmount: 300000,
     currentSavings: 120000,
     targetYear: 2028,
     tenureYears: 2,
-    expectedReturnRate: 8,
+    expectedReturnRate: 10,
   },
 ];
 

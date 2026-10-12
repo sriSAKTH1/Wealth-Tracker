@@ -85,10 +85,10 @@ export const DemoCountdownBanner: React.FC = () => {
             type="button"
             onClick={() => refillDemoAccount()}
             className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 font-sans text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
-            title="Refill demo account with default ₹10 Lakh portfolio & ₹70,000 salary data"
+            title="Refill demo account with default ₹1,042,931 portfolio & ₹70,000 salary data"
           >
             <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Refill Demo (₹10L)</span>
+            <span className="hidden sm:inline">Refill Demo (₹1,042,931)</span>
             <span className="sm:hidden">Refill</span>
           </button>
 

@@ -509,8 +509,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       'aura_wealth_demo_v2_budgets', 'aura_wealth_demo_v2_essential_goals', 'aura_wealth_demo_v2_custom_goals', 'aura_wealth_demo_v2_scheduled', 'aura_wealth_demo_v2_history',
       'aura_wealth_demo_v3_assets', 'aura_wealth_demo_v3_liabilities', 'aura_wealth_demo_v3_accounts', 'aura_wealth_demo_v3_transactions',
       'aura_wealth_demo_v3_budgets', 'aura_wealth_demo_v3_essential_goals', 'aura_wealth_demo_v3_custom_goals', 'aura_wealth_demo_v3_scheduled', 'aura_wealth_demo_v3_history',
-      'aura_wealth_demo_v4_assets', 'aura_wealth_demo_v4_liabilities', 'aura_wealth_demo_v4_accounts', 'aura_wealth_demo_v4_transactions',
-      'aura_wealth_demo_v4_budgets', 'aura_wealth_demo_v4_essential_goals', 'aura_wealth_demo_v4_custom_goals', 'aura_wealth_demo_v4_scheduled', 'aura_wealth_demo_v4_history'
+      'aura_wealth_demo_v4_budgets', 'aura_wealth_demo_v4_essential_goals', 'aura_wealth_demo_v4_custom_goals', 'aura_wealth_demo_v4_scheduled', 'aura_wealth_demo_v4_history',
+      'aura_wealth_demo_v5_assets', 'aura_wealth_demo_v5_liabilities', 'aura_wealth_demo_v5_accounts', 'aura_wealth_demo_v5_transactions',
+      'aura_wealth_demo_v5_budgets', 'aura_wealth_demo_v5_essential_goals', 'aura_wealth_demo_v5_custom_goals', 'aura_wealth_demo_v5_scheduled', 'aura_wealth_demo_v5_history'
     ];
     oldDemoKeys.forEach(k => {
       try { localStorage.removeItem(k); } catch {}

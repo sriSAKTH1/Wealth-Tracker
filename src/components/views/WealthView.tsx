@@ -61,6 +61,7 @@ import { AssetEditModal } from '../AssetEditModal';
 import { ConfirmationModal } from '../ConfirmationModal';
 import { AssetDetailView } from '../wealth/AssetDetailView';
 import { LiabilityDetailView } from '../wealth/LiabilityDetailView';
+import { DebtStrategyModule } from '../wealth/DebtStrategyModule';
 
 const DEFAULT_TARGET_ALLOCATIONS: Record<string, number> = {
   'Stocks & ETFs': 45,
@@ -2755,129 +2756,8 @@ export const WealthView: React.FC = () => {
 
           {/* RENDER VIEW 1: PAYOFF STRATEGY (SNOWBALL VS AVALANCHE) */}
           {liabViewLayoutMode === 'payoff_strategy' && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-amber-400" />
-                      <span>Debt Payoff Optimizer</span>
-                    </h3>
-                    <p className="text-xs text-zinc-400">
-                      Systematically eliminate liabilities using proven financial acceleration methods
-                    </p>
-                  </div>
-
-                  {/* Strategy Toggle */}
-                  <div className="flex items-center gap-1 p-1 rounded-xl bg-zinc-950 border border-zinc-800 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setPayoffStrategyMode('avalanche')}
-                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
-                        payoffStrategyMode === 'avalanche'
-                          ? 'bg-rose-500 text-zinc-950 shadow-xs'
-                          : 'text-zinc-400 hover:text-zinc-200'
-                      }`}
-                    >
-                      Avalanche (Highest APR)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPayoffStrategyMode('snowball')}
-                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
-                        payoffStrategyMode === 'snowball'
-                          ? 'bg-amber-400 text-zinc-950 shadow-xs'
-                          : 'text-zinc-400 hover:text-zinc-200'
-                      }`}
-                    >
-                      Snowball (Smallest Balance)
-                    </button>
-                  </div>
-                </div>
-
-                {/* Strategy Insight Banner */}
-                <div className={`p-3.5 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
-                  isLight ? 'bg-slate-50 border-slate-200/90 text-slate-800' : 'bg-zinc-950/80 border-zinc-800/80 text-zinc-300'
-                }`}>
-                  <div className="space-y-0.5">
-                    <span className="font-bold text-zinc-200">
-                      {payoffStrategyMode === 'avalanche' 
-                        ? '🎯 Debt Avalanche Method (Maximum Financial Savings)' 
-                        : '⚡ Debt Snowball Method (Quick Psychological Momentum)'}
-                    </span>
-                    <p className="text-zinc-400 text-[11px]">
-                      {payoffStrategyMode === 'avalanche'
-                        ? 'Tackles highest APR debt first while paying minimums on others. Minimizes total interest paid to banks.'
-                        : 'Eliminates smallest balance debts first regardless of APR to free up monthly cash flow and build confidence.'}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">Estimated Annual Interest Drag</span>
-                    <span className="font-mono font-bold text-rose-400 text-sm">
-                      {formatMoney(liabilities.reduce((s, l) => s + (l.balance * (l.interestRate || 0) / 100), 0))}/yr
-                    </span>
-                  </div>
-                </div>
-
-                {/* Prioritized List */}
-                <div className="space-y-2.5">
-                  {prioritizedLiabilities.map((liab, idx) => {
-                    const isTopPriority = idx === 0;
-                    const annualInterest = (liab.balance * (liab.interestRate || 0)) / 100;
-                    return (
-                      <div
-                        key={liab.id}
-                        className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                          isTopPriority
-                            ? 'bg-rose-500/10 border-rose-500/40 ring-1 ring-rose-500/30'
-                            : 'bg-zinc-950/60 border-zinc-800/80'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={`w-8 h-8 rounded-xl font-bold font-mono text-xs flex items-center justify-center shrink-0 ${
-                            isTopPriority ? 'bg-rose-500 text-white' : 'bg-zinc-800 text-zinc-400'
-                          }`}>
-                            #{idx + 1}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 
-                                onClick={() => setActiveDetailLiabilityId(liab.id)}
-                                className="text-sm font-bold text-zinc-100 hover:text-rose-400 cursor-pointer transition-colors"
-                                title="Click to view repayment history and loan details"
-                              >
-                                {liab.name}
-                              </h4>
-                              <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-zinc-800 text-zinc-300">
-                                {liab.category}
-                              </span>
-                              {isTopPriority && (
-                                <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-300 animate-pulse">
-                                  🎯 Pay Extra Here!
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-zinc-400 mt-0.5">
-                              {liab.institution} • APR: <span className="text-rose-400 font-semibold">{liab.interestRate || 0}%</span> • Min: {formatMoney(liab.monthlyPayment || liab.minimumPayment || 0)}/mo
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between sm:justify-end gap-5 text-right pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-800">
-                          <div>
-                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">Principal</span>
-                            <span className="font-mono font-bold text-zinc-100 text-sm">{formatMoney(liab.balance)}</span>
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">Annual Interest</span>
-                            <span className="font-mono font-semibold text-rose-400 text-xs">{formatMoney(annualInterest)}/yr</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+            <div className="animate-in fade-in duration-150">
+              <DebtStrategyModule embeddedLocation="wealth" />
             </div>
           )}
 
