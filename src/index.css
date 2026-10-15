@@ -1,11 +1,36 @@
 @import "tailwindcss";
 
 :root {
+  --default-font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --app-font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-body, html, #root {
-  font-family: var(--app-font-family), 'Plus Jakarta Sans', sans-serif;
+body, html {
+  font-family: var(--default-font-family);
+}
+
+/*
+ * LANDING PAGE TYPOGRAPHY LOCKDOWN:
+ * When the user changes font in Settings, only the web app / website updates.
+ * The landing page is strictly preserved with its original brand typography.
+ */
+.launch-page-root,
+.launch-page-root :is(h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, select, textarea, label, table, th, td):not(.font-mono):not([class*="font-mono"]) {
+  font-family: var(--default-font-family) !important;
+}
+
+.launch-page-root .font-mono,
+.launch-page-root [class*="font-mono"] {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace !important;
+}
+
+/*
+ * WEB APPLICATION / SITE TYPOGRAPHY:
+ * Applied across the entire website/dashboard, cards, headers, tables, buttons, and views.
+ */
+.app-website-root,
+.app-website-root :is(h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, select, textarea, label, table, th, td):not(.font-mono):not([class*="font-mono"]) {
+  font-family: var(--app-font-family, var(--default-font-family));
 }
 
 /* Typography Family Classes */

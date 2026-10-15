@@ -535,8 +535,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('fix_appearance_font_family', fontId);
     document.documentElement.style.setProperty('--app-font-family', cssFont);
     document.documentElement.setAttribute('data-font', fontId);
-    if (document.body) {
-      document.body.style.fontFamily = cssFont;
+    if (document.body && document.body.style.fontFamily) {
+      document.body.style.fontFamily = '';
     }
   };
 
@@ -552,8 +552,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const cssFont = fontMap[fontFamily] || fontMap.plus_jakarta;
     document.documentElement.style.setProperty('--app-font-family', cssFont);
     document.documentElement.setAttribute('data-font', fontFamily);
-    if (document.body) {
-      document.body.style.fontFamily = cssFont;
+    if (document.body && document.body.style.fontFamily) {
+      document.body.style.fontFamily = '';
     }
   }, [fontFamily]);
 

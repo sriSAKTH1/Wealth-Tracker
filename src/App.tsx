@@ -110,7 +110,9 @@ const MainLayout: React.FC = () => {
     <div
       data-accent={accentColor}
       data-theme={theme}
-      className={`h-screen w-full flex overflow-hidden font-['Plus_Jakarta_Sans',sans-serif] ${themeClasses[theme] || 'bg-zinc-950 text-zinc-100'}`}
+      id="app-main-layout"
+      className={`app-website-root h-screen w-full flex overflow-hidden ${themeClasses[theme] || 'bg-zinc-950 text-zinc-100'}`}
+      style={{ fontFamily: 'var(--app-font-family, var(--default-font-family))' }}
     >
       {/* Desktop & Mobile Sidebar: Spans TOP TO END (Full-height h-screen) */}
       <Sidebar />

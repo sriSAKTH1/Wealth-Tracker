@@ -473,15 +473,80 @@ export async function deleteBroadcastNotification(id: string): Promise<void> {
 export const INITIAL_SEED_NEWS: AppNewsPost[] = [
   {
     id: 'post-roadmap-upcoming-features-2027',
-    title: 'Upcoming Roadmap: Real UPI, Bank Accounts, Demat Portfolios, WhatsApp/Telegram AI & Live Stock Intelligence',
+    title: 'Upcoming Roadmap: Real-time UPI Integration, Bank/Demat account syncing, WhatsApp/Telegram AI integration, Live AI Financial Advisor, and Real-time stock news',
     category: 'Feature Release',
-    summary: 'Announcing our comprehensive 2027 product engineering roadmap: Real UPI & Bank AA integration, Demat broking sync (Zerodha/Groww), WhatsApp/Telegram AI companion, Universal AI Wealth Advisory, and live company news tailored to your holdings.',
-    content: `We are thrilled to unveil FIX Wealth's official engineering and feature roadmap!\n\nDriven by community feedback, our core focus is eliminating manual ledger entry, enhancing real-time market awareness, and integrating artificial intelligence seamlessly into your daily communication flow.\n\n### 1. Real UPI Accounts & Instant Auto-Sync (NPCI Rails)\n- Direct UPI payment gateway & SMS/NPCI parsing for Google Pay, PhonePe, Paytm, and BHIM.\n- Auto-categorization of merchant QR payments, daily chai/groceries, and peer transfers.\n- Real-time balance debits and zero manual typing.\n\n### 2. Real Bank Accounts via RBI Account Aggregator (AA)\n- Secure, consent-driven net banking synchronization across HDFC, SBI, ICICI, Axis, Kotak, and 20+ scheduled banks.\n- Live balance reconciliation for savings, fixed deposits, and recurring deposits.\n- Verified statement reconciliation and automated monthly cash flow velocity.\n\n### 3. Live Demat & Broking Portfolio Sync\n- Direct read-only connection with CDSL/NSDL and top brokerages including Zerodha Kite, Groww, Upstox, and Angel One.\n- Real-time portfolio valuation for NSE & BSE stocks, mutual fund NAVs, SGBs, and ETFs.\n- Automated dividend tracking and instant capital gains (LTCG / STCG) computation.\n\n### 4. WhatsApp & Telegram AI Wealth Companion\n- Connect your FIX Wealth vault directly to WhatsApp or Telegram.\n- Check your live net worth, ask "Can I afford this ₹15,000 gadget?", or log expenses on the fly simply by sending a text or voice note.\n- Daily morning financial digest with market opening summaries and upcoming bill reminders.\n\n### 5. Universal AI Financial & Investment Advisor (All-Market Domain Expertise)\n- Comprehensive AI financial advisor built with deep knowledge of Indian & global capital markets.\n- Analyzes your portfolio asset allocation by age and risk tolerance, identifying underperforming assets and suggesting optimized index SIPs.\n- Retirement runway (FIRE score) stress-testing, inflation projections, and personalized tax optimization strategies.\n\n### 6. Live Stock & Company News Feed (Holding-Tailored Intelligence)\n- Real-time corporate news, quarterly earnings announcements, and market sentiment curated specifically for the companies and mutual funds in your portfolio.\n- Instant shareable news briefs to keep you ahead of market movements.\n\n### 7. Additional Upcoming Capabilities\n- Live CIBIL & Credit Solvency Radar (loan refinance & debt payoff velocity)\n- Automated Capital Gains & ITR Tax Engine (FY 2026-27 Union Budget slabs)\n- Real Estate & Land Valuation Tracker (circle rates & rental yields)\n- Family Office & Nominee Vault (encrypted legacy pass)\n\nVisit the dedicated **Upcoming Features** tab in News & Updates to explore all items, cast your community upvotes, and request early beta access!`,
+    summary: 'Announcing our comprehensive engineering roadmap: Real-time UPI Integration, Bank/Demat account syncing, WhatsApp/Telegram AI integration, Live AI Financial Advisor, and Real-time stock news.',
+    content: `We are thrilled to unveil FIX Wealth's official engineering and feature roadmap!\n\nDriven by community feedback, our core focus is delivering real-time data automation, conversational AI convenience, and instant market awareness.\n\n### 1. Real-time UPI Integration (NPCI Fast Rails)\n- Direct UPI payment integration with Google Pay, PhonePe, Paytm, and BHIM.\n- Auto-capture of UPI QR merchant payments, bills, and peer transfers.\n- Real-time balance debits and automated spend categorizations with zero manual typing.\n\n### 2. Bank/Demat account syncing\n- Direct RBI-regulated Account Aggregator (AA) net banking integration for HDFC, SBI, ICICI, Axis, and Kotak.\n- Automated live CDSL/NSDL Demat sync with Zerodha Kite, Groww, Upstox, and Angel One.\n- Real-time equity and mutual fund portfolio valuation, dividend tracking, and automated capital gains calculation.\n\n### 3. WhatsApp/Telegram AI integration\n- Two-way interactive AI wealth companion directly in your WhatsApp and Telegram chat.\n- Ask "What's my current net worth?" or "Can I afford this ₹12,000 purchase?", and log expenses on the fly via text or voice notes.\n- Automated morning digests with market opening previews and scheduled bill reminders.\n\n### 4. Live AI Financial Advisor\n- Comprehensive real-time financial advisor trained on Indian and global financial markets.\n- Dynamic age-based asset allocation analysis, portfolio rebalancing, and tax-saving checks under Section 80C and LTCG/STCG.\n- Retirement readiness stress tests, inflation modelling, and actionable SIP guidance.\n\n### 5. Real-time stock news\n- Real-time corporate news feed, quarterly earnings briefs, and market alerts tailored dynamically to your portfolio's stocks and mutual fund holdings.\n- Direct integration with NSE and BSE corporate filing feeds to keep you informed ahead of market movements.\n\nExplore all 5 upcoming features below, cast your upvotes, and request early beta access!`,
     author: 'Sudharsan M. (Admin)',
     imageUrl: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80',
     imageCaption: 'Comprehensive 2027 Engineering Roadmap & Upcoming Features',
     publishedAt: new Date().toISOString(),
     readTimeMinutes: 5,
+    isFeatured: true
+  },
+  {
+    id: 'post-feat-realtime-upi',
+    title: 'Upcoming Feature: Real-time UPI Integration',
+    category: 'Feature Release',
+    summary: 'Instant automated synchronization with NPCI, PhonePe, Google Pay, Paytm, and BHIM for sub-second spend logging.',
+    content: `Eliminating manual expense entry is our #1 priority. With Real-time UPI Integration:\n\n- Instant Settlement Detection: Scan QR codes at merchants or tap to pay via UPI, and transactions will automatically log with smart merchant tags.\n- Multi-UPI ID Aggregation: Connect multiple bank UPI handles with end-to-end privacy encryption.\n- Daily Budget Tracking: Live alerts when daily UPI micro-spending approaches category limits.\n\nTarget Release: Q2 2027. Early beta testing opening soon!`,
+    author: 'Sudharsan M. (Admin)',
+    imageUrl: 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?auto=format&fit=crop&w=800&q=80',
+    imageCaption: 'Sub-Second UPI Transaction Settlement & Sync',
+    publishedAt: new Date(Date.now() - 1800000).toISOString(),
+    readTimeMinutes: 3,
+    isFeatured: true
+  },
+  {
+    id: 'post-feat-bank-demat-sync',
+    title: 'Upcoming Feature: Bank/Demat account syncing',
+    category: 'Feature Release',
+    summary: 'Unified portfolio sync combining RBI Account Aggregator banking feeds with CDSL/NSDL Demat brokerages.',
+    content: `No more monthly manual statements. Bank/Demat account syncing connects:\n\n- 20+ Scheduled Banks: HDFC, SBI, ICICI, Axis, Kotak via RBI-regulated Account Aggregator.\n- Broking Portfolios: Zerodha Kite, Groww, Upstox, Angel One read-only sync.\n- Automatic Valuations: Real-time mutual fund NAVs, equity shares, SGBs, and automated capital gains calculation.\n\nTarget Release: Q2 2027. Vote now in the Roadmap tab!`,
+    author: 'Sudharsan M. (Admin)',
+    imageUrl: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=800&q=80',
+    imageCaption: 'Consolidated Banking & Broking Account Aggregator',
+    publishedAt: new Date(Date.now() - 3600000).toISOString(),
+    readTimeMinutes: 4,
+    isFeatured: true
+  },
+  {
+    id: 'post-feat-whatsapp-telegram-ai',
+    title: 'Upcoming Feature: WhatsApp/Telegram AI integration',
+    category: 'Feature Release',
+    summary: 'Chat with your FIX Wealth advisor and log expenses right inside WhatsApp and Telegram.',
+    content: `Your financial management now lives where you chat daily:\n\n- Conversational Queries: Ask "How much did I spend on dining this week?" or "Am I on track for my emergency fund goal?".\n- Voice Note Expense Logging: Send a voice note like "Spent 450 on fuel" and the bot automatically records it in your vault.\n- Morning Market Pulse: Receive a 2-minute daily audio or text summary of your portfolio performance.\n\nTarget Release: Q2 2027. Request early access in the roadmap!`,
+    author: 'Sudharsan M. (Admin)',
+    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+    imageCaption: 'Two-Way WhatsApp & Telegram Conversational AI Assistant',
+    publishedAt: new Date(Date.now() - 5400000).toISOString(),
+    readTimeMinutes: 3,
+    isFeatured: true
+  },
+  {
+    id: 'post-feat-live-ai-advisor',
+    title: 'Upcoming Feature: Live AI Financial Advisor',
+    category: 'Feature Release',
+    summary: 'Proactive portfolio optimization, age-calibrated asset allocation, and real-time FIRE runway simulations.',
+    content: `Introducing our full-scale interactive financial co-pilot:\n\n- Age-Calibrated Rebalancing: Automated recommendations across equities, G-Secs, SGBs, and fixed deposits tailored to your exact life stage.\n- Tax Harvesting Radar: Real-time analysis of Section 80C, 80D, and LTCG ₹1.25 Lakh threshold harvest opportunities.\n- FIRE & Retirement Simulations: Monte Carlo stress testing for financial freedom.\n\nTarget Release: Q1 2027 (Currently in Beta Testing).`,
+    author: 'Sudharsan M. (Admin)',
+    imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
+    imageCaption: 'Real-Time Financial Intelligence & Advisory Co-pilot',
+    publishedAt: new Date(Date.now() - 7200000).toISOString(),
+    readTimeMinutes: 4,
+    isFeatured: true
+  },
+  {
+    id: 'post-feat-realtime-stock-news',
+    title: 'Upcoming Feature: Real-time stock news',
+    category: 'Market News',
+    summary: 'Instant news briefs and quarterly earnings updates tailored directly to your personal portfolio holdings.',
+    content: `Stay ahead of the curve without market noise:\n\n- Holding-Specific Filtering: Curates headlines only for companies and funds you actually hold.\n- Earnings & Concall Summaries: Instant AI key-takeaways from quarterly financial results.\n- Macro Regulatory Alerts: RBI, SEBI, and Union Budget announcements that impact your wealth.\n\nTarget Release: Q1 2027. In active development!`,
+    author: 'Sudharsan M. (Admin)',
+    imageUrl: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80',
+    imageCaption: 'Personalized Stock & Holdings Intelligence Stream',
+    publishedAt: new Date(Date.now() - 9000000).toISOString(),
+    readTimeMinutes: 3,
     isFeatured: true
   },
   {
@@ -493,9 +558,9 @@ export const INITIAL_SEED_NEWS: AppNewsPost[] = [
     author: 'Sudharsan M. (Admin)',
     imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
     imageCaption: 'Asset Allocation Engine & Real-Time INR Valuation',
-    publishedAt: new Date(Date.now() - 3600000).toISOString(),
+    publishedAt: new Date(Date.now() - 10800000).toISOString(),
     readTimeMinutes: 3,
-    isFeatured: true
+    isFeatured: false
   },
   {
     id: 'post-fr-2',
@@ -580,9 +645,14 @@ export async function fetchNewsPosts(): Promise<AppNewsPost[]> {
   const cached = localStorage.getItem('app_news_posts');
   if (cached) {
     try {
-      return JSON.parse(cached);
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const hasLatestRoadmap = parsed.some((p: any) => p.title && p.title.includes('Real-time UPI Integration'));
+        if (hasLatestRoadmap) return parsed;
+      }
     } catch {}
   }
+  localStorage.setItem('app_news_posts', JSON.stringify(INITIAL_SEED_NEWS));
   return INITIAL_SEED_NEWS;
 }
 
@@ -697,85 +767,71 @@ export async function saveFirestoreFinancialData(userId: string, data: Partial<U
 
 export const SEED_UPCOMING_FEATURES: UpcomingFeature[] = [
   {
-    id: 'feat-real-upi-sync',
-    title: 'Real UPI Accounts & Auto-Sync',
-    description: 'Direct NPCI / UPI link with GPay, PhonePe, Paytm, and BHIM. Automatically imports UPI spends, categorizes transactions, and tracks QR/merchant settlements with zero manual typing.',
+    id: 'feat-realtime-upi-integration',
+    title: 'Real-time UPI Integration',
+    description: 'Direct NPCI payment rails & webhook integration with Google Pay, PhonePe, Paytm, and BHIM. Automatically captures UPI debits and merchant QR settlements with zero manual typing.',
     category: 'Real Accounts & Banking',
     status: 'in_development',
     targetRelease: 'Q2 2027',
-    priority: 'high',
-    votesCount: 342,
-    tags: ['UPI', 'NPCI', 'PhonePe', 'GPay', 'Instant Sync'],
+    priority: 'urgent',
+    votesCount: 485,
+    tags: ['UPI', 'Real-Time', 'NPCI', 'PhonePe', 'GPay', 'Instant Sync'],
     iconName: 'Smartphone',
     badge: 'Top Voted',
     createdAt: '2026-10-01T10:00:00.000Z'
   },
   {
-    id: 'feat-real-bank-aa',
-    title: 'Automated Bank Account Aggregator (AA)',
-    description: 'Seamless RBI-regulated Account Aggregator (AA) net banking integration for HDFC, SBI, ICICI, Axis, and Kotak. Auto-reconciles bank balances, deposits, and automated cash flow statements securely.',
+    id: 'feat-bank-demat-account-syncing',
+    title: 'Bank/Demat account syncing',
+    description: 'Consolidated real-time synchronization combining RBI-regulated Account Aggregator (AA) net banking (HDFC, SBI, ICICI, Axis, Kotak) with live CDSL/NSDL Demat brokerages (Zerodha Kite, Groww, Upstox, Angel One). Automated ledger reconciliation and live mutual fund/equity holdings sync.',
     category: 'Real Accounts & Banking',
     status: 'in_development',
     targetRelease: 'Q2 2027',
-    priority: 'high',
-    votesCount: 418,
-    tags: ['RBI AA', 'Net Banking', 'HDFC / SBI', 'Zero Manual Entry'],
+    priority: 'urgent',
+    votesCount: 520,
+    tags: ['Bank Sync', 'Demat Sync', 'RBI AA', 'Zerodha', 'Groww', 'CDSL / NSDL'],
     iconName: 'Landmark',
     badge: 'High Priority',
     createdAt: '2026-10-02T11:00:00.000Z'
   },
   {
-    id: 'feat-real-demat-sync',
-    title: 'Live Demat & Broking Portfolio Sync',
-    description: 'Direct read-only integration with CDSL/NSDL and top brokerages (Zerodha Kite, Groww, Upstox, Angel One) for live equity shares, mutual fund NAVs, dividends, and automated capital gains calculation.',
-    category: 'Real Accounts & Banking',
-    status: 'planned',
-    targetRelease: 'Q3 2027',
-    priority: 'high',
-    votesCount: 389,
-    tags: ['Demat', 'Zerodha Kite', 'Groww', 'CDSL', 'Live Holdings'],
-    iconName: 'Coins',
-    badge: 'Planned',
-    createdAt: '2026-10-03T12:00:00.000Z'
-  },
-  {
-    id: 'feat-whatsapp-telegram-ai',
-    title: 'WhatsApp & Telegram AI Wealth Bot',
-    description: 'Sync and chat with your FIX Wealth AI companion directly on WhatsApp and Telegram. Query real-time net worth, ask "Can I afford this?", log transactions on the go via text or voice notes, and receive morning digests.',
+    id: 'feat-whatsapp-telegram-ai-integration',
+    title: 'WhatsApp/Telegram AI integration',
+    description: 'Two-way interactive AI wealth assistant on WhatsApp and Telegram. Query real-time net worth, ask affordability questions before buying, log transactions on the go via text or voice notes, and receive morning portfolio briefs.',
     category: 'AI & Messaging',
     status: 'in_development',
     targetRelease: 'Q2 2027',
     priority: 'urgent',
-    votesCount: 526,
-    tags: ['WhatsApp Bot', 'Telegram AI', 'Voice Logging', 'Instant Query'],
+    votesCount: 574,
+    tags: ['WhatsApp Bot', 'Telegram AI', 'Voice Logging', 'Instant Queries', 'AI Companion'],
     iconName: 'MessageSquare',
     badge: 'Community Favorite',
     createdAt: '2026-10-04T09:30:00.000Z'
   },
   {
-    id: 'feat-universal-ai-advisor',
-    title: 'Universal AI Financial Advisor (SIP & Capital Growth)',
-    description: 'Comprehensive AI wealth advisor with deep domain knowledge across Indian & global financial markets. Analyzes your asset allocation, calculates retirement runway, generates personalized SIP recommendations, and highlights tax-saving opportunities.',
+    id: 'feat-live-ai-financial-advisor',
+    title: 'Live AI Financial Advisor',
+    description: 'Interactive real-time wealth advisor powered by state-of-the-art financial reasoning. Dynamic age-calibrated asset allocation, personalized SIP optimization, retirement FIRE simulations, and Section 80C & LTCG/STCG tax harvesting.',
     category: 'AI Advisory',
     status: 'beta_testing',
     targetRelease: 'Q1 2027',
     priority: 'urgent',
-    votesCount: 612,
-    tags: ['AI Advisor', 'SIP Optimization', 'Asset Rebalance', 'Financial Freedom'],
+    votesCount: 680,
+    tags: ['Live AI Advisor', 'Asset Allocation', 'SIP Growth', 'FIRE Score', 'Tax Harvest'],
     iconName: 'Sparkles',
     badge: 'Beta Testing',
     createdAt: '2026-10-05T14:15:00.000Z'
   },
   {
-    id: 'feat-live-market-news-holdings',
-    title: 'Live Stock & Company Intelligence Feed',
-    description: 'Real-time market news, quarterly earnings summaries, and stock alerts curated dynamically for the specific companies and mutual fund schemes present in your personal portfolio (NSE & BSE).',
+    id: 'feat-realtime-stock-news',
+    title: 'Real-time stock news',
+    description: 'Instant corporate news radar and quarterly earnings intelligence tailored specifically to the exact equities, ETFs, and mutual fund schemes held in your personal portfolio across NSE and BSE.',
     category: 'Market News & Stocks',
     status: 'in_development',
     targetRelease: 'Q1 2027',
     priority: 'high',
-    votesCount: 275,
-    tags: ['NSE / BSE', 'Earnings Calls', 'Portfolio News', 'Real-Time Feeds'],
+    votesCount: 395,
+    tags: ['Real-Time News', 'NSE / BSE', 'Earnings Calls', 'Portfolio Tailored', 'Market Radar'],
     iconName: 'TrendingUp',
     badge: 'Active Build',
     createdAt: '2026-10-06T16:00:00.000Z'
@@ -881,7 +937,10 @@ export async function fetchUpcomingFeatures(): Promise<UpcomingFeature[]> {
   if (cached) {
     try {
       const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const hasLatestFeats = parsed.some((f: any) => f.title === 'Real-time UPI Integration');
+        if (hasLatestFeats) return parsed;
+      }
     } catch {}
   }
 

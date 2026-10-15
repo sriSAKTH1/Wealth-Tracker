@@ -321,7 +321,7 @@ export const AdminPanelView: React.FC = () => {
     try {
       const seeded = await seedInitialUpcomingFeatures();
       setUpcomingFeatures(seeded);
-      showToast('All 8 upcoming roadmap features seeded to Firestore Database!');
+      showToast(`All ${seeded.length} upcoming roadmap features seeded to Firestore Database!`);
     } catch (err) {
       showToast('Error seeding roadmap features.');
     } finally {
