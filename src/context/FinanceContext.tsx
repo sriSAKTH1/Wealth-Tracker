@@ -140,6 +140,10 @@ interface FinanceContextType {
   setTooltipsEnabled: (enabled: boolean) => void;
   toggleTooltips: () => void;
 
+  // Typography & Font Family
+  fontFamily: string;
+  setFontFamily: (font: string) => void;
+
   // Real-time Market Data & Synchronization
   isSyncingMarketPrices: boolean;
   lastMarketSyncTime: string | null;
@@ -511,6 +515,47 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const toggleTooltips = () => {
     setTooltipsEnabled(!tooltipsEnabled);
   };
+
+  // Typography & Font Family State (Default: plus_jakarta)
+  const [fontFamily, setFontFamilyState] = useState<string>(() => {
+    return localStorage.getItem('fix_appearance_font_family') || 'plus_jakarta';
+  });
+
+  const setFontFamily = (fontId: string) => {
+    const fontMap: Record<string, string> = {
+      plus_jakarta: "'Plus Jakarta Sans', sans-serif",
+      roboto: "'Roboto', sans-serif",
+      bungee: "'Bungee', cursive, sans-serif",
+      playfair: "'Playfair Display', Georgia, serif",
+      cinzel: "'Cinzel', serif",
+      orbitron: "'Orbitron', sans-serif"
+    };
+    const cssFont = fontMap[fontId] || fontMap.plus_jakarta;
+    setFontFamilyState(fontId);
+    localStorage.setItem('fix_appearance_font_family', fontId);
+    document.documentElement.style.setProperty('--app-font-family', cssFont);
+    document.documentElement.setAttribute('data-font', fontId);
+    if (document.body) {
+      document.body.style.fontFamily = cssFont;
+    }
+  };
+
+  useEffect(() => {
+    const fontMap: Record<string, string> = {
+      plus_jakarta: "'Plus Jakarta Sans', sans-serif",
+      roboto: "'Roboto', sans-serif",
+      bungee: "'Bungee', cursive, sans-serif",
+      playfair: "'Playfair Display', Georgia, serif",
+      cinzel: "'Cinzel', serif",
+      orbitron: "'Orbitron', sans-serif"
+    };
+    const cssFont = fontMap[fontFamily] || fontMap.plus_jakarta;
+    document.documentElement.style.setProperty('--app-font-family', cssFont);
+    document.documentElement.setAttribute('data-font', fontFamily);
+    if (document.body) {
+      document.body.style.fontFamily = cssFont;
+    }
+  }, [fontFamily]);
 
   // Real-time Market Live Price Synchronization
   const [isSyncingMarketPrices, setIsSyncingMarketPrices] = useState(false);
@@ -1522,6 +1567,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         tooltipsEnabled,
         setTooltipsEnabled,
         toggleTooltips,
+        fontFamily,
+        setFontFamily,
         isShortcutsHelpOpen,
         setIsShortcutsHelpOpen,
         isSyncingMarketPrices,

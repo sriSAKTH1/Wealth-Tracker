@@ -10,7 +10,7 @@
     <meta property="og:description" content="Comprehensive personal finance, wealth, net worth, and cash flow tracker with dual mobile and desktop responsive views." />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Cinzel:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <script>
       (function() {
         try {
@@ -36,11 +36,26 @@
           }
           var acc = localStorage.getItem('fix_accent_color') || 'blue';
           document.documentElement.setAttribute('data-accent', acc);
+
+          // Apply saved typography font family
+          var f = localStorage.getItem('fix_appearance_font_family') || 'plus_jakarta';
+          var fontMap = {
+            'plus_jakarta': "'Plus Jakarta Sans', sans-serif",
+            'roboto': "'Roboto', sans-serif",
+            'bungee': "'Bungee', cursive, sans-serif",
+            'playfair': "'Playfair Display', Georgia, serif",
+            'cinzel': "'Cinzel', serif",
+            'orbitron': "'Orbitron', sans-serif"
+          };
+          if (fontMap[f]) {
+            document.documentElement.style.setProperty('--app-font-family', fontMap[f]);
+            document.documentElement.setAttribute('data-font', f);
+          }
         } catch (e) {}
       })();
     </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-emerald-500 selection:text-white font-['Plus_Jakarta_Sans',sans-serif]">
+  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-emerald-500 selection:text-white" style="font-family: var(--app-font-family, 'Plus Jakarta Sans', sans-serif);">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

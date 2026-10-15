@@ -491,7 +491,7 @@ export const SettingsView: React.FC = () => {
       )}
 
       {/* 5. 🎨 APPEARANCE */}
-      {shouldShow('appearance', ['appearance', 'theme', 'dark', 'light', 'font', 'layout', 'density', 'dashboard', 'color', 'accent', 'tooltip', 'tooltips', 'hover', 'hints', 'customize']) && (
+      {shouldShow('appearance', ['appearance', 'theme', 'dark', 'light', 'font', 'fonts', 'typography', 'roboto', 'bungee', 'playfair', 'cinzel', 'orbitron', 'layout', 'density', 'dashboard', 'color', 'accent', 'tooltip', 'tooltips', 'hover', 'hints', 'customize']) && (
         <AppearanceSection />
       )}
 

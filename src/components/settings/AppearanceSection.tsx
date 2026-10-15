@@ -21,6 +21,69 @@ import {
 import { useFinance } from '../../context/FinanceContext';
 import { MainTab } from '../../types';
 
+export const APP_FONTS = [
+  { 
+    id: 'plus_jakarta', 
+    name: 'Plus Jakarta Sans', 
+    fontClass: 'font-jakarta', 
+    category: 'Modern Geometric Sans', 
+    tag: 'Default',
+    sampleText: '₹8,40,250 • Net Worth',
+    desc: 'Crisp, contemporary geometric typography with balanced proportions and high legibility across all dashboards.',
+    badge: 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+  },
+  { 
+    id: 'roboto', 
+    name: 'Roboto', 
+    fontClass: 'font-roboto', 
+    category: 'Neo-Grotesque Tech & Precision', 
+    tag: 'Google Standard',
+    sampleText: '₹8,40,250 • Net Worth',
+    desc: 'Clean, neutral mechanical skeleton engineered by Google with smooth curves and high information density.',
+    badge: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+  },
+  { 
+    id: 'bungee', 
+    name: 'Bungee', 
+    fontClass: 'font-bungee', 
+    category: 'Bold Display & Urban Signage', 
+    tag: 'Heavy Arcade',
+    sampleText: '₹8,40,250 • NET WORTH',
+    desc: 'Heavyweight celebration of vertical urban signage; bold all-caps punch for balances and crypto stats.',
+    badge: 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+  },
+  { 
+    id: 'playfair', 
+    name: 'Playfair Display', 
+    fontClass: 'font-playfair', 
+    category: 'Editorial Luxury & Wealth Serif', 
+    tag: 'Private Wealth',
+    sampleText: '₹8,40,250 • Net Worth',
+    desc: 'High-contrast European serif evoking financial press, private banking, luxury portfolios, and editorial heritage.',
+    badge: 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+  },
+  { 
+    id: 'cinzel', 
+    name: 'Cinzel', 
+    fontClass: 'font-cinzel', 
+    category: 'Classical Roman Inscription', 
+    tag: 'Imperial Stature',
+    sampleText: '₹8,40,250 • NET WORTH',
+    desc: 'Inspired by 1st-century Roman epigraphy; conveys sovereign permanence, gold vaults, and dynasty legacy.',
+    badge: 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+  },
+  { 
+    id: 'orbitron', 
+    name: 'Orbitron', 
+    fontClass: 'font-orbitron', 
+    category: 'Futuristic Sci-Fi HUD & Quant Terminal', 
+    tag: 'Cyberpunk HUD',
+    sampleText: '₹8,40,250 • NET WORTH',
+    desc: 'Geometric display typeface styled after aerospace telemetry, digital HUDs, and algorithmic trading desks.',
+    badge: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20'
+  }
+];
+
 export const ACCENT_COLORS = [
   { id: 'blue', name: 'Electric Blue', hex: '#3b82f6', border: 'border-blue-500', bg: 'bg-blue-500', ring: 'ring-blue-500' },
   { id: 'indigo', name: 'Royal Indigo', hex: '#6366f1', border: 'border-indigo-500', bg: 'bg-indigo-500', ring: 'ring-indigo-500' },
@@ -44,7 +107,9 @@ export const AppearanceSection: React.FC = () => {
     setAccentColor,
     tooltipsEnabled,
     setTooltipsEnabled,
-    toggleTooltips
+    toggleTooltips,
+    fontFamily,
+    setFontFamily
   } = useFinance();
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
@@ -93,6 +158,14 @@ export const AppearanceSection: React.FC = () => {
       root.style.fontSize = '16px';
     }
     showNotice(`Font size adjusted to ${size}`);
+  };
+
+  const [customPreviewText, setCustomPreviewText] = useState<string>('₹8,40,250 Net Worth Portfolio');
+
+  const handleFontFamilyChange = (fontId: string) => {
+    setFontFamily(fontId);
+    const chosen = APP_FONTS.find(f => f.id === fontId);
+    showNotice(`Typography font updated to ${chosen?.name || fontId}`);
   };
 
   const handleDensityChange = (d: 'comfortable' | 'compact') => {
@@ -323,61 +396,203 @@ export const AppearanceSection: React.FC = () => {
       {/* Grid of Customization Panels */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
         
-        {/* 2. FONT SIZE & UI SCALING */}
-        <div className={`p-5 rounded-2xl border space-y-4 ${
+        {/* 2. TYPOGRAPHY & FONT FAMILIES (MD:COL-SPAN-2) */}
+        <div className={`p-6 rounded-3xl border space-y-6 md:col-span-2 shadow-xs transition-all ${
           isLight ? 'bg-slate-50/70 border-slate-200' : 'bg-slate-950/50 border-slate-800'
         }`}>
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
-            <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
-              <Type className="w-4 h-4 text-purple-500" />
-              <span>Typography & UI Scale</span>
+          {/* Section Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-500">
+                  <Type className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                  Typography & Font Family Themes
+                </h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 font-bold border border-purple-500/20">
+                  {APP_FONTS.find(f => f.id === fontFamily)?.name || 'Plus Jakarta Sans'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                Customize the global typeface across all charts, widgets, metrics, and navigation. Includes Roboto, Bungee, Playfair Display, Cinzel, Orbitron, and Plus Jakarta Sans.
+              </p>
             </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/15 text-purple-500 font-bold capitalize">
-              {fontSize}
-            </span>
+
+            <button
+              onClick={() => handleFontFamilyChange('plus_jakarta')}
+              className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-purple-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500/40 rounded-xl transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset to Default (Plus Jakarta Sans)
+            </button>
           </div>
 
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Adjust the baseline typographic scale and button sizing across all dashboards.
-          </p>
+          {/* 6 Font Family Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {APP_FONTS.map(font => {
+              const isActive = fontFamily === font.id;
+              return (
+                <button
+                  key={font.id}
+                  onClick={() => handleFontFamilyChange(font.id)}
+                  className={`group relative p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                    isActive
+                      ? isLight
+                        ? 'bg-white border-purple-500 ring-2 ring-purple-500/20 shadow-md shadow-purple-500/5'
+                        : 'bg-slate-900 border-purple-500 ring-2 ring-purple-500/30 shadow-md shadow-purple-900/20'
+                      : isLight
+                        ? 'bg-white/80 border-slate-200/90 hover:border-slate-300 hover:bg-white'
+                        : 'bg-slate-900/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900'
+                  }`}
+                >
+                  {/* Top Bar: Icon Lettermark, Name in Font, Tag */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 transition-transform group-hover:scale-105 ${font.fontClass} ${
+                        isActive
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : isLight ? 'bg-slate-100 text-slate-700' : 'bg-slate-800 text-slate-300'
+                      }`}>
+                        Aa
+                      </div>
+                      <div>
+                        <div className={`text-sm font-bold text-slate-900 dark:text-slate-100 ${font.fontClass}`}>
+                          {font.name}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono">
+                          {font.category}
+                        </div>
+                      </div>
+                    </div>
+                    <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider shrink-0 ${font.badge}`}>
+                      {font.tag}
+                    </span>
+                  </div>
 
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { id: 'compact', label: 'Compact', scale: '90%', desc: 'Dense data display' },
-              { id: 'standard', label: 'Standard', scale: '100%', desc: 'Balanced default' },
-              { id: 'large', label: 'Large', scale: '110%', desc: 'Relaxed reading' },
-            ].map(opt => (
-              <button
-                key={opt.id}
-                onClick={() => handleFontSizeChange(opt.id)}
-                className={`p-2.5 rounded-xl border text-center transition-all ${
-                  fontSize === opt.id
-                    ? 'bg-purple-600 text-white border-purple-500 shadow-sm font-bold'
-                    : isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-slate-900 border-slate-800 text-slate-300'
-                }`}
-              >
-                <div className="text-xs font-bold">{opt.label}</div>
-                <div className="text-[10px] font-mono opacity-80">{opt.scale}</div>
-                <div className="text-[9px] mt-0.5 opacity-70 truncate">{opt.desc}</div>
-              </button>
-            ))}
+                  {/* Authentic Font Typeface Sample */}
+                  <div className={`p-2.5 rounded-xl border transition-colors ${font.fontClass} ${
+                    isActive
+                      ? isLight ? 'bg-purple-50/60 border-purple-200 text-purple-950' : 'bg-purple-950/20 border-purple-800/40 text-purple-200'
+                      : isLight ? 'bg-slate-50 border-slate-100 text-slate-800' : 'bg-slate-950/40 border-slate-800/60 text-slate-300'
+                  }`}>
+                    <div className="text-[11px] font-bold truncate">
+                      {font.sampleText}
+                    </div>
+                    <div className="text-[9px] opacity-75 mt-0.5 font-mono">
+                      1 2 3 4 5 6 7 8 9 0 • % $ € £ ₹
+                    </div>
+                  </div>
+
+                  {/* Description & Selection Indicator */}
+                  <div className="flex items-center justify-between text-[10px] pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                    <span className="text-slate-500 dark:text-slate-400 line-clamp-1 pr-2">
+                      {font.desc}
+                    </span>
+                    {isActive ? (
+                      <span className="flex items-center gap-1 font-bold text-purple-600 dark:text-purple-400 shrink-0">
+                        <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                        Active
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 group-hover:text-purple-500 font-medium shrink-0">
+                        Select →
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Typography Sample Preview */}
-          <div className={`p-3 rounded-xl border ${
-            isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
-          }`}>
-            <div className="text-[10px] text-slate-500 mb-1 font-mono">Live Typography Sample:</div>
-            <div className={`font-black text-slate-900 dark:text-slate-100 ${
-              fontSize === 'compact' ? 'text-sm' : fontSize === 'large' ? 'text-lg' : 'text-base'
+          {/* Bottom Controls: Scaling & Live Interactive Typography Tester */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-2">
+            
+            {/* UI Scaling */}
+            <div className={`p-4 rounded-2xl border space-y-3 ${
+              isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
             }`}>
-              Net Worth Valuation: {formatMoney(840250)}
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-purple-500" />
+                  Typographic Scale
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-500 font-bold capitalize">
+                  {fontSize}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  { id: 'compact', label: 'Compact', scale: '90%' },
+                  { id: 'standard', label: 'Standard', scale: '100%' },
+                  { id: 'large', label: 'Large', scale: '110%' },
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => handleFontSizeChange(opt.id)}
+                    className={`py-2 px-1 rounded-xl border text-center transition-all cursor-pointer ${
+                      fontSize === opt.id
+                        ? 'bg-purple-600 text-white border-purple-500 shadow-sm font-bold'
+                        : isLight ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
+                    }`}
+                  >
+                    <div className="text-[11px] font-bold">{opt.label}</div>
+                    <div className="text-[9px] font-mono opacity-80">{opt.scale}</div>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className={`text-slate-500 ${
-              fontSize === 'compact' ? 'text-[10px]' : fontSize === 'large' ? 'text-xs' : 'text-[11px]'
+
+            {/* Interactive Live Font Sandbox */}
+            <div className={`p-4 rounded-2xl border lg:col-span-2 space-y-2.5 ${
+              isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
             }`}>
-              Asset Allocation: 64% Equity • 22% Real Estate • 14% Liquid Cash
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Live Type Inspection & Sandbox</span>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">
+                  Active: {APP_FONTS.find(f => f.id === fontFamily)?.name} • Scale: {fontSize}
+                </span>
+              </div>
+
+              {/* Custom Editable Text Input for instant verification */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={customPreviewText}
+                  onChange={(e) => setCustomPreviewText(e.target.value)}
+                  placeholder="Type any custom text or currency amount to preview..."
+                  className={`w-full px-3 py-1.5 rounded-xl border text-xs transition-all ${
+                    isLight 
+                      ? 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:border-purple-500' 
+                      : 'bg-slate-950 border-slate-800 text-slate-100 focus:bg-slate-900 focus:border-purple-500'
+                  } outline-hidden`}
+                />
+              </div>
+
+              {/* Live Render Area using dynamic font-family */}
+              <div className={`p-3.5 rounded-xl border transition-all ${
+                isLight ? 'bg-gradient-to-r from-purple-50/50 to-blue-50/50 border-purple-100' : 'bg-gradient-to-r from-purple-950/20 to-blue-950/20 border-purple-900/30'
+              }`}>
+                <div className={`font-black text-slate-900 dark:text-slate-100 truncate tracking-tight ${
+                  fontSize === 'compact' ? 'text-base' : fontSize === 'large' ? 'text-xl' : 'text-lg'
+                }`}>
+                  {customPreviewText || '₹8,40,250 Net Worth Portfolio'}
+                </div>
+                <div className={`text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 ${
+                  fontSize === 'compact' ? 'text-[10px]' : fontSize === 'large' ? 'text-xs' : 'text-[11px]'
+                }`}>
+                  <span>Valuation: {formatMoney(840250)}</span>
+                  <span>•</span>
+                  <span className="text-emerald-500 font-semibold">+18.4% YTD Growth</span>
+                  <span>•</span>
+                  <span>Asset Allocation: 64% Equity • 22% Real Estate • 14% Cash</span>
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
 
