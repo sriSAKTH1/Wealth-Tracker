@@ -67,6 +67,29 @@
         "readTimeMinutes": { "type": "number", "description": "Estimated read duration in minutes" }
       },
       "required": ["id", "title", "category", "summary", "content", "publishedAt"]
+    },
+    "UpcomingFeature": {
+      "title": "UpcomingFeature",
+      "description": "Upcoming product features and public development roadmap items that users can view and vote on.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique feature roadmap ID" },
+        "title": { "type": "string", "description": "Feature headline name" },
+        "description": { "type": "string", "description": "Detailed capability explanation" },
+        "category": { "type": "string", "enum": ["Real Accounts & Banking", "AI & Messaging", "AI Advisory", "Market News & Stocks", "Tax & Compliance", "Credit & Solvency", "Security & Infra"], "description": "Feature technical category" },
+        "status": { "type": "string", "enum": ["in_development", "planned", "beta_testing", "under_research", "released"], "description": "Delivery lifecycle status" },
+        "targetRelease": { "type": "string", "description": "Target release quarter (e.g. Q1 2027, Q2 2027)" },
+        "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"], "description": "Roadmap delivery priority" },
+        "votesCount": { "type": "number", "description": "Community upvote count" },
+        "tags": { "type": "array", "description": "Keywords and tech stack tags" },
+        "iconName": { "type": "string", "description": "Lucide icon identifier name" },
+        "badge": { "type": "string", "description": "Highlight pill badge label" },
+        "createdAt": { "type": "string", "description": "ISO timestamp when item was planned" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of last status update" },
+        "votedUserIds": { "type": "array", "description": "User IDs who have upvoted" },
+        "earlyAccessRequests": { "type": "array", "description": "User emails who requested beta access" }
+      },
+      "required": ["id", "title", "description", "category", "status", "targetRelease", "createdAt"]
     }
   },
   "firestore": {
@@ -85,6 +108,10 @@
     "/news_posts/{postId}": {
       "schema": "NewsPost",
       "description": "News and blog posts published by Admin for users to read."
+    },
+    "/upcoming_features/{featureId}": {
+      "schema": "UpcomingFeature",
+      "description": "Upcoming roadmap features that users can view and vote on, and admin can manage."
     }
   }
 }

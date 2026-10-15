@@ -33,11 +33,28 @@ import {
   BookOpen,
   Image as ImageIcon,
   Upload,
-  Link as LinkIcon
+  Link as LinkIcon,
+  TrendingUp,
+  Coins,
+  Landmark,
+  Bot,
+  Zap,
+  FileText,
+  ThumbsUp,
+  Layers,
+  Save
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { useAuth } from '../../context/AuthContext';
-import { AppUserProfile, AppFeedback, AppBroadcastNotification, AppNewsPost } from '../../types';
+import { 
+  AppUserProfile, 
+  AppFeedback, 
+  AppBroadcastNotification, 
+  AppNewsPost,
+  UpcomingFeature,
+  UpcomingFeatureCategory,
+  UpcomingFeatureStatus
+} from '../../types';
 
 // Curated Fintech & Wealth Feature Release Image Presets
 export const ADMIN_IMAGE_PRESETS = [
@@ -91,6 +108,13 @@ import {
   deleteNewsPost,
   deleteUserAccount,
   purgeNonRealUsers,
+  fetchUpcomingFeatures,
+  saveUpcomingFeature,
+  createUpcomingFeature,
+  updateUpcomingFeatureStatus,
+  deleteUpcomingFeature,
+  seedInitialUpcomingFeatures,
+  SEED_UPCOMING_FEATURES,
   db
 } from '../../services/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -102,15 +126,33 @@ export const AdminPanelView: React.FC = () => {
   const { currentUser } = useAuth();
 
   // Admin Sub-tabs
-  const [adminTab, setAdminTab] = useState<'users' | 'feedback' | 'broadcast' | 'news'>('users');
+  const [adminTab, setAdminTab] = useState<'users' | 'feedback' | 'broadcast' | 'news' | 'upcoming_features'>('users');
 
   // Data states
   const [users, setUsers] = useState<AppUserProfile[]>([]);
   const [feedbackList, setFeedbackList] = useState<AppFeedback[]>([]);
   const [notifications, setNotifications] = useState<AppBroadcastNotification[]>([]);
   const [newsPosts, setNewsPosts] = useState<AppNewsPost[]>([]);
+  const [upcomingFeatures, setUpcomingFeatures] = useState<UpcomingFeature[]>(SEED_UPCOMING_FEATURES);
   const [isLoading, setIsLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Upcoming Features Tab State & Form
+  const [featuresFilter, setFeaturesFilter] = useState<string>('all');
+  const [featuresStatusFilter, setFeaturesStatusFilter] = useState<string>('all');
+  const [featuresSearchQuery, setFeaturesSearchQuery] = useState('');
+  const [isFeatureModalOpen, setIsFeatureModalOpen] = useState(false);
+  const [editingFeature, setEditingFeature] = useState<UpcomingFeature | null>(null);
+  const [featTitle, setFeatTitle] = useState('');
+  const [featDesc, setFeatDesc] = useState('');
+  const [featCategory, setFeatCategory] = useState<UpcomingFeatureCategory>('Real Accounts & Banking');
+  const [featStatus, setFeatStatus] = useState<UpcomingFeatureStatus>('in_development');
+  const [featQuarter, setFeatQuarter] = useState('Q2 2027');
+  const [featPriority, setFeatPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('high');
+  const [featTags, setFeatTags] = useState('');
+  const [featBadge, setFeatBadge] = useState('');
+  const [featVotes, setFeatVotes] = useState('100');
+  const [isSavingFeature, setIsSavingFeature] = useState(false);
 
   // Users Tab Search & Filter
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -151,21 +193,158 @@ export const AdminPanelView: React.FC = () => {
   const loadAllData = async () => {
     setIsLoading(true);
     try {
-      const [u, f, n, p] = await Promise.all([
+      const [u, f, n, p, feats] = await Promise.all([
         fetchAllUsers(),
         fetchFeedbackList(),
         fetchBroadcastNotifications(),
-        fetchNewsPosts()
+        fetchNewsPosts(),
+        fetchUpcomingFeatures()
       ]);
       setUsers(u);
       setFeedbackList(f);
       setNotifications(n);
       setNewsPosts(p);
+      setUpcomingFeatures(feats);
     } catch (err) {
       console.warn("Error loading admin data:", err);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Feature Roadmap Handlers
+  const handleOpenCreateFeature = () => {
+    setEditingFeature(null);
+    setFeatTitle('');
+    setFeatDesc('');
+    setFeatCategory('Real Accounts & Banking');
+    setFeatStatus('in_development');
+    setFeatQuarter('Q2 2027');
+    setFeatPriority('high');
+    setFeatTags('');
+    setFeatBadge('');
+    setFeatVotes('100');
+    setIsFeatureModalOpen(true);
+  };
+
+  const handleOpenEditFeature = (feat: UpcomingFeature) => {
+    setEditingFeature(feat);
+    setFeatTitle(feat.title);
+    setFeatDesc(feat.description);
+    setFeatCategory(feat.category);
+    setFeatStatus(feat.status);
+    setFeatQuarter(feat.targetRelease);
+    setFeatPriority(feat.priority);
+    setFeatTags((feat.tags || []).join(', '));
+    setFeatBadge(feat.badge || '');
+    setFeatVotes(String(feat.votesCount || 0));
+    setIsFeatureModalOpen(true);
+  };
+
+  const handleSaveFeature = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!featTitle.trim() || !featDesc.trim()) {
+      showToast('Please provide a feature title and description.');
+      return;
+    }
+
+    setIsSavingFeature(true);
+    try {
+      const parsedTags = featTags
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
+
+      if (editingFeature) {
+        const updated: UpcomingFeature = {
+          ...editingFeature,
+          title: featTitle.trim(),
+          description: featDesc.trim(),
+          category: featCategory,
+          status: featStatus,
+          targetRelease: featQuarter.trim() || '2027',
+          priority: featPriority,
+          votesCount: parseInt(featVotes) || 0,
+          tags: parsedTags,
+          badge: featBadge.trim() || undefined,
+          updatedAt: new Date().toISOString()
+        };
+        await saveUpcomingFeature(updated);
+        setUpcomingFeatures(prev => prev.map(f => f.id === updated.id ? updated : f));
+        showToast(`Feature "${updated.title}" updated in Firestore DB!`);
+      } else {
+        const created = await createUpcomingFeature({
+          title: featTitle.trim(),
+          description: featDesc.trim(),
+          category: featCategory,
+          status: featStatus,
+          targetRelease: featQuarter.trim() || '2027',
+          priority: featPriority,
+          votesCount: parseInt(featVotes) || 0,
+          tags: parsedTags,
+          badge: featBadge.trim() || undefined
+        });
+        setUpcomingFeatures(prev => [created, ...prev]);
+        showToast(`New feature "${created.title}" stored in Firestore DB!`);
+      }
+      setIsFeatureModalOpen(false);
+    } catch (err) {
+      showToast('Error saving feature to database.');
+    } finally {
+      setIsSavingFeature(false);
+    }
+  };
+
+  const handleQuickStatusChange = async (featId: string, newStatus: UpcomingFeatureStatus) => {
+    try {
+      await updateUpcomingFeatureStatus(featId, newStatus);
+      setUpcomingFeatures(prev => prev.map(f => f.id === featId ? { ...f, status: newStatus } : f));
+      showToast(`Feature status updated to "${newStatus.replace('_', ' ').toUpperCase()}".`);
+    } catch (err) {
+      showToast('Error updating feature status.');
+    }
+  };
+
+  const handleDeleteFeature = async (featId: string, featTitle: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${featTitle}" from the roadmap?`)) return;
+    try {
+      await deleteUpcomingFeature(featId);
+      setUpcomingFeatures(prev => prev.filter(f => f.id !== featId));
+      showToast(`Feature "${featTitle}" deleted from database.`);
+    } catch (err) {
+      showToast('Error deleting feature.');
+    }
+  };
+
+  const handleSeedDefaultRoadmap = async () => {
+    setIsLoading(true);
+    try {
+      const seeded = await seedInitialUpcomingFeatures();
+      setUpcomingFeatures(seeded);
+      showToast('All 8 upcoming roadmap features seeded to Firestore Database!');
+    } catch (err) {
+      showToast('Error seeding roadmap features.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePublishFeatureAsReleaseBlog = (feat: UpcomingFeature) => {
+    setNewsTitle(`Feature Release: ${feat.title}`);
+    setNewsCategory('Feature Release');
+    setNewsSummary(feat.description);
+    setNewsContent(
+      `We are thrilled to officially announce the release of **${feat.title}** on FIX Wealth!\n\n` +
+      `### What This Delivers\n${feat.description}\n\n` +
+      `### Key Capabilities\n` +
+      (feat.tags && feat.tags.length > 0 
+        ? feat.tags.map(t => `- ${t}`).join('\n') 
+        : '- Real-time automated data integration\n- Zero-knowledge client-side encryption\n- Seamless wealth dashboard integration') +
+      `\n\n### Access\nThis feature is now active and accessible directly across your wealth command center.`
+    );
+    setIsCreatingNews(true);
+    setAdminTab('news');
+    showToast(`Pre-populated Release Blog form for "${feat.title}". Review and click "Publish Article"!`);
   };
 
   const showToast = (msg: string) => {
@@ -491,6 +670,19 @@ export const AdminPanelView: React.FC = () => {
         >
           <Newspaper className="w-4 h-4" />
           <span>News &amp; Blog CMS ({newsPosts.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAdminTab('upcoming_features')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            adminTab === 'upcoming_features'
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/25'
+              : isLight ? 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200' : 'bg-purple-950/40 text-purple-300 hover:bg-purple-900/50 border border-purple-800/60'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <span>Upcoming Features &amp; DB ({upcomingFeatures.length})</span>
         </button>
       </div>
 
@@ -1389,6 +1581,534 @@ export const AdminPanelView: React.FC = () => {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 5: UPCOMING FEATURES & FIRESTORE DATABASE ROADMAP MANAGEMENT         */}
+      {/* ========================================================================= */}
+      {adminTab === 'upcoming_features' && (
+        <div className={`p-6 sm:p-8 rounded-3xl border shadow-sm space-y-6 ${
+          isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+        }`}>
+          {/* Top Header & DB Status */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-inherit/40">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-500" />
+                  <span>Upcoming Features &amp; Public Roadmap Database</span>
+                </h2>
+                <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                  <Database className="w-3 h-3 text-emerald-500" />
+                  <span>Firestore Sync: /upcoming_features</span>
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                  Visible in News &amp; Release Blogs
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+                Add, edit, and update the status of upcoming roadmap features (Real UPI, Bank AA, Demat Portfolios, WhatsApp/Telegram AI, Universal AI Advisor, Live Stock News). Changes sync directly to Firestore and show to all users.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={handleSeedDefaultRoadmap}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                  isLight
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                }`}
+                title="Synchronize and guarantee all standard upcoming features exist in Firestore database"
+              >
+                <Database className="w-3.5 h-3.5 text-blue-500" />
+                <span>Sync / Seed to DB</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenCreateFeature}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/20 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Roadmap Feature</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Metrics Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className={`p-4 rounded-2xl border text-center ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800/40 border-slate-800'
+            }`}>
+              <span className="text-[10px] uppercase font-mono text-slate-400 block">Total Features</span>
+              <span className="text-xl font-black font-mono text-slate-900 dark:text-white">
+                {upcomingFeatures.length}
+              </span>
+            </div>
+
+            <div className={`p-4 rounded-2xl border text-center ${
+              isLight ? 'bg-emerald-50/50 border-emerald-200' : 'bg-emerald-950/20 border-emerald-800/40'
+            }`}>
+              <span className="text-[10px] uppercase font-mono text-emerald-600 dark:text-emerald-400 block">In Development</span>
+              <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                {upcomingFeatures.filter(f => f.status === 'in_development').length}
+              </span>
+            </div>
+
+            <div className={`p-4 rounded-2xl border text-center ${
+              isLight ? 'bg-purple-50/50 border-purple-200' : 'bg-purple-950/20 border-purple-800/40'
+            }`}>
+              <span className="text-[10px] uppercase font-mono text-purple-600 dark:text-purple-400 block">Beta Testing</span>
+              <span className="text-xl font-black font-mono text-purple-600 dark:text-purple-400">
+                {upcomingFeatures.filter(f => f.status === 'beta_testing').length}
+              </span>
+            </div>
+
+            <div className={`p-4 rounded-2xl border text-center ${
+              isLight ? 'bg-blue-50/50 border-blue-200' : 'bg-blue-950/20 border-blue-800/40'
+            }`}>
+              <span className="text-[10px] uppercase font-mono text-blue-600 dark:text-blue-400 block">Community Votes</span>
+              <span className="text-xl font-black font-mono text-blue-600 dark:text-blue-400">
+                {upcomingFeatures.reduce((acc, f) => acc + (f.votesCount || 0), 0)}
+              </span>
+            </div>
+
+            <div className={`p-4 rounded-2xl border text-center col-span-2 sm:col-span-1 ${
+              isLight ? 'bg-amber-50/50 border-amber-200' : 'bg-amber-950/20 border-amber-800/40'
+            }`}>
+              <span className="text-[10px] uppercase font-mono text-amber-600 dark:text-amber-400 block">Beta Waitlist</span>
+              <span className="text-xl font-black font-mono text-amber-600 dark:text-amber-400">
+                {upcomingFeatures.reduce((acc, f) => acc + (f.earlyAccessRequests?.length || 0), 0)}
+              </span>
+            </div>
+          </div>
+
+          {/* Search & Filters */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={featuresSearchQuery}
+                onChange={e => setFeaturesSearchQuery(e.target.value)}
+                placeholder="Search features (UPI, Bank, Demat, AI, WhatsApp, Stocks)..."
+                className={`w-full text-xs pl-8 pr-3 py-2 rounded-xl border focus:outline-none ${
+                  isLight 
+                    ? 'bg-slate-50 border-slate-200 focus:border-purple-500 text-slate-900' 
+                    : 'bg-slate-800/80 border-slate-700 focus:border-purple-500 text-white'
+                }`}
+              />
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <select
+                value={featuresFilter}
+                onChange={e => setFeaturesFilter(e.target.value)}
+                className={`px-3 py-1.5 rounded-xl border font-semibold focus:outline-none cursor-pointer ${
+                  isLight ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-800 border-slate-700 text-slate-200'
+                }`}
+              >
+                <option value="all">All Categories ({upcomingFeatures.length})</option>
+                <option value="Real Accounts & Banking">Real Accounts &amp; Banking</option>
+                <option value="AI & Messaging">AI &amp; Messaging Bots</option>
+                <option value="AI Advisory">AI Advisory</option>
+                <option value="Market News & Stocks">Market News &amp; Stocks</option>
+                <option value="Credit & Solvency">Credit &amp; Solvency</option>
+                <option value="Tax & Compliance">Tax &amp; Compliance</option>
+                <option value="Security & Infra">Security &amp; Infra</option>
+              </select>
+
+              <select
+                value={featuresStatusFilter}
+                onChange={e => setFeaturesStatusFilter(e.target.value)}
+                className={`px-3 py-1.5 rounded-xl border font-semibold focus:outline-none cursor-pointer ${
+                  isLight ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-800 border-slate-700 text-slate-200'
+                }`}
+              >
+                <option value="all">All Lifecycles</option>
+                <option value="in_development">In Development</option>
+                <option value="beta_testing">Beta Testing</option>
+                <option value="planned">Planned</option>
+                <option value="under_research">Under Research</option>
+                <option value="released">Released / Live</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Features Cards Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {upcomingFeatures
+              .filter(f => {
+                if (featuresFilter !== 'all' && f.category !== featuresFilter) return false;
+                if (featuresStatusFilter !== 'all' && f.status !== featuresStatusFilter) return false;
+                if (featuresSearchQuery) {
+                  const q = featuresSearchQuery.toLowerCase();
+                  const matchTitle = f.title.toLowerCase().includes(q);
+                  const matchDesc = f.description.toLowerCase().includes(q);
+                  const matchTags = (f.tags || []).some(t => t.toLowerCase().includes(q));
+                  return matchTitle || matchDesc || matchTags;
+                }
+                return true;
+              })
+              .map(feat => {
+                return (
+                  <div
+                    key={feat.id}
+                    className={`p-5 rounded-2xl border transition-all flex flex-col justify-between space-y-4 ${
+                      isLight 
+                        ? 'bg-slate-50/60 border-slate-200 hover:border-purple-300' 
+                        : 'bg-slate-900 border-slate-800 hover:border-purple-500/50'
+                    }`}
+                  >
+                    <div className="space-y-3">
+                      {/* Top Badges & Quarter */}
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Quick Lifecycle Status Dropdown */}
+                          <select
+                            value={feat.status}
+                            onChange={(e) => handleQuickStatusChange(feat.id, e.target.value as UpcomingFeatureStatus)}
+                            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border cursor-pointer focus:outline-none ${
+                              feat.status === 'in_development'
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                                : feat.status === 'beta_testing'
+                                ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30'
+                                : feat.status === 'released'
+                                ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                                : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                            }`}
+                          >
+                            <option value="in_development">● In Development</option>
+                            <option value="beta_testing">✦ Beta Testing</option>
+                            <option value="planned">◷ Planned</option>
+                            <option value="under_research">🔬 Under Research</option>
+                            <option value="released">✓ Released</option>
+                          </select>
+
+                          <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold ${
+                            isLight ? 'bg-white text-slate-700 border border-slate-200' : 'bg-slate-800 text-slate-300 border border-slate-700'
+                          }`}>
+                            Target: {feat.targetRelease}
+                          </span>
+
+                          <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md uppercase font-bold ${
+                            feat.priority === 'urgent'
+                              ? 'bg-rose-500/15 text-rose-500 border border-rose-500/30'
+                              : feat.priority === 'high'
+                              ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                          }`}>
+                            {feat.priority}
+                          </span>
+                        </div>
+
+                        {feat.badge && (
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                            {feat.badge}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Title & Category */}
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                          {feat.title}
+                        </h4>
+                        <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
+                          Category: {feat.category} • ID: <code className="text-purple-500 font-mono">{feat.id}</code>
+                        </span>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        {feat.description}
+                      </p>
+
+                      {/* Tags */}
+                      {feat.tags && feat.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {feat.tags.map(t => (
+                            <span 
+                              key={t}
+                              className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${
+                                isLight ? 'bg-white text-slate-600 border-slate-200' : 'bg-slate-800 text-slate-300 border-slate-700'
+                              }`}
+                            >
+                              #{t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Early Access Requests Info */}
+                      {feat.earlyAccessRequests && feat.earlyAccessRequests.length > 0 && (
+                        <div className={`p-2.5 rounded-xl border text-[11px] ${
+                          isLight ? 'bg-amber-50/60 border-amber-200/80 text-amber-800' : 'bg-amber-950/20 border-amber-900/40 text-amber-300'
+                        }`}>
+                          <div className="font-bold flex items-center gap-1.5 mb-1">
+                            <Zap className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Beta Waitlist Requesters ({feat.earlyAccessRequests.length}):</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {feat.earlyAccessRequests.slice(0, 5).map(email => (
+                              <span key={email} className="px-1.5 py-0.5 rounded bg-amber-500/10 font-mono text-[10px]">
+                                {email}
+                              </span>
+                            ))}
+                            {feat.earlyAccessRequests.length > 5 && (
+                              <span className="text-[10px] font-mono opacity-80">+{feat.earlyAccessRequests.length - 5} more</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="pt-3 border-t border-inherit/40 flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
+                        <ThumbsUp className="w-3.5 h-3.5 text-blue-500" />
+                        <span className="font-bold text-slate-700 dark:text-slate-300">{feat.votesCount} votes</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/* Publish as Release Blog */}
+                        <button
+                          type="button"
+                          onClick={() => handlePublishFeatureAsReleaseBlog(feat)}
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 border border-blue-500/30 flex items-center gap-1 cursor-pointer"
+                          title="Convert this feature roadmap item into a published release blog post"
+                        >
+                          <BookOpen className="w-3.5 h-3.5" />
+                          <span>Publish Release Blog</span>
+                        </button>
+
+                        {/* Edit Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditFeature(feat)}
+                          className="p-1.5 rounded-lg border hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer"
+                          title="Edit Roadmap Details"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Delete Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFeature(feat.id, feat.title)}
+                          className="p-1.5 rounded-lg border border-rose-500/30 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
+                          title="Delete from Roadmap"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ADD / EDIT ROADMAP FEATURE IN FIRESTORE DB */}
+      {isFeatureModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className={`w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border p-6 sm:p-8 space-y-5 shadow-2xl ${
+            isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+          }`}>
+            <div className="flex items-center justify-between pb-4 border-b border-inherit/40">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-500" />
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                  {editingFeature ? `Edit Roadmap Feature: ${editingFeature.title}` : 'Add New Roadmap Feature'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFeatureModalOpen(false)}
+                className="p-1.5 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4 text-slate-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveFeature} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  Feature Headline Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={featTitle}
+                  onChange={e => setFeatTitle(e.target.value)}
+                  placeholder="e.g. Real UPI Accounts & Instant Sync"
+                  className={`w-full px-3 py-2 rounded-xl border focus:outline-none ${
+                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800 border-slate-700'
+                  }`}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                    Technical Category *
+                  </label>
+                  <select
+                    value={featCategory}
+                    onChange={e => setFeatCategory(e.target.value as UpcomingFeatureCategory)}
+                    className={`w-full px-3 py-2 rounded-xl border focus:outline-none ${
+                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800 border-slate-700'
+                    }`}
+                  >
+                    <option value="Real Accounts & Banking">Real Accounts &amp; Banking</option>
+                    <option value="AI & Messaging">AI &amp; Messaging Bots</option>
+                    <option value="AI Advisory">AI Advisory</option>
+                    <option value="Market News & Stocks">Market News &amp; Stocks</option>
+                    <option value="Credit & Solvency">Credit &amp; Solvency</option>
+                    <option value="Tax & Compliance">Tax &amp; Compliance</option>
+                    <option value="Security & Infra">Security &amp; Infra</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                    Lifecycle Status *
+                  </label>
+                  <select
+                    value={featStatus}
+                    onChange={e => setFeatStatus(e.target.value as UpcomingFeatureStatus)}
+                    className={`w-full px-3 py-2 rounded-xl border focus:outline-none ${
+                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800 border-slate-700'
+                    }`}
+                  >
+                    <option value="in_development">In Active Development</option>
+                    <option value="beta_testing">Beta Testing &amp; Preview</option>
+                    <option value="planned">Planned for 2027</option>
+                    <option value="under_research">Under Research</option>
+                    <option value="released">Released / Live</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                    Target Quarter *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={featQuarter}
+                    onChange={e => setFeatQuarter(e.target.value)}
+                    placeholder="e.g. Q2 2027"
+                    className={`w-full px-3 py-2 rounded-xl border focus:outline-none ${
+                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800 border-slate-700'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                    Priority
+                  </label>
+                  <select
+                    value={featPriority}
+                    onChange={e => setFeatPriority(e.target.value as any)}
+                    className={`w-full px-3 py-2 rounded-xl border focus:outline-none ${
+                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800 border-slate-700'
+                    }`}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                    Upvote Count
+                  </label>
+                  <input
+                    type="number"
+                    value={featVotes}
+                    onChange={e => setFeatVotes(e.target.value)}
+                    className={`w-full px-3 py-2 rounded-xl border focus:outline-none ${
+                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800 border-slate-700'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  Highlight Pill Badge (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={featBadge}
+                  onChange={e => setFeatBadge(e.target.value)}
+                  placeholder="e.g. Top Voted, Beta Testing, Community Favorite"
+                  className={`w-full px-3 py-2 rounded-xl border focus:outline-none ${
+                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800 border-slate-700'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  Tags (comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={featTags}
+                  onChange={e => setFeatTags(e.target.value)}
+                  placeholder="e.g. UPI, NPCI, PhonePe, GPay, Instant Sync"
+                  className={`w-full px-3 py-2 rounded-xl border focus:outline-none ${
+                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800 border-slate-700'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  Detailed Capability Description *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={featDesc}
+                  onChange={e => setFeatDesc(e.target.value)}
+                  placeholder="Explain what the feature does, key user benefits, and technical integrations..."
+                  className={`w-full px-3 py-2 rounded-xl border focus:outline-none leading-relaxed ${
+                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800 border-slate-700'
+                  }`}
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-inherit/40">
+                <button
+                  type="button"
+                  onClick={() => setIsFeatureModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingFeature}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold flex items-center gap-1.5 shadow-md shadow-purple-600/20 cursor-pointer"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingFeature ? 'Saving to Database...' : 'Save to Firestore DB'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

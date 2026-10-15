@@ -521,3 +521,38 @@ export interface AppNewsPost {
   isFeatured?: boolean;
 }
 
+export type UpcomingFeatureCategory = 
+  | 'Real Accounts & Banking'
+  | 'AI & Messaging'
+  | 'AI Advisory'
+  | 'Market News & Stocks'
+  | 'Tax & Compliance'
+  | 'Credit & Solvency'
+  | 'Security & Infra';
+
+export type UpcomingFeatureStatus = 
+  | 'in_development'
+  | 'planned'
+  | 'beta_testing'
+  | 'under_research'
+  | 'released';
+
+export interface UpcomingFeature {
+  id: string;
+  title: string;
+  description: string;
+  category: UpcomingFeatureCategory;
+  status: UpcomingFeatureStatus;
+  targetRelease: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  votesCount: number;
+  tags: string[];
+  iconName?: string;
+  badge?: string;
+  createdAt: string;
+  updatedAt?: string;
+  votedUserIds?: string[];
+  earlyAccessRequests?: string[];
+}
+
+

@@ -33,12 +33,27 @@ import {
   Info,
   Image as ImageIcon,
   Upload,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Landmark,
+  Smartphone,
+  MessageSquare,
+  Bot,
+  ThumbsUp,
+  Layers,
+  Radio,
+  ArrowUpRight
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { useAuth } from '../../context/AuthContext';
-import { AppNewsPost } from '../../types';
-import { fetchNewsPosts, publishNewsPost } from '../../services/firebase';
+import { AppNewsPost, UpcomingFeature, UpcomingFeatureCategory, UpcomingFeatureStatus } from '../../types';
+import { 
+  fetchNewsPosts, 
+  publishNewsPost, 
+  fetchUpcomingFeatures, 
+  voteUpcomingFeature, 
+  requestEarlyAccessFeature,
+  SEED_UPCOMING_FEATURES
+} from '../../services/firebase';
 import { ADMIN_IMAGE_PRESETS } from './AdminPanelView';
 
 // Reliable category-based fintech fallback banners
@@ -90,7 +105,7 @@ const DEFAULT_SEED_NOTES: FinancialNote[] = [
   }
 ];
 
-type NewsMainTab = 'news_updates' | 'pro_schedule' | 'notepad' | 'holding_news';
+type NewsMainTab = 'news_updates' | 'upcoming_features' | 'holding_news' | 'pro_schedule' | 'notepad';
 
 export const NewsUpdatesView: React.FC = () => {
   const { theme, assets } = useFinance();
@@ -106,6 +121,29 @@ export const NewsUpdatesView: React.FC = () => {
   const [posts, setPosts] = useState<AppNewsPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeArticle, setActiveArticle] = useState<AppNewsPost | null>(null);
+
+  // Upcoming Features & Roadmap State
+  const [upcomingFeatures, setUpcomingFeatures] = useState<UpcomingFeature[]>(SEED_UPCOMING_FEATURES);
+  const [isFeaturesLoading, setIsFeaturesLoading] = useState(true);
+  const [featuresFilter, setFeaturesFilter] = useState<string>('all');
+  const [featuresStatusFilter, setFeaturesStatusFilter] = useState<string>('all');
+  const [featuresSearch, setFeaturesSearch] = useState('');
+  const [votedIds, setVotedIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('app_user_voted_features');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [earlyAccessRequestedIds, setEarlyAccessRequestedIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('app_user_early_access_features');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Admin direct feature release & blog authoring state
   const isAdmin = currentUser?.role === 'admin' || currentUser?.email === 'sudharsan014@gamil.com' || currentUser?.email === 'sudharsan014@gmail.com' || currentUser?.email === 'sudharsanm014@gmail.com';
@@ -174,6 +212,72 @@ export const NewsUpdatesView: React.FC = () => {
     }
     loadPosts();
   }, []);
+
+  // Fetch upcoming roadmap features
+  useEffect(() => {
+    async function loadUpcoming() {
+      setIsFeaturesLoading(true);
+      try {
+        const data = await fetchUpcomingFeatures();
+        setUpcomingFeatures(data);
+      } catch (err) {
+        console.warn('Error loading upcoming features:', err);
+      } finally {
+        setIsFeaturesLoading(false);
+      }
+    }
+    loadUpcoming();
+  }, []);
+
+  const handleVoteFeature = async (featureId: string) => {
+    const userId = currentUser?.id || 'guest_user';
+    const isCurrentlyVoted = votedIds.includes(featureId);
+    const newVoted = isCurrentlyVoted 
+      ? votedIds.filter(id => id !== featureId)
+      : [...votedIds, featureId];
+    
+    setVotedIds(newVoted);
+    localStorage.setItem('app_user_voted_features', JSON.stringify(newVoted));
+
+    // Optimistic UI update
+    setUpcomingFeatures(prev => prev.map(f => {
+      if (f.id === featureId) {
+        return {
+          ...f,
+          votesCount: Math.max(0, f.votesCount + (isCurrentlyVoted ? -1 : 1))
+        };
+      }
+      return f;
+    }));
+
+    try {
+      await voteUpcomingFeature(featureId, userId);
+      showToast(isCurrentlyVoted ? 'Upvote removed' : 'Thanks for upvoting! Your feedback shapes our development queue.');
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleRequestEarlyAccess = async (feature: UpcomingFeature) => {
+    const email = currentUser?.email || 'user@fixwealth.local';
+    const isAlreadyRequested = earlyAccessRequestedIds.includes(feature.id);
+    
+    if (isAlreadyRequested) {
+      showToast(`You are already on the priority beta waitlist for "${feature.title}".`);
+      return;
+    }
+
+    const updated = [...earlyAccessRequestedIds, feature.id];
+    setEarlyAccessRequestedIds(updated);
+    localStorage.setItem('app_user_early_access_features', JSON.stringify(updated));
+
+    try {
+      await requestEarlyAccessFeature(feature.id, email);
+      showToast(`🎉 Early beta access registered for "${feature.title}"! You will be notified on launch.`);
+    } catch {
+      showToast(`🎉 Early beta access registered for "${feature.title}"!`);
+    }
+  };
 
   // Sync notes to local storage
   useEffect(() => {
@@ -460,7 +564,31 @@ export const NewsUpdatesView: React.FC = () => {
             </span>
           </button>
 
-          {/* Tab 2: Pro Digest Schedule */}
+          {/* Tab 2: Upcoming Features & Roadmap */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('upcoming_features');
+              setActiveArticle(null);
+            }}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+              activeTab === 'upcoming_features'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : isLight 
+                ? 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-transparent' 
+                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 border border-transparent'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+            <span>Upcoming Features &amp; Roadmap</span>
+            <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded ${
+              activeTab === 'upcoming_features' ? 'bg-white/20 text-white' : 'bg-purple-500/15 text-purple-600 dark:text-purple-400'
+            }`}>
+              {upcomingFeatures.length}
+            </span>
+          </button>
+
+          {/* Tab 3: Pro Digest Schedule */}
           <button
             type="button"
             onClick={() => {
@@ -598,7 +726,7 @@ export const NewsUpdatesView: React.FC = () => {
               </div>
 
               {/* Bottom Actions */}
-              <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 flex-wrap">
                 <button
                   type="button"
                   onClick={() => setActiveArticle(null)}
@@ -608,21 +736,104 @@ export const NewsUpdatesView: React.FC = () => {
                   <span>Back to news feed</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                    showToast('Dispatch link copied to clipboard!');
-                  }}
-                  className="px-4 py-2 rounded-lg border hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 text-slate-600 dark:text-slate-300"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>Share Dispatch</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveArticle(null);
+                      setActiveTab('upcoming_features');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm shadow-purple-600/20"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>View Roadmap &amp; Upvote ({upcomingFeatures.length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.href);
+                      showToast('Dispatch link copied to clipboard!');
+                    }}
+                    className="px-4 py-2 rounded-lg border hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 text-slate-600 dark:text-slate-300"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>Share Dispatch</span>
+                  </button>
+                </div>
               </div>
             </article>
           ) : (
             <>
+              {/* UPCOMING ROADMAP HIGHLIGHTS HERO BANNER IN NEWS & BLOGS */}
+              <div className={`p-5 sm:p-6 rounded-2xl border transition-all ${
+                isLight 
+                  ? 'bg-gradient-to-r from-purple-50 via-indigo-50/40 to-blue-50/50 border-purple-200 shadow-xs' 
+                  : 'bg-gradient-to-r from-purple-950/30 via-indigo-950/20 to-slate-900 border-purple-500/30 shadow-xs'
+              }`}>
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="space-y-1.5 max-w-3xl">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30">
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <span>Upcoming Features &amp; Releases</span>
+                      </span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        Firestore Sync Active
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-500">
+                        {upcomingFeatures.length} Roadmap Features in Queue
+                      </span>
+                    </div>
+
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                      Upcoming Features: Real UPI, Bank Accounts, Demat Portfolios, WhatsApp AI &amp; Stock Feeds
+                    </h3>
+
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      We are engineering real-time data integrations: <strong>Real UPI auto-sync</strong>, <strong>RBI Account Aggregator bank feeds</strong>, <strong>Live Demat portfolios (Zerodha, Groww)</strong>, <strong>WhatsApp &amp; Telegram AI wealth chat</strong>, <strong>Universal AI investment advisor</strong>, and <strong>Company news tailored to your holdings</strong>.
+                    </p>
+
+                    {/* Quick feature pill highlights */}
+                    <div className="flex items-center gap-2 flex-wrap pt-1 text-[11px] font-semibold">
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">
+                        <Smartphone className="w-3 h-3 text-blue-500" /> Real UPI Accounts
+                      </span>
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">
+                        <Landmark className="w-3 h-3 text-emerald-500" /> Bank AA Feeds
+                      </span>
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">
+                        <Coins className="w-3 h-3 text-amber-500" /> Demat (Zerodha/Groww)
+                      </span>
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">
+                        <MessageSquare className="w-3 h-3 text-emerald-500" /> WhatsApp &amp; Telegram AI
+                      </span>
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">
+                        <Bot className="w-3 h-3 text-purple-500" /> AI Advisor (All Knowledge)
+                      </span>
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">
+                        <TrendingUp className="w-3 h-3 text-cyan-500" /> Live Stock News
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('upcoming_features');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/25 cursor-pointer whitespace-nowrap"
+                    >
+                      <span>Explore Roadmap &amp; Upvote ({upcomingFeatures.length})</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* SUB-NEWS FILTER STRIP & SEARCH BAR */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 {/* Segmented Category Buttons */}
@@ -801,7 +1012,348 @@ export const NewsUpdatesView: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* 2. PRO DIGEST SCHEDULE & FREQUENCY SECTION                                 */}
+      {/* 2. UPCOMING FEATURES & PRODUCT ROADMAP (COMMUNITY WISHLIST & QUEUE)       */}
+      {/* ========================================================================= */}
+      {activeTab === 'upcoming_features' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Main Hero Header */}
+          <div className={`p-6 sm:p-8 rounded-2xl border relative overflow-hidden ${
+            isLight 
+              ? 'bg-gradient-to-br from-purple-50/70 via-white to-white border-purple-200 shadow-xs' 
+              : 'bg-gradient-to-br from-purple-950/25 via-slate-900 to-slate-900 border-purple-500/30 shadow-xs'
+          }`}>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-inherit/40">
+              <div className="flex items-start gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-purple-600/25">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                      Upcoming Features &amp; Product Roadmap
+                    </h2>
+                    <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30">
+                      Live Community Queue
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      Firestore Sync Active
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-3xl leading-relaxed">
+                    Explore planned features: <strong>Real UPI auto-sync</strong>, <strong>Bank Account Aggregator (AA)</strong>, <strong>Demat portfolios (Zerodha, Groww)</strong>, <strong>WhatsApp &amp; Telegram AI companion</strong>, <strong>Universal AI Advisor</strong>, and <strong>Live Company Stock Intelligence</strong>. Upvote features to accelerate their engineering release!
+                  </p>
+                </div>
+              </div>
+
+              {/* Roadmap Key Metrics */}
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <div className={`px-3 py-2 rounded-xl border text-center min-w-[90px] ${
+                  isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+                }`}>
+                  <span className="text-[10px] text-slate-500 block uppercase font-mono">In Dev</span>
+                  <span className="text-base font-black font-mono text-emerald-500">
+                    {upcomingFeatures.filter(f => f.status === 'in_development').length}
+                  </span>
+                </div>
+                <div className={`px-3 py-2 rounded-xl border text-center min-w-[90px] ${
+                  isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+                }`}>
+                  <span className="text-[10px] text-slate-500 block uppercase font-mono">Beta Test</span>
+                  <span className="text-base font-black font-mono text-purple-400">
+                    {upcomingFeatures.filter(f => f.status === 'beta_testing').length}
+                  </span>
+                </div>
+                <div className={`px-3 py-2 rounded-xl border text-center min-w-[90px] ${
+                  isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+                }`}>
+                  <span className="text-[10px] text-slate-500 block uppercase font-mono">Total Votes</span>
+                  <span className="text-base font-black font-mono text-blue-500">
+                    {upcomingFeatures.reduce((acc, f) => acc + (f.votesCount || 0), 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Filter Bar */}
+            <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={featuresSearch}
+                  onChange={e => setFeaturesSearch(e.target.value)}
+                  placeholder="Search roadmap (UPI, Bank, Demat, AI, WhatsApp, CIBIL)..."
+                  className={`w-full text-xs pl-8 pr-3 py-2 rounded-xl border transition-colors focus:outline-none ${
+                    isLight 
+                      ? 'bg-white border-slate-200 focus:border-purple-500 text-slate-900 placeholder:text-slate-400' 
+                      : 'bg-slate-900/90 border-slate-800 focus:border-purple-500 text-white placeholder:text-slate-500'
+                  }`}
+                />
+              </div>
+
+              {/* Status Filter Dropdown */}
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-slate-500 font-medium text-[11px]">Lifecycle:</span>
+                <select
+                  value={featuresStatusFilter}
+                  onChange={e => setFeaturesStatusFilter(e.target.value)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold focus:outline-none cursor-pointer ${
+                    isLight 
+                      ? 'bg-white border-slate-200 text-slate-800' 
+                      : 'bg-slate-900 border-slate-800 text-slate-200'
+                  }`}
+                >
+                  <option value="all">All Stages ({upcomingFeatures.length})</option>
+                  <option value="in_development">In Active Development</option>
+                  <option value="beta_testing">Beta Testing &amp; Preview</option>
+                  <option value="planned">Planned for 2027</option>
+                  <option value="under_research">Under Research</option>
+                  <option value="released">Released / Live</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Category Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-3 text-xs">
+              {[
+                { id: 'all', label: 'All Categories' },
+                { id: 'Real Accounts & Banking', label: 'Real Accounts & Banking' },
+                { id: 'AI & Messaging', label: 'AI & Messaging Bots' },
+                { id: 'AI Advisory', label: 'AI Advisory' },
+                { id: 'Market News & Stocks', label: 'Market News & Stocks' },
+                { id: 'Credit & Solvency', label: 'Credit & Solvency' },
+                { id: 'Tax & Compliance', label: 'Tax & Compliance' },
+                { id: 'Security & Infra', label: 'Security & Infra' }
+              ].map(cat => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setFeaturesFilter(cat.id)}
+                  className={`px-3 py-1 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                    featuresFilter === cat.id
+                      ? 'bg-purple-600 text-white font-bold shadow-xs'
+                      : isLight
+                      ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Features Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {upcomingFeatures
+              .filter(f => {
+                if (featuresFilter !== 'all' && f.category !== featuresFilter) return false;
+                if (featuresStatusFilter !== 'all' && f.status !== featuresStatusFilter) return false;
+                if (featuresSearch) {
+                  const q = featuresSearch.toLowerCase();
+                  const inTitle = f.title.toLowerCase().includes(q);
+                  const inDesc = f.description.toLowerCase().includes(q);
+                  const inTags = (f.tags || []).some(t => t.toLowerCase().includes(q));
+                  return inTitle || inDesc || inTags;
+                }
+                return true;
+              })
+              .map(feat => {
+                const isVoted = votedIds.includes(feat.id);
+                const isWaitlisted = earlyAccessRequestedIds.includes(feat.id);
+
+                // Icon selection
+                const getFeatureIcon = () => {
+                  switch (feat.category) {
+                    case 'Real Accounts & Banking':
+                      if (feat.title.includes('UPI')) return <Smartphone className="w-5 h-5 text-blue-500" />;
+                      if (feat.title.includes('Demat')) return <Coins className="w-5 h-5 text-amber-500" />;
+                      return <Landmark className="w-5 h-5 text-blue-500" />;
+                    case 'AI & Messaging':
+                      return <MessageSquare className="w-5 h-5 text-emerald-500" />;
+                    case 'AI Advisory':
+                      return <Bot className="w-5 h-5 text-purple-500" />;
+                    case 'Market News & Stocks':
+                      return <TrendingUp className="w-5 h-5 text-cyan-500" />;
+                    case 'Credit & Solvency':
+                      return <ShieldCheck className="w-5 h-5 text-rose-500" />;
+                    case 'Tax & Compliance':
+                      return <FileText className="w-5 h-5 text-indigo-500" />;
+                    case 'Security & Infra':
+                      return <ShieldCheck className="w-5 h-5 text-indigo-500" />;
+                    default:
+                      return <Sparkles className="w-5 h-5 text-purple-500" />;
+                  }
+                };
+
+                return (
+                  <div
+                    key={feat.id}
+                    className={`p-5 sm:p-6 rounded-2xl border transition-all flex flex-col justify-between space-y-4 ${
+                      isLight 
+                        ? 'bg-white border-slate-200 hover:border-purple-300 shadow-2xs hover:shadow-xs' 
+                        : 'bg-slate-900 border-slate-800 hover:border-purple-500/50 shadow-2xs'
+                    }`}
+                  >
+                    <div className="space-y-3">
+                      {/* Top Badges & Target Quarter Row */}
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Status Badge */}
+                          {feat.status === 'in_development' && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                              </span>
+                              In Development
+                            </span>
+                          )}
+                          {feat.status === 'beta_testing' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30">
+                              <Sparkles className="w-3 h-3 text-purple-500" />
+                              Beta Testing
+                            </span>
+                          )}
+                          {feat.status === 'planned' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                              <Clock className="w-3 h-3 text-amber-500" />
+                              Planned
+                            </span>
+                          )}
+                          {feat.status === 'released' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30">
+                              <CheckCircle2 className="w-3 h-3 text-blue-500" />
+                              Released
+                            </span>
+                          )}
+
+                          {/* Target Quarter */}
+                          <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold ${
+                            isLight ? 'bg-slate-100 text-slate-600' : 'bg-slate-800 text-slate-300'
+                          }`}>
+                            Target: {feat.targetRelease}
+                          </span>
+                        </div>
+
+                        {/* Priority / Badge */}
+                        {feat.badge && (
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                            {feat.badge}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Title & Icon Header */}
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+                          isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-800/80 border-slate-700'
+                        }`}>
+                          {getFeatureIcon()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight">
+                            {feat.title}
+                          </h3>
+                          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
+                            Category: {feat.category}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        {feat.description}
+                      </p>
+
+                      {/* Tags */}
+                      {feat.tags && feat.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {feat.tags.map(t => (
+                            <span 
+                              key={t}
+                              className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${
+                                isLight ? 'bg-slate-50 text-slate-600 border-slate-200' : 'bg-slate-800/60 text-slate-300 border-slate-700/60'
+                              }`}
+                            >
+                              #{t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bottom Action Footer */}
+                    <div className="pt-3 border-t border-inherit/30 flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        {/* Interactive Upvote Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleVoteFeature(feat.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all flex items-center gap-1.5 cursor-pointer border ${
+                            isVoted
+                              ? 'bg-purple-600 text-white border-purple-500 shadow-xs'
+                              : isLight
+                              ? 'bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700 border-slate-200'
+                              : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                          }`}
+                          title={isVoted ? 'Click to remove upvote' : 'Upvote this feature to prioritize it'}
+                        >
+                          <ThumbsUp className={`w-3.5 h-3.5 ${isVoted ? 'fill-white' : ''}`} />
+                          <span>{isVoted ? 'Upvoted' : 'Upvote'}</span>
+                          <span className="opacity-80">({feat.votesCount})</span>
+                        </button>
+
+                        {/* Request Early Access Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleRequestEarlyAccess(feat)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer border ${
+                            isWaitlisted
+                              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                              : isLight
+                              ? 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                              : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-slate-700'
+                          }`}
+                          title="Register for beta testing notification upon release"
+                        >
+                          {isWaitlisted ? (
+                            <>
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                              <span>✓ Beta Waitlist</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="w-3.5 h-3.5 text-amber-500" />
+                              <span>Request Beta Access</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Share Link */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const shareText = `Check out "${feat.title}" coming to FIX Wealth: ${feat.description}`;
+                          navigator.clipboard.writeText(shareText);
+                          showToast(`Copied details for "${feat.title}" to clipboard!`);
+                        }}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                        title="Share / Copy feature details"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 3. PRO DIGEST SCHEDULE & FREQUENCY SECTION                                 */}
       {/* ========================================================================= */}
       {activeTab === 'pro_schedule' && (
         <div className="space-y-6 animate-in fade-in">

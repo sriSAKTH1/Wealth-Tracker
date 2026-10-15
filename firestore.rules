@@ -57,5 +57,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // --- UPCOMING FEATURES & ROADMAP (PUBLIC READ, ADMIN WRITE, USER UPVOTES) ---
+    match /upcoming_features/{featureId} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isSignedIn() || isAdmin();
+    }
   }
 }
