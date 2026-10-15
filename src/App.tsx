@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Shield } from 'lucide-react';
 import { FinanceProvider, useFinance } from './context/FinanceContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -26,6 +26,7 @@ import { BalanceSheetView } from './components/views/BalanceSheetView';
 import { SettingsView } from './components/views/SettingsView';
 import { FinancialCalculatorsView } from './components/calculators/FinancialCalculatorsView';
 import { AdminPanelView } from './components/views/AdminPanelView';
+import { AdminPinGate } from './components/auth/AdminPinGate';
 import { NewsUpdatesView } from './components/views/NewsUpdatesView';
 import { AppFooter } from './components/AppFooter';
 import { LaunchPage } from './components/LaunchPage';
@@ -35,6 +36,13 @@ import { GlobalToast } from './components/common/GlobalToast';
 const MainLayout: React.FC = () => {
   const { activeTab, setActiveTab, theme, accentColor, isMobileFrameSimulated, openQuickAdd, transactions = [] } = useFinance();
   const { isUser, isAdmin, isDemoMode } = useAuth();
+  const [adminPinUnlocked, setAdminPinUnlocked] = useState(() => {
+    try {
+      return sessionStorage.getItem('admin_pin_verified') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const hasNoTransactions = !transactions || transactions.length === 0;
 
   // Render current active view
@@ -64,30 +72,13 @@ const MainLayout: React.FC = () => {
         return <FinancialCalculatorsView />;
       case 'news':
         return <NewsUpdatesView />;
-      case 'admin':
-        if (!isAdmin) {
-          return (
-            <div className="p-8 text-center max-w-lg mx-auto my-16 rounded-3xl border border-rose-500/25 bg-rose-500/10 space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-500 flex items-center justify-center mx-auto">
-                <Shield className="w-6 h-6" />
-              </div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                Admin Panel Restricted
-              </h2>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                The Master Admin Control Panel is strictly reserved for the Administrator. Your personal finances and records remain 100% private in local storage on this device.
-              </p>
-              <button
-                type="button"
-                onClick={() => setActiveTab('overview')}
-                className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-md shadow-blue-600/25 hover:bg-blue-500 transition-all cursor-pointer"
-              >
-                Return to Overview Dashboard
-              </button>
-            </div>
-          );
+      case 'admin': {
+        const isVerified = adminPinUnlocked || (typeof window !== 'undefined' && sessionStorage.getItem('admin_pin_verified') === 'true');
+        if (!isVerified || !isAdmin) {
+          return <AdminPinGate onVerified={() => setAdminPinUnlocked(true)} />;
         }
         return <AdminPanelView />;
+      }
       default:
         return <OverviewView />;
     }

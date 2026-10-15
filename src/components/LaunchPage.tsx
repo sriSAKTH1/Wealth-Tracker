@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { FixWealthLogo } from './common/FixWealthLogo';
+import { AdminPinModal } from './auth/AdminPinModal';
 
 // Floating Translucent Financial Icons for Hero Entry (Matching reference line-art icons)
 interface FloatingFinanceIcon {
@@ -285,6 +286,7 @@ export const LaunchPage: React.FC = () => {
 
   // Dialog and allocation states
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState(false);
   const [activeAllocationTab, setActiveAllocationTab] = useState<'actual' | 'target'>('actual');
 
   // Launch Page is dedicated Light Mode only.
@@ -1751,9 +1753,9 @@ export const LaunchPage: React.FC = () => {
               <button
                 type="button"
                 id="btn-hero-test-admin"
-                onClick={() => enterTestMode('admin')}
+                onClick={() => setIsAdminPinModalOpen(true)}
                 className="w-full sm:w-auto px-6 py-3 rounded-2xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 text-blue-800 hover:text-blue-900 font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-                title="Test as sudharsan014@gamil.com (Master Administrator)"
+                title="Enter PIN to access Master Administrator"
               >
                 <Shield className="w-4 h-4 text-blue-600" />
                 <span>👑 Test as Admin</span>
@@ -1965,6 +1967,12 @@ export const LaunchPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Master Admin PIN Modal Popup */}
+      <AdminPinModal
+        isOpen={isAdminPinModalOpen}
+        onClose={() => setIsAdminPinModalOpen(false)}
+      />
 
     </div>
   );

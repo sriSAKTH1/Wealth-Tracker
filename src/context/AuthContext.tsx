@@ -19,7 +19,7 @@ export const ADMIN_EMAILS = [
   'sudharsanm014@gmail.com'
 ];
 
-export const ADMIN_PASSWORD = 'FIXwithME';
+export const ADMIN_PASSWORD = 'niceTRY';
 
 export const isAdminEmail = (email?: string | null): boolean => {
   if (!email) return false;
@@ -189,14 +189,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const role: 'admin' | 'user' = isTargetAdmin ? 'admin' : 'user';
     const now = new Date().toISOString();
 
-    // STRICT ADMIN VERIFICATION: Only sudharsan014@gamil.com / sudharsan014@gmail.com with password "FIXwithME"
+    // STRICT ADMIN VERIFICATION: Only sudharsan014@gamil.com / sudharsan014@gmail.com with password "niceTRY"
     if (isTargetAdmin) {
       if (pass !== ADMIN_PASSWORD) {
         return { 
           success: false, 
-          error: `Incorrect administrator password for ${cleanEmail}. Enter password "FIXwithME".` 
+          error: `Incorrect administrator PIN / password for ${cleanEmail}. Access denied.` 
         };
       }
+      try {
+        sessionStorage.setItem('admin_pin_verified', 'true');
+      } catch {}
       const adminProfile: AppUserProfile = {
         id: 'user-sudharsan014-admin',
         email: cleanEmail,
@@ -491,6 +494,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem(DEMO_SESSION_ACTIVE_KEY);
       localStorage.removeItem(DEMO_SESSION_START_KEY);
       localStorage.removeItem(DEMO_CALC_ONLY_KEY);
+      try {
+        sessionStorage.setItem('admin_pin_verified', 'true');
+      } catch {}
 
       setCurrentUser(profile);
       localStorage.setItem(LOCAL_AUTH_USER_KEY, JSON.stringify(profile));
