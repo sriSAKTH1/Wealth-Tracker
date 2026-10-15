@@ -725,17 +725,17 @@ export const LaunchPage: React.FC = () => {
                       </div>
 
                       <div className="grid grid-cols-3 gap-2 text-center mb-4">
-                        <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
-                          <span className="text-[10px] text-slate-500 block mb-0.5">Income</span>
-                          <span className="text-xs sm:text-sm font-mono font-bold text-emerald-700">₹1.80L</span>
+                        <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200/90 shadow-2xs hover:border-emerald-300 transition-colors">
+                          <span className="text-[10px] text-emerald-700 font-semibold block mb-0.5">Income</span>
+                          <span className="text-xs sm:text-sm font-mono font-bold text-emerald-800">₹1.80L</span>
                         </div>
                         <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
                           <span className="text-[10px] text-slate-500 block mb-0.5">Expenses</span>
                           <span className="text-xs sm:text-sm font-mono font-bold text-slate-700">₹92,000</span>
                         </div>
-                        <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 shadow-2xs">
-                          <span className="text-[10px] text-emerald-700 font-bold block mb-0.5">Surplus</span>
-                          <span className="text-xs sm:text-sm font-mono font-bold text-emerald-800">+₹88,000</span>
+                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-teal-50 via-emerald-50 to-emerald-100/70 border border-emerald-300/80 shadow-2xs hover:border-emerald-400 transition-colors">
+                          <span className="text-[10px] text-teal-800 font-bold block mb-0.5">Surplus</span>
+                          <span className="text-xs sm:text-sm font-mono font-bold text-emerald-900">+₹88,000</span>
                         </div>
                       </div>
                     </div>
