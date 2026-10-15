@@ -63,7 +63,10 @@ export const SettingsView: React.FC = () => {
     keyboardShortcutsEnabled,
     setKeyboardShortcutsEnabled,
     toggleKeyboardShortcuts,
-    setIsShortcutsHelpOpen
+    setIsShortcutsHelpOpen,
+    tooltipsEnabled,
+    setTooltipsEnabled,
+    toggleTooltips
   } = useFinance();
 
   const { signOut, currentUser } = useAuth();
@@ -299,15 +302,15 @@ export const SettingsView: React.FC = () => {
       {/* Navigation Filter Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
         {[
-          { id: 'profile', label: '👤 Profile', icon: <User className="w-3.5 h-3.5" /> },
-          { id: 'language', label: '🌐 Language & Region', icon: <Globe className="w-3.5 h-3.5" /> },
-          { id: 'help', label: '❓ Help & Support', icon: <HelpCircle className="w-3.5 h-3.5" /> },
-          { id: 'security', label: '🔐 Security', icon: <Shield className="w-3.5 h-3.5" /> },
-          { id: 'appearance', label: '🎨 Appearance', icon: <Palette className="w-3.5 h-3.5" /> },
-          { id: 'notifications', label: '🔔 Notifications', icon: <Bell className="w-3.5 h-3.5" /> },
-          { id: 'shortcuts', label: '⌨️ Shortcuts', icon: <Keyboard className="w-3.5 h-3.5" /> },
-          { id: 'data', label: '💾 Data & Backup', icon: <Download className="w-3.5 h-3.5" /> },
-          { id: 'danger', label: '⚠️ Danger Zone', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+          { id: 'profile', label: '👤 Profile', icon: <User className="w-3.5 h-3.5" />, tooltip: 'User Profile & Identity' },
+          { id: 'language', label: '🌐 Language & Region', icon: <Globe className="w-3.5 h-3.5" />, tooltip: 'Language & Currency Slabs' },
+          { id: 'help', label: '❓ Help & Support', icon: <HelpCircle className="w-3.5 h-3.5" />, tooltip: 'User Guide, FAQs & Support' },
+          { id: 'security', label: '🔐 Security', icon: <Shield className="w-3.5 h-3.5" />, tooltip: 'Security & Privacy Vault' },
+          { id: 'appearance', label: '🎨 Appearance', icon: <Palette className="w-3.5 h-3.5" />, tooltip: 'Customize Appearance' },
+          { id: 'notifications', label: '🔔 Notifications', icon: <Bell className="w-3.5 h-3.5" />, tooltip: 'Manage Alert Preferences' },
+          { id: 'shortcuts', label: '⌨️ Shortcuts', icon: <Keyboard className="w-3.5 h-3.5" />, tooltip: 'Keyboard Nav & Keybinds' },
+          { id: 'data', label: '💾 Data & Backup', icon: <Download className="w-3.5 h-3.5" />, tooltip: 'Data Export & Cloud Sync' },
+          { id: 'danger', label: '⚠️ Danger Zone', icon: <AlertTriangle className="w-3.5 h-3.5" />, tooltip: 'Reset & Data Wipe' },
         ].map(tab => {
           const isActive = activeTab === tab.id;
           return (
@@ -315,7 +318,8 @@ export const SettingsView: React.FC = () => {
               key={tab.id}
               id={`btn-tab-${tab.id}`}
               onClick={() => setActiveSettingsTab(tab.id as SettingsTab)}
-              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              title={tooltipsEnabled ? (tab.tooltip || tab.label) : undefined}
+              className={`relative group px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
                 isActive
                   ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
                   : isLight 
@@ -324,6 +328,17 @@ export const SettingsView: React.FC = () => {
               }`}
             >
               <span>{tab.label}</span>
+
+              {/* Hover Tooltip - Enabled by default (controlled via Settings > Appearance) */}
+              {tooltipsEnabled && (
+                <span
+                  role="tooltip"
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 text-[11px] font-semibold text-white bg-slate-900 dark:bg-slate-800 rounded-lg shadow-xl shadow-black/30 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none z-50 scale-95 group-hover:scale-100 flex items-center gap-1 border border-slate-700/60"
+                >
+                  <span>{tab.tooltip || tab.label}</span>
+                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 dark:border-t-slate-800" />
+                </span>
+              )}
             </button>
           );
         })}
@@ -476,7 +491,7 @@ export const SettingsView: React.FC = () => {
       )}
 
       {/* 5. 🎨 APPEARANCE */}
-      {shouldShow('appearance', ['appearance', 'theme', 'dark', 'light', 'font', 'layout', 'density', 'dashboard', 'color', 'accent']) && (
+      {shouldShow('appearance', ['appearance', 'theme', 'dark', 'light', 'font', 'layout', 'density', 'dashboard', 'color', 'accent', 'tooltip', 'tooltips', 'hover', 'hints', 'customize']) && (
         <AppearanceSection />
       )}
 

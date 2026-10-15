@@ -135,6 +135,11 @@ interface FinanceContextType {
   isShortcutsHelpOpen: boolean;
   setIsShortcutsHelpOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
 
+  // UI Tooltips & Guided Hints (Default ON)
+  tooltipsEnabled: boolean;
+  setTooltipsEnabled: (enabled: boolean) => void;
+  toggleTooltips: () => void;
+
   // Real-time Market Data & Synchronization
   isSyncingMarketPrices: boolean;
   lastMarketSyncTime: string | null;
@@ -490,6 +495,21 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const toggleKeyboardShortcuts = () => {
     setKeyboardShortcutsEnabled(!keyboardShortcutsEnabled);
+  };
+
+  // UI Tooltips & Guided Hints State (Default ON)
+  const [tooltipsEnabled, setTooltipsEnabledState] = useState<boolean>(() => {
+    const saved = localStorage.getItem('aura_tooltips_enabled');
+    return saved === null ? true : saved === 'true'; // Default ON
+  });
+
+  const setTooltipsEnabled = (enabled: boolean) => {
+    setTooltipsEnabledState(enabled);
+    localStorage.setItem('aura_tooltips_enabled', String(enabled));
+  };
+
+  const toggleTooltips = () => {
+    setTooltipsEnabled(!tooltipsEnabled);
   };
 
   // Real-time Market Live Price Synchronization
@@ -1499,6 +1519,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         keyboardShortcutsEnabled,
         setKeyboardShortcutsEnabled,
         toggleKeyboardShortcuts,
+        tooltipsEnabled,
+        setTooltipsEnabled,
+        toggleTooltips,
         isShortcutsHelpOpen,
         setIsShortcutsHelpOpen,
         isSyncingMarketPrices,

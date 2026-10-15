@@ -13,7 +13,10 @@ import {
   Sliders, 
   LineChart, 
   Maximize2,
-  Layers
+  Layers,
+  HelpCircle,
+  Info,
+  RotateCcw
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { MainTab } from '../../types';
@@ -31,7 +34,18 @@ export const ACCENT_COLORS = [
 ];
 
 export const AppearanceSection: React.FC = () => {
-  const { theme, setTheme, isPrivateMode, togglePrivateMode, formatMoney, accentColor, setAccentColor } = useFinance();
+  const { 
+    theme, 
+    setTheme, 
+    isPrivateMode, 
+    togglePrivateMode, 
+    formatMoney, 
+    accentColor, 
+    setAccentColor,
+    tooltipsEnabled,
+    setTooltipsEnabled,
+    toggleTooltips
+  } = useFinance();
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   // 1. Font Size State
@@ -110,6 +124,11 @@ export const AppearanceSection: React.FC = () => {
     setDefaultMaskOnBoot(next);
     localStorage.setItem('fix_default_mask_on_boot', String(next));
     showNotice(next ? 'Startup privacy mask enabled' : 'Startup privacy mask disabled');
+  };
+
+  const handleToggleTooltips = (enable: boolean) => {
+    setTooltipsEnabled(enable);
+    showNotice(enable ? 'Interactive UI tooltips enabled (Default ON)' : 'Interactive UI tooltips disabled (OFF)');
   };
 
   const selectedAccent = ACCENT_COLORS.find(a => a.id === accentColor) || ACCENT_COLORS[0];
@@ -658,6 +677,148 @@ export const AppearanceSection: React.FC = () => {
           <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300 select-all cursor-text font-sans">
             ✨ <strong className="text-slate-900 dark:text-white">Try dragging or selecting this sentence with your cursor!</strong> When text is selected, press the <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-[11px] font-bold">Shift</kbd> key to cycle through Default Theme, Lite-Green, Red, and Blue.
           </p>
+        </div>
+      </div>
+
+      {/* 8. 💡 INTERFACE TOOLTIPS & HOVER HINTS (DEFAULT ON / OFF TOGGLE) */}
+      <div className={`p-5 rounded-2xl border space-y-4 ${
+        isLight ? 'bg-slate-50/70 border-slate-200' : 'bg-slate-950/50 border-slate-800'
+      }`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/80 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <HelpCircle className="w-4 h-4 text-blue-500" />
+            <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+              Interface Tooltips &amp; Hover Guidance
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+              tooltipsEnabled 
+                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/25' 
+                : 'bg-slate-500/15 text-slate-400 border-slate-500/25'
+            }`}>
+              {tooltipsEnabled ? '● ON (Default)' : '○ OFF'}
+            </span>
+            <button
+              type="button"
+              onClick={() => handleToggleTooltips(true)}
+              title="Reset tooltips to default (ON)"
+              className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset to Default (ON)
+            </button>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+          Display contextual guidance and descriptions on hover across navigation tabs, buttons, and action bars (such as the <strong className="text-slate-700 dark:text-slate-200">"Customize Appearance"</strong> tooltip on the Appearance button). By default, tooltips are turned <strong className="text-emerald-600 dark:text-emerald-400">ON</strong>.
+        </p>
+
+        {/* 2-Option Radio / Toggle Buttons: ON (Default) and OFF */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            type="button"
+            id="btn-tooltips-on"
+            onClick={() => handleToggleTooltips(true)}
+            className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-start justify-between ${
+              tooltipsEnabled
+                ? isLight 
+                  ? 'bg-white border-blue-500 ring-2 ring-blue-500/30 shadow-xs' 
+                  : 'bg-slate-900 border-blue-500 ring-2 ring-blue-500/30 shadow-xs'
+                : isLight 
+                  ? 'bg-white border-slate-200 hover:bg-slate-100 text-slate-700' 
+                  : 'bg-slate-900/60 border-slate-800 text-slate-300'
+            }`}
+          >
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500/50" />
+                <span className="font-bold text-xs text-slate-900 dark:text-slate-100">Tooltips ON (Default)</span>
+                <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
+                  Recommended
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-500">
+                Displays "Customize Appearance" and helpful hints when hovering over tabs &amp; buttons.
+              </div>
+            </div>
+            {tooltipsEnabled && <Check className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />}
+          </button>
+
+          <button
+            type="button"
+            id="btn-tooltips-off"
+            onClick={() => handleToggleTooltips(false)}
+            className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-start justify-between ${
+              !tooltipsEnabled
+                ? isLight 
+                  ? 'bg-white border-slate-400 ring-2 ring-slate-400/30 shadow-xs' 
+                  : 'bg-slate-900 border-slate-600 ring-2 ring-slate-500/30 shadow-xs'
+                : isLight 
+                  ? 'bg-white border-slate-200 hover:bg-slate-100 text-slate-700' 
+                  : 'bg-slate-900/60 border-slate-800 text-slate-300'
+            }`}
+          >
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                <span className="font-bold text-xs text-slate-900 dark:text-slate-100">Tooltips OFF</span>
+              </div>
+              <div className="text-[11px] text-slate-500">
+                Hides all hover tooltips and floating labels for a clutter-free, minimalist workflow.
+              </div>
+            </div>
+            {!tooltipsEnabled && <Check className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />}
+          </button>
+        </div>
+
+        {/* Live Interactive Hover Test Box */}
+        <div className={`p-4 rounded-xl border space-y-2.5 ${
+          isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+        }`}>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5 text-blue-500" />
+              Live Hover Test Sandbox:
+            </span>
+            <span className="text-[10px] text-slate-500">
+              Status: {tooltipsEnabled ? 'Hover over the button below to see the tooltip' : 'Tooltips are currently OFF (no tooltip on hover)'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              type="button"
+              id="preview-btn-appearance"
+              title={tooltipsEnabled ? 'Customize Appearance' : undefined}
+              className={`relative group px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border ${
+                isLight 
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300' 
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+              }`}
+            >
+              <Palette className="w-3.5 h-3.5 text-purple-500" />
+              <span>🎨 Appearance (Hover Me)</span>
+
+              {/* Tooltip on hover */}
+              {tooltipsEnabled && (
+                <span
+                  role="tooltip"
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 text-[11px] font-semibold text-white bg-slate-900 dark:bg-slate-800 rounded-lg shadow-xl shadow-black/30 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none z-50 scale-95 group-hover:scale-100 flex items-center gap-1 border border-slate-700/60"
+                >
+                  <span>Customize Appearance</span>
+                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 dark:border-t-slate-800" />
+                </span>
+              )}
+            </button>
+
+            <span className="text-[11px] text-slate-500 italic">
+              {tooltipsEnabled 
+                ? '👈 Hover your mouse here to test the "Customize Appearance" tooltip!' 
+                : '👈 Tooltips disabled. Switch to "ON (Default)" above to re-enable.'}
+            </span>
+          </div>
         </div>
       </div>
     </section>
