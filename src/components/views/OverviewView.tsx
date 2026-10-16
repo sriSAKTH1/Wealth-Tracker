@@ -37,6 +37,7 @@ import {
 import { useFinance } from '../../context/FinanceContext';
 import { Transaction } from '../../types';
 import { ConfirmationModal } from '../ConfirmationModal';
+import { DashboardSavingsGoals } from '../goals/DashboardSavingsGoals';
 
 export const OverviewView: React.FC = () => {
   const { 
@@ -495,7 +496,11 @@ export const OverviewView: React.FC = () => {
           ))}
         </div>
       </div>
-      {/* 4. Recent Transactions & Activity Stream */}
+
+      {/* 4. Savings Goals with Target Date, Category & Daily Savings Needed */}
+      <DashboardSavingsGoals />
+
+      {/* 5. Recent Transactions & Activity Stream */}
       <div className={`p-5 sm:p-6 rounded-3xl border space-y-4 transition-all ${heroStyles.sectionCard}`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">

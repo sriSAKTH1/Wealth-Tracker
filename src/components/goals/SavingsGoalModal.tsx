@@ -328,46 +328,21 @@ export const SavingsGoalModal: React.FC<SavingsGoalModalProps> = ({
             </div>
           </div>
 
-          {/* Live Progress Preview if amounts entered */}
-          {parseFloat(targetAmount) > 0 && (
-            <div
-              className={`p-3 rounded-2xl border text-xs space-y-1.5 ${
-                isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-zinc-900/80 border-zinc-800 text-zinc-300'
-              }`}
-            >
-              <div className="flex items-center justify-between font-mono text-[11px]">
-                <span>Progress Preview:</span>
-                <span className="font-bold" style={{ color }}>
-                  {Math.min(100, Math.round(((parseFloat(currentAmount) || 0) / parseFloat(targetAmount)) * 100))}%
-                </span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-zinc-800 overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-300"
-                  style={{
-                    backgroundColor: color,
-                    width: `${Math.min(100, Math.max(0, ((parseFloat(currentAmount) || 0) / parseFloat(targetAmount)) * 100))}%`
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
           {/* Target Date & Color Palette */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                Target Completion Date
+                Target Date *
               </label>
               <input
                 type="date"
                 required
                 value={targetDate}
                 onChange={(e) => setTargetDate(e.target.value)}
-                className={`w-full px-3.5 py-2 rounded-xl border text-xs font-mono outline-none ${
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-mono outline-none ${
                   isLight
-                    ? 'bg-slate-50 border-slate-300 text-slate-900'
-                    : 'bg-zinc-900 border-zinc-800 text-white'
+                    ? 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white focus:border-blue-500'
+                    : 'bg-zinc-900 border-zinc-800 text-white focus:border-blue-500'
                 }`}
               />
             </div>
@@ -376,7 +351,7 @@ export const SavingsGoalModal: React.FC<SavingsGoalModalProps> = ({
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                 Goal Color Theme
               </label>
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center gap-2 pt-1.5">
                 {COLOR_PALETTE.map((col) => (
                   <button
                     key={col}
@@ -394,6 +369,62 @@ export const SavingsGoalModal: React.FC<SavingsGoalModalProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Live Progress & Daily Savings Needed Preview */}
+          {parseFloat(targetAmount) > 0 && (() => {
+            const targetVal = parseFloat(targetAmount) || 0;
+            const currentVal = parseFloat(currentAmount) || 0;
+            const remaining = Math.max(0, targetVal - currentVal);
+            const targetDateObj = targetDate ? new Date(targetDate) : new Date();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            targetDateObj.setHours(0, 0, 0, 0);
+            const diffTimeMs = targetDateObj.getTime() - today.getTime();
+            const daysRemaining = Math.max(1, Math.ceil(diffTimeMs / (1000 * 60 * 60 * 24)));
+            const dailyNeeded = Math.ceil(remaining / daysRemaining);
+            const monthlyNeeded = Math.ceil(remaining / Math.max(1, daysRemaining / 30.4));
+            const percentage = Math.min(100, Math.round((currentVal / targetVal) * 100));
+
+            return (
+              <div
+                className={`p-3.5 rounded-2xl border text-xs space-y-2.5 ${
+                  isLight ? 'bg-blue-50/70 border-blue-200 text-slate-800' : 'bg-blue-950/30 border-blue-800/50 text-blue-100'
+                }`}
+              >
+                <div className="flex items-center justify-between font-mono text-[11px]">
+                  <span className="font-semibold text-slate-600 dark:text-slate-300">Progress: {formatMoney(currentVal)} of {formatMoney(targetVal)}</span>
+                  <span className="font-bold text-xs" style={{ color }}>
+                    {percentage}%
+                  </span>
+                </div>
+
+                <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-zinc-800 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      backgroundColor: color,
+                      width: `${percentage}%`
+                    }}
+                  />
+                </div>
+
+                {/* Daily savings needed calculation box */}
+                <div className="pt-1 flex items-center justify-between text-xs border-t border-blue-200/60 dark:border-blue-900/40">
+                  <span className="font-medium text-slate-600 dark:text-slate-300">
+                    Daily Savings Needed:
+                  </span>
+                  <span className="font-mono font-black text-sm text-blue-600 dark:text-blue-400">
+                    {formatMoney(dailyNeeded)} <span className="text-[11px] font-normal text-slate-500">/ day</span>
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                  <span>{daysRemaining} days until target date</span>
+                  <span>≈ {formatMoney(monthlyNeeded)}/month pace</span>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Notes (Optional) */}
           <div className="space-y-1.5">

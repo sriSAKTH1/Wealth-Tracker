@@ -50,11 +50,11 @@ export const Sidebar: React.FC = () => {
     { id: 'reports', label: 'Reports & Analytics', icon: BarChart3 },
     { id: 'calculators', label: 'Tools & Calculators', icon: MoreHorizontal },
     { id: 'news', label: 'News & Release Blogs', icon: Newspaper, badge: 'New' },
-    { id: 'admin', label: 'Admin Control Panel', icon: ShieldCheck, badge: isAdmin ? 'Master' : 'PIN' },
+    { id: 'admin', label: 'Admin Control Panel', icon: ShieldCheck, badge: 'Master', adminOnly: true },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
-  const toolNavItems = allToolNavItems;
+  const toolNavItems = allToolNavItems.filter(item => !item.adminOnly || isAdmin);
 
   const handleNavClick = (id: MainTab) => {
     if (isCalculatorOnlyMode && id !== 'calculators') {

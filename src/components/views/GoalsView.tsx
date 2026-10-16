@@ -940,6 +940,17 @@ export const GoalsView: React.FC = () => {
               const remainingTime = getRemainingTimeLabel(goal.targetDate);
               const recommendedMonthly = tenureMonths > 0 ? Math.max(1, Math.round(remaining / tenureMonths)) : 0;
 
+              let dailyNeeded = 0;
+              if (goal.targetDate && remaining > 0) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const targetObj = new Date(goal.targetDate);
+                targetObj.setHours(0, 0, 0, 0);
+                const diffMs = targetObj.getTime() - today.getTime();
+                const daysLeft = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+                dailyNeeded = Math.ceil(remaining / daysLeft);
+              }
+
               return (
                 <div 
                   key={goal.id}
@@ -1046,10 +1057,10 @@ export const GoalsView: React.FC = () => {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-1">
+                    <div className="flex flex-wrap items-center justify-between text-[11px] text-zinc-400 pt-1 gap-1">
                       <span className="text-zinc-400">Target: <span className="font-mono text-zinc-300">{goal.targetDate}</span></span>
-                      <span className="font-mono text-zinc-300">
-                        {remaining === 0 ? '🎉 Milestone Met!' : `Pace: ${formatMoney(recommendedMonthly)}/mo`}
+                      <span className="font-mono text-emerald-400 font-semibold">
+                        {remaining === 0 ? '🎉 Milestone Met!' : `${formatMoney(dailyNeeded)}/day (${formatMoney(recommendedMonthly)}/mo)`}
                       </span>
                     </div>
                   </div>
