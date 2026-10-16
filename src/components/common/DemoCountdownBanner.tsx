@@ -1,7 +1,6 @@
 import React from 'react';
-import { Clock, Lock, Sparkles, ArrowRight, LogOut, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Clock, Lock, Sparkles, ArrowRight, LogOut, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useFinance } from '../../context/FinanceContext';
 
 export const DemoCountdownBanner: React.FC = () => {
   const { 
@@ -13,10 +12,6 @@ export const DemoCountdownBanner: React.FC = () => {
     isAdmin,
     role
   } = useAuth();
-  const { refillDemoAccount } = useFinance();
-
-  // Strictly hide demo timer for Admins - admins always have unlimited access without timing
-  if (!isDemoMode || isAdmin || role === 'admin') return null;
 
   const minutes = Math.floor(demoSecondsRemaining / 60);
   const seconds = demoSecondsRemaining % 60;
@@ -81,17 +76,6 @@ export const DemoCountdownBanner: React.FC = () => {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
-          <button
-            type="button"
-            onClick={() => refillDemoAccount()}
-            className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 font-sans text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
-            title="Refill demo account with default ₹1,042,931 portfolio & ₹70,000 salary data"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Refill Demo (₹1,042,931)</span>
-            <span className="sm:hidden">Refill</span>
-          </button>
-
           <button
             type="button"
             onClick={() => openAuthModal('register')}

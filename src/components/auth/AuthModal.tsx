@@ -216,37 +216,7 @@ export const AuthModal: React.FC = () => {
             </span>
           </button>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-2">
-            <div className={`flex-1 h-px ${isLight ? 'bg-slate-200' : 'bg-slate-800'}`} />
-            <span className="text-[10px] uppercase font-bold text-slate-400">
-              or continue with email
-            </span>
-            <div className={`flex-1 h-px ${isLight ? 'bg-slate-200' : 'bg-slate-800'}`} />
-          </div>
 
-          {/* Quick Admin Credentials Auto-fill */}
-          {activeTab === 'login' && (
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('sudharsan014@gamil.com');
-                setPassword('FIXwithME');
-                setErrorMessage(null);
-              }}
-              className="w-full py-2 px-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-600 dark:text-blue-400 text-[11px] font-semibold flex items-center justify-between transition-colors cursor-pointer"
-              title="Click to fill administrator credentials: sudharsan014@gamil.com / FIXwithME"
-            >
-              <span className="flex items-center gap-1.5 truncate">
-                <span>👑</span>
-                <span>Admin:</span>
-                <span className="font-mono">sudharsan014@gamil.com</span>
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-500 shrink-0">
-                Use FIXwithME
-              </span>
-            </button>
-          )}
 
           {activeTab === 'register' && (
             <div>
