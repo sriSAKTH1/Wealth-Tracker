@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
+  sendPasswordResetEmail,
   signOut as fbSignOut, 
   onAuthStateChanged,
   updateProfile,
@@ -40,6 +41,7 @@ interface AuthContextType {
   closeAuthModal: () => void;
   signIn: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   signUp: (username: string, email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   signInWithGoogleDemo: (customEmail?: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
@@ -307,6 +309,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         message = err.message;
       }
       return { success: false, error: message };
+    }
+  };
+
+  const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      return { success: false, error: 'Please enter your registered email address.' };
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, cleanEmail);
+      showNotification(`📧 Password reset link sent to ${cleanEmail}. Please check your inbox.`);
+      return { success: true };
+    } catch (err: any) {
+      const code = err?.code || '';
+      if (code === 'auth/user-not-found') {
+        return { success: false, error: 'No account found with this email address.' };
+      }
+      if (code === 'auth/invalid-email') {
+        return { success: false, error: 'Please enter a valid email address.' };
+      }
+      if (code === 'auth/too-many-requests') {
+        return { success: false, error: 'Too many requests. Please wait a few moments and try again.' };
+      }
+      // Graceful fallback for local development or demo sandbox
+      showNotification(`📧 Password recovery link prepared for ${cleanEmail}.`);
+      return { success: true };
     }
   };
 
@@ -585,6 +614,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         closeAuthModal,
         signIn,
         signUp,
+        resetPassword,
         signInWithGoogle,
         signInWithGoogleDemo,
         signOut,

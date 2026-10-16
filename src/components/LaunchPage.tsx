@@ -394,10 +394,10 @@ export const LaunchPage: React.FC = () => {
               type="button"
               id="btn-launch-try-demo"
               onClick={() => enterTestMode('user')}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl text-emerald-800 bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-200/90 shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-sm shadow-blue-600/25 border border-blue-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
               title="Explore full dashboard with dummy data in 1 click"
             >
-              <FlaskConical className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <FlaskConical className="w-3.5 h-3.5 text-blue-100 shrink-0" />
               <span>Try Demo</span>
             </button>
 
