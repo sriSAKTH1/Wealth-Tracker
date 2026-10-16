@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useFinance } from '../../context/FinanceContext';
+import { MoneyTreeBackground } from '../common/MoneyTreeBackground';
+import { MoneyTreeAnimation } from '../common/MoneyTreeAnimation';
 
 export const AuthModal: React.FC = () => {
   const { 
@@ -132,13 +134,23 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+      {/* Background Money Tree Animation in Empty Space */}
+      <MoneyTreeBackground opacity={0.65} />
+
       <div 
-        className={`w-full max-w-md rounded-3xl border shadow-2xl overflow-hidden transition-all animate-in zoom-in-95 duration-200 ${
-          isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+        className={`relative z-10 w-full max-w-md lg:max-w-4xl rounded-3xl border shadow-2xl overflow-hidden transition-all animate-in zoom-in-95 duration-200 flex flex-col lg:flex-row my-auto ${
+          isLight ? 'bg-white/95 border-slate-200 backdrop-blur-md' : 'bg-slate-900/95 border-slate-800 backdrop-blur-md'
         }`}
       >
-        {/* Header */}
+        {/* Left Side: Animated Character Planting Money Tree (Desktop Showcase) */}
+        <div className="hidden lg:flex lg:w-1/2 flex-col justify-center border-r border-slate-200 dark:border-slate-800 bg-gradient-to-b from-indigo-950/40 via-slate-950/60 to-emerald-950/40 p-6">
+          <MoneyTreeAnimation variant="split" />
+        </div>
+
+        {/* Right Side: Form Content */}
+        <div className="w-full lg:w-1/2 flex flex-col justify-between">
+          {/* Header */}
         <div className="p-6 pb-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
@@ -510,6 +522,7 @@ export const AuthModal: React.FC = () => {
             </div>
           </form>
         )}
+        </div>
       </div>
     </div>
   );

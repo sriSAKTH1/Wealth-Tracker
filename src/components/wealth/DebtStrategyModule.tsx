@@ -55,7 +55,7 @@ interface StrategyResult {
   firstWinDebtName: string;
   firstWinMonth: number;
   items: DebtSimulationItem[];
-  timeline: { month: number; label: string; snowballRemaining: number; avalancheRemaining: number; baselineRemaining: number }[];
+  timeline: { month: number; label: string; remaining?: number; snowballRemaining?: number; avalancheRemaining?: number; baselineRemaining?: number }[];
 }
 
 interface DebtStrategyModuleProps {
@@ -99,8 +99,8 @@ export const DebtStrategyModule: React.FC<DebtStrategyModuleProps> = ({
           if (l.category === 'Credit Card') rate = 36;
           else if (l.category === 'Personal Loan') rate = 13.5;
           else if (l.category === 'Auto Loan') rate = 9.25;
-          else if (l.category === 'Mortgage / Home Loan') rate = 8.5;
-          else if (l.category === 'Education Loan') rate = 10.5;
+          else if (l.category === 'Mortgage' || (l.category as string) === 'Mortgage / Home Loan' || (l.category as string) === 'Home Loan') rate = 8.5;
+          else if (l.category === 'Student Loan' || (l.category as string) === 'Education Loan') rate = 10.5;
           else rate = 12.0;
         }
 

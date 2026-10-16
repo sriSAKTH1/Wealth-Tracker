@@ -163,13 +163,19 @@ interface FinanceContextType {
   netWorthHistory: NetWorthSnapshot[];
 
   // CRUD Actions
+  setAssets: React.Dispatch<React.SetStateAction<Asset[]>>;
   addAsset: (asset: Omit<Asset, 'id' | 'lastUpdated'>) => void;
   updateAsset: (id: string, updates: Partial<Asset>) => void;
   deleteAsset: (id: string) => void;
 
+  setLiabilities: React.Dispatch<React.SetStateAction<Liability[]>>;
   addLiability: (liability: Omit<Liability, 'id' | 'lastUpdated'>) => void;
   updateLiability: (id: string, updates: Partial<Liability>) => void;
   deleteLiability: (id: string) => void;
+  setLiabilitiesToZero: () => void;
+  scaleBalanceSheet: (targetTotalAssets: number, zeroLiabilities?: boolean) => void;
+  restoreLiveBalanceSheet: () => void;
+  clearBalanceSheet: () => void;
 
   addTransaction: (tx: Omit<Transaction, 'id'>) => void;
   updateTransaction: (id: string, updates: Partial<Transaction>) => void;
@@ -1219,6 +1225,151 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setLiabilities(prev => prev.filter(l => l.id !== id));
   };
 
+  const setLiabilitiesToZero = () => {
+    setLiabilities(prev => {
+      if (prev.length === 0) {
+        return [{
+          id: `liab-zero-${Date.now()}`,
+          name: 'Liabilities Cleared',
+          category: 'Other Debt',
+          subType: 'Debt Free',
+          institution: 'Debt-Free Statement',
+          balance: 0,
+          amount: 0,
+          currency: currency,
+          lastUpdated: new Date().toISOString().split('T')[0],
+          notes: 'No active liabilities recorded. Total debt is ₹0.',
+        }];
+      }
+      return prev.map(l => ({
+        ...l,
+        balance: 0,
+        amount: 0,
+        minimumPayment: 0,
+        monthlyPayment: 0,
+        lastUpdated: new Date().toISOString().split('T')[0],
+      }));
+    });
+    showNotification('Liabilities set to ₹0. Balance sheet is 100% debt-free.');
+  };
+
+  const scaleBalanceSheet = (targetTotalAssets: number, zeroLiabilities?: boolean) => {
+    if (targetTotalAssets <= 0) {
+      setAssets([]);
+      if (zeroLiabilities) {
+        setLiabilities([]);
+      }
+      showNotification('Balance sheet cleared to ₹0.');
+      return;
+    }
+
+    setAssets(prev => {
+      const currentTotal = prev.reduce((sum, a) => sum + (Number(a.value) || 0), 0);
+      if (currentTotal > 0) {
+        const ratio = targetTotalAssets / currentTotal;
+        return prev.map(a => ({
+          ...a,
+          value: Math.round(Number(a.value || 0) * ratio),
+          lastUpdated: new Date().toISOString().split('T')[0],
+        }));
+      } else {
+        // Benchmark portfolio around targetTotalAssets (around 1 Crore)
+        return [
+          {
+            id: 'ast-bench-1',
+            name: 'HDFC Bank & Liquid Sweep',
+            category: 'Cash & Bank',
+            subType: 'Savings & FD',
+            institution: 'HDFC Bank',
+            value: Math.round(targetTotalAssets * 0.15),
+            currency: currency,
+            isLiquid: true,
+            tags: ['Liquid Emergency', 'Safety Net'],
+            purpose: 'Emergency Fund',
+            color: '#06b6d4',
+            lastUpdated: new Date().toISOString().split('T')[0],
+          },
+          {
+            id: 'ast-bench-2',
+            name: 'Nifty 50 Large Cap Index Fund',
+            category: 'Equity',
+            subType: 'Mutual Fund',
+            institution: 'UTI Mutual Fund',
+            value: Math.round(targetTotalAssets * 0.35),
+            currency: currency,
+            isLiquid: true,
+            tags: ['Index Core', 'Long Term'],
+            purpose: 'Retirement',
+            color: '#3b82f6',
+            lastUpdated: new Date().toISOString().split('T')[0],
+          },
+          {
+            id: 'ast-bench-3',
+            name: 'Parag Parikh Flexi Cap Fund',
+            category: 'Equity',
+            subType: 'Mutual Fund',
+            institution: 'PPFAS AMC',
+            value: Math.round(targetTotalAssets * 0.25),
+            currency: currency,
+            isLiquid: true,
+            tags: ['Flexi Cap', 'Alpha'],
+            purpose: 'High Growth',
+            color: '#6366f1',
+            lastUpdated: new Date().toISOString().split('T')[0],
+          },
+          {
+            id: 'ast-bench-4',
+            name: 'Sovereign Gold Bonds (SGB / RBI)',
+            category: 'Commodities',
+            subType: 'SGB',
+            institution: 'Reserve Bank of India',
+            value: Math.round(targetTotalAssets * 0.10),
+            currency: currency,
+            isLiquid: true,
+            tags: ['Gold Hedge'],
+            purpose: 'Long-term Savings',
+            color: '#eab308',
+            lastUpdated: new Date().toISOString().split('T')[0],
+          },
+          {
+            id: 'ast-bench-5',
+            name: 'Employees Provident Fund (EPF)',
+            category: 'Debt',
+            subType: 'Retirement Debt',
+            institution: 'EPFO India',
+            value: Math.round(targetTotalAssets * 0.15),
+            currency: currency,
+            isLiquid: false,
+            tags: ['Tax-free Compounding'],
+            purpose: 'Retirement',
+            color: '#10b981',
+            lastUpdated: new Date().toISOString().split('T')[0],
+          },
+        ];
+      }
+    });
+
+    if (zeroLiabilities) {
+      setLiabilitiesToZero();
+    }
+    const displayStr = targetTotalAssets >= 10000000 
+      ? (targetTotalAssets / 10000000).toFixed(2) + ' Cr' 
+      : (targetTotalAssets / 100000).toFixed(1) + ' Lakhs';
+    showNotification(`Balance sheet adjusted to ${displayStr}.`);
+  };
+
+  const restoreLiveBalanceSheet = () => {
+    setAssets(INITIAL_ASSETS);
+    setLiabilities(INITIAL_LIABILITIES);
+    showNotification('Live actual balance sheet data restored.');
+  };
+
+  const clearBalanceSheet = () => {
+    setAssets([]);
+    setLiabilities([]);
+    showNotification('Balance sheet data cleared (₹0).');
+  };
+
   // Transaction CRUD (100% Local-First Privacy)
   const addTransaction = (data: Omit<Transaction, 'id'>) => {
     if (isDemoMode) {
@@ -1490,14 +1641,14 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setTransactions([]);
     // Reset all budget envelopes to $0 allocated
     setBudgets([
-      { id: 'b-housing', category: 'Housing', allocatedAmount: 0, period: 'monthly', color: '#3B82F6' },
-      { id: 'b-food', category: 'Food & Dining', allocatedAmount: 0, period: 'monthly', color: '#10B981' },
+      { id: 'b-housing', category: 'Housing & Rent', allocatedAmount: 0, period: 'monthly', color: '#3B82F6' },
+      { id: 'b-food', category: 'Food & Groceries', allocatedAmount: 0, period: 'monthly', color: '#10B981' },
       { id: 'b-transport', category: 'Transportation', allocatedAmount: 0, period: 'monthly', color: '#F59E0B' },
-      { id: 'b-util', category: 'Utilities', allocatedAmount: 0, period: 'monthly', color: '#6366F1' },
-      { id: 'b-personal', category: 'Personal & Health', allocatedAmount: 0, period: 'monthly', color: '#EC4899' },
+      { id: 'b-util', category: 'Utilities & Bills', allocatedAmount: 0, period: 'monthly', color: '#6366F1' },
+      { id: 'b-personal', category: 'Health & Wellness', allocatedAmount: 0, period: 'monthly', color: '#EC4899' },
       { id: 'b-ent', category: 'Entertainment', allocatedAmount: 0, period: 'monthly', color: '#8B5CF6' },
       { id: 'b-sub', category: 'Subscriptions', allocatedAmount: 0, period: 'monthly', color: '#06B6D4' },
-      { id: 'b-other', category: 'Miscellaneous', allocatedAmount: 0, period: 'monthly', color: '#64748B' },
+      { id: 'b-other', category: 'Other Expense', allocatedAmount: 0, period: 'monthly', color: '#64748B' },
     ]);
     // Reset essential goals to $0
     setEssentialGoals([
@@ -1512,6 +1663,116 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setNetWorthHistory([
       { date: new Date().toISOString().split('T')[0], netWorth: 0, totalAssets: 0, totalLiabilities: 0 }
     ]);
+  };
+
+  const syncFinScoreToAccount = (data: {
+    profile?: FinScoreProfile;
+    loans?: FinScoreLoan[];
+    goals?: FinScoreGoal[];
+    emergency?: FinScoreEmergency;
+    insurance?: FinScoreInsurance;
+    expenses?: FinScoreExpenseCategory[];
+  }) => {
+    let addedLiabilities = 0;
+    let addedGoals = 0;
+    let addedEssential = 0;
+
+    if (data.loans && data.loans.length > 0) {
+      const newLiabs: Liability[] = [];
+      const todayStr = new Date().toISOString().split('T')[0];
+      data.loans.forEach((loan, idx) => {
+        const bal = loan.outstandingAmount || (loan as any).outstandingBalance || 0;
+        if (bal > 0) {
+          const categoryMap: Record<string, LiabilityCategory> = {
+            'Home Loan': 'Mortgage',
+            'Personal Loan': 'Personal Loan',
+            'Auto Loan': 'Auto Loan',
+            'Credit Card': 'Credit Card',
+            'Education': 'Student Loan',
+          };
+          const cat = categoryMap[loan.type] || 'Other Debt';
+          newLiabs.push({
+            id: `synced-liab-${Date.now()}-${idx}`,
+            name: `${loan.type}`,
+            category: cat,
+            balance: bal,
+            amount: bal,
+            interestRate: loan.interestRate,
+            monthlyPayment: loan.monthlyEmi,
+            remainingMonths: loan.remainingTenureMonths,
+            currency: currency as CurrencyCode,
+            lastUpdated: todayStr,
+            notes: 'Imported from FinScore diagnostic',
+          });
+          addedLiabilities++;
+        }
+      });
+      if (newLiabs.length > 0) {
+        setLiabilities(prev => [...prev, ...newLiabs]);
+      }
+    }
+
+    if (data.goals && data.goals.length > 0) {
+      const newCustomGoals: CustomGoal[] = [];
+      data.goals.forEach((g, idx) => {
+        if (g.targetAmount > 0) {
+          const yearsRemaining = g.targetYear ? Math.max(1, g.targetYear - new Date().getFullYear()) : 3;
+          const targetDateStr = `${g.targetYear || (new Date().getFullYear() + 3)}-12-31`;
+          newCustomGoals.push({
+            id: `synced-goal-${Date.now()}-${idx}`,
+            name: g.name,
+            category: g.category || 'General Savings',
+            targetAmount: g.targetAmount,
+            currentAmount: g.currentSavings || 0,
+            targetDate: targetDateStr,
+            tenureYears: yearsRemaining,
+            tenureMonths: yearsRemaining * 12,
+            monthlyContribution: Math.round((g.targetAmount - (g.currentSavings || 0)) / Math.max(1, yearsRemaining * 12)),
+            color: '#10b981',
+            icon: 'Target',
+          });
+          addedGoals++;
+        }
+      });
+      if (newCustomGoals.length > 0) {
+        setCustomGoals(prev => [...prev, ...newCustomGoals]);
+      }
+    }
+
+    if (data.emergency && (data.emergency.currentEmergencySavings > 0 || data.emergency.targetMonths > 0)) {
+      const targetM = data.emergency.targetMonths || 6;
+      const computedTarget = Math.max(100000, (monthlyExpenses > 0 ? monthlyExpenses : 50000) * targetM);
+      const currSavings = data.emergency.currentEmergencySavings || 0;
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      setEssentialGoals(prev => {
+        const found = prev.find(eg => eg.type === 'emergency_fund');
+        if (found) {
+          return prev.map(eg => eg.type === 'emergency_fund' ? {
+            ...eg,
+            targetAmount: computedTarget,
+            currentAmount: currSavings,
+            targetMonths: targetM,
+            lastUpdated: todayStr,
+          } : eg);
+        } else {
+          return [...prev, {
+            id: `synced-eg-${Date.now()}`,
+            name: 'Emergency Fund',
+            type: 'emergency_fund' as const,
+            targetAmount: computedTarget,
+            currentAmount: currSavings,
+            targetMonths: targetM,
+            lastUpdated: todayStr,
+            color: '#10b981',
+          }];
+        }
+      });
+      addedEssential++;
+    }
+
+    showNotification(`Synced ${addedLiabilities} debts, ${addedGoals} goals, and emergency reserve to account!`);
+    return { addedLiabilities, addedGoals, addedEssential };
   };
 
   return (
@@ -1585,12 +1846,18 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         goals: customGoals,
         scheduledItems,
         netWorthHistory,
+        setAssets,
         addAsset,
         updateAsset,
         deleteAsset,
+        setLiabilities,
         addLiability,
         updateLiability,
         deleteLiability,
+        setLiabilitiesToZero,
+        scaleBalanceSheet,
+        restoreLiveBalanceSheet,
+        clearBalanceSheet,
         addTransaction,
         updateTransaction,
         deleteTransaction,
@@ -1634,6 +1901,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         cloudSyncStatus,
         lastCloudSyncTime,
         syncWithFirestore,
+        syncFinScoreToAccount,
       }}
     >
       {children}

@@ -1,0 +1,6 @@
+# Production Robots.txt for FIX Wealth Tracker
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: /sitemap.xml

@@ -1463,6 +1463,11 @@ body[data-selection-color="blue"] *::selection,
     color: #0e7490 !important;
   }
 
+  .bg-clip-text {
+    -webkit-text-fill-color: #1d4ed8 !important;
+    color: #1d4ed8 !important;
+  }
+
   /* Clean Paper Borders */
   .border,
   .border-b,

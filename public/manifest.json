@@ -1,0 +1,19 @@
+{
+  "short_name": "FIX Wealth",
+  "name": "FIX Wealth Tracker",
+  "description": "Comprehensive personal finance, wealth, net worth, and cash flow tracker with dual mobile and desktop responsive views.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512 any",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#090d16",
+  "theme_color": "#2563eb",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": ["finance", "productivity", "utilities"]
+}

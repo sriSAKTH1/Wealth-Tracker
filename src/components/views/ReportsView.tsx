@@ -267,8 +267,23 @@ export const ReportsView: React.FC = () => {
   }, [filteredTransactions, currency]);
 
   const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = `FIX Wealth Tracker - Financial Report (${timeframeLabels[reportTimeframe]})`;
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1500);
   };
+
+  const reportGeneratedDate = useMemo(() => {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date());
+  }, []);
 
   const timeframeLabels: Record<TimeframeOption, string> = {
     '30D': '30 Days',
@@ -283,58 +298,88 @@ export const ReportsView: React.FC = () => {
 
   return (
     <div id="financial-reports-view" className="space-y-6 pb-24 lg:pb-12 animate-in fade-in duration-200">
-      {/* View Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className={`p-2 rounded-xl ${isLight ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'}`}>
-              <BarChart3 className="w-5 h-5" />
+      {/* Top Statement Banner with Brand Logo and Website Name on Top-Left */}
+      <div className={`p-4 sm:p-5 rounded-3xl border transition-all ${
+        isLight 
+          ? 'bg-gradient-to-r from-blue-50/70 via-white to-emerald-50/50 border-slate-200/90 shadow-xs' 
+          : 'bg-gradient-to-r from-slate-900/90 via-zinc-900/95 to-slate-900/90 border-zinc-800 shadow-xl'
+      }`}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Top Left: Logo with Website Name + Statement on Header */}
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="relative shrink-0 p-2 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-zinc-700/60 shadow-md shadow-blue-500/10">
+              <img 
+                src="/favicon.svg" 
+                alt="FIX Wealth Logo" 
+                className="w-10 h-10 sm:w-11 sm:h-11 object-contain"
+              />
+              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-950 flex items-center justify-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              </div>
             </div>
+
             <div>
-              <h2 className={`text-xl font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-zinc-100'}`}>
-                Financial Reports & In-Depth Analytics
-              </h2>
-              <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>
-                Real-time cash flow audit, timeline velocity, and category distribution strictly generated from your logged transactions.
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>FIX Wealth Tracker</span>
+                </h1>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30">
+                  Institutional Audit
+                </span>
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Live Verified
+                </span>
+              </div>
+
+              {/* Statement on the Header */}
+              <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-zinc-300 mt-1 max-w-2xl leading-relaxed">
+                Official Financial Intelligence, Cash Flow Audit & Capital Velocity Statement
               </p>
+              
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-slate-400 dark:text-zinc-500 font-mono">
+                <span>Cycle: {timeframeLabels[reportTimeframe]}</span>
+                <span>•</span>
+                <span>Base Currency: {currency}</span>
+                <span>•</span>
+                <span>Generated: {reportGeneratedDate}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Action Controls & Quick Add */}
-        <div className="no-print flex flex-wrap items-center gap-2">
-          <button
-            id="btn-report-quick-add"
-            onClick={() => openQuickAdd('income')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span>Log Transaction</span>
-          </button>
-          <button
-            id="btn-report-export-csv"
-            onClick={exportTransactionsCSV}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
-              isLight 
-                ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' 
-                : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-800'
-            }`}
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
-          </button>
-          <button
-            id="btn-report-print"
-            onClick={handlePrint}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
-              isLight 
-                ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200' 
-                : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-800'
-            }`}
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Print Report</span>
-          </button>
+          {/* Action Controls & Print/Export Button */}
+          <div className="no-print flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              id="btn-report-quick-add"
+              onClick={() => openQuickAdd('income')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Log Transaction</span>
+            </button>
+            <button
+              id="btn-report-export-csv"
+              onClick={exportTransactionsCSV}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer ${
+                isLight 
+                  ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-xs' 
+                  : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border-zinc-800'
+              }`}
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>Export CSV</span>
+            </button>
+            {/* The requested Print/Export Report button */}
+            <button
+              id="btn-report-print-export"
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              title="Open clean browser print dialog formatted for PDF generation"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print/Export Report</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -767,6 +812,38 @@ export const ReportsView: React.FC = () => {
               })}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* niceTRY Section */}
+      <div className={`mt-8 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4 transition-all ${
+        isLight ? 'border-slate-200' : 'border-zinc-800'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600/10 via-indigo-500/10 to-emerald-500/10 border border-blue-500/25 flex items-center gap-2 shadow-xs">
+            <span className="font-black tracking-widest text-base sm:text-lg bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 bg-clip-text text-transparent">
+              niceTRY
+            </span>
+            <span className="text-[10px] font-mono font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+              VERIFIED
+            </span>
+          </div>
+          <div>
+            <div className={`text-xs font-bold ${isLight ? 'text-slate-800' : 'text-zinc-200'}`}>
+              niceTRY Financial Intelligence Engine
+            </div>
+            <div className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>
+              Personal wealth velocity, cash flow governance & independence ledger
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-[11px] font-mono text-slate-400 dark:text-zinc-500 text-center sm:text-right">
+          <span>FIX Wealth Tracker</span>
+          <span className="hidden sm:inline">•</span>
+          <span>Confidential Audit Record</span>
+          <span className="hidden sm:inline">•</span>
+          <span className={`font-bold ${isLight ? 'text-slate-700' : 'text-zinc-300'}`}>niceTRY</span>
         </div>
       </div>
     </div>

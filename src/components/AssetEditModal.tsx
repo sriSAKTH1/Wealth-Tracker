@@ -22,6 +22,7 @@ interface AssetEditModalProps {
   asset: Asset | null;
   onClose: () => void;
   onSave: (assetId: string, updates: Partial<Asset>) => void;
+  onDelete?: (id: string) => void;
 }
 
 export const AssetEditModal: React.FC<AssetEditModalProps> = ({

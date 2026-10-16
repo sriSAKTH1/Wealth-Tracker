@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ShieldCheck, Lock, Eye, EyeOff, AlertCircle, ArrowLeft, Sparkles, KeyRound } from 'lucide-react';
 import { useAuth, ADMIN_PASSWORD } from '../../context/AuthContext';
 import { useFinance } from '../../context/FinanceContext';
+import { MoneyTreeBackground } from '../common/MoneyTreeBackground';
+import { MoneyTreeAnimation } from '../common/MoneyTreeAnimation';
 
 interface AdminPinGateProps {
   onVerified: () => void;
@@ -57,14 +59,23 @@ export const AdminPinGate: React.FC<AdminPinGateProps> = ({ onVerified }) => {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4 sm:p-6 min-h-[calc(100vh-80px)]">
+    <div className="relative flex-1 flex flex-col lg:flex-row items-center justify-center p-4 sm:p-6 lg:p-12 min-h-[calc(100vh-80px)] overflow-hidden gap-8">
+      {/* Background Money Tree Animation in Empty Space */}
+      <MoneyTreeBackground opacity={0.65} />
+
+      {/* Left side on desktop: Character planting money tree showcase */}
+      <div className="hidden lg:block relative z-10 max-w-lg w-full">
+        <MoneyTreeAnimation variant="split" />
+      </div>
+
+      {/* Right side / Center: Admin PIN entry card */}
       <div
-        className={`w-full max-w-md rounded-3xl border shadow-2xl p-6 sm:p-8 space-y-6 transition-all ${
+        className={`relative z-10 w-full max-w-md rounded-3xl border shadow-2xl p-6 sm:p-8 space-y-6 transition-all ${
           isShaking ? 'animate-bounce' : 'animate-in zoom-in-95 duration-200'
         } ${
           isLight
-            ? 'bg-white border-blue-200 text-slate-900 shadow-blue-500/10'
-            : 'bg-zinc-950 border-blue-500/30 text-zinc-100 shadow-blue-900/30 ring-1 ring-blue-500/20'
+            ? 'bg-white/95 border-blue-200 text-slate-900 shadow-blue-500/10 backdrop-blur-md'
+            : 'bg-zinc-950/95 border-blue-500/30 text-zinc-100 shadow-blue-900/30 ring-1 ring-blue-500/20 backdrop-blur-md'
         }`}
       >
         {/* Header with Icon */}

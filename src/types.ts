@@ -98,7 +98,7 @@ export interface Asset {
   navDate?: string;
   ticker?: string;             // e.g. "AAPL", "NVDA", "RELIANCE", "BTC", "VOO", "122639"
   exchange?: string;           // e.g. "NASDAQ", "NYSE", "NSE", "CRYPTO", "INDEX", "MF", "BSE"
-  assetType?: 'stock' | 'etf' | 'crypto' | 'mutual_fund' | 'commodity' | 'manual';
+  assetType?: 'stock' | 'etf' | 'crypto' | 'mutual_fund' | 'commodity' | 'reit' | 'manual';
   schemeCode?: number | string;// Scheme code for Indian Mutual Funds (mfapi.in)
   fundHouse?: string;          // AMC name e.g. "PPFAS Mutual Fund"
   shares?: number;             // Number of units / quantity
@@ -180,6 +180,7 @@ export interface Liability {
   subType?: string;
   institution?: string;
   balance: number;
+  amount?: number; // alias for balance
   originalAmount?: number;
   interestRate?: number; // annual %
   minimumPayment?: number;
@@ -237,6 +238,7 @@ export interface EssentialGoal {
   name: string;
   type: 'emergency_fund' | 'debt_snowball' | 'essential_runway' | 'insurance_buffer' | 'medical_shield' | 'custom_vault';
   targetMonths?: number;
+  coverageMonths?: number;
   targetAmount: number;
   currentAmount: number;
   notes?: string;
@@ -339,6 +341,8 @@ export interface FinScoreInsurance {
   isFamilyCovered: boolean;
   hasEmployerInsurance: boolean;
   hasPersonalHealthPolicy: boolean;
+  lifePremiumAnnual?: number;
+  healthPremiumAnnual?: number;
 }
 
 export interface FinScoreEmergency {
