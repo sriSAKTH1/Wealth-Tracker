@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Coins, RefreshCw, Sprout, Heart, Droplets } from 'lucide-react';
-const characterMoneyTreeImg = '/src/assets/images/character_plants_money_tree_1792166280252.jpg';
+const characterMoneyTreeImg = '/src/assets/images/hand_planting_money_tree_1792250871534.jpg';
 
 interface MoneyTreeAnimationProps {
   className?: string;
@@ -62,19 +62,19 @@ export const MoneyTreeAnimation: React.FC<MoneyTreeAnimationProps> = ({
       aria-hidden="true"
     >
       {/* Background Glow Orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none animate-pulse" />
-      <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-purple-500/15 blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-purple-500/20 blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-amber-400/10 blur-[100px] pointer-events-none" />
 
       {/* Main Illustration Container */}
       <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
-        {/* Glowing Frame with Character & Money Tree */}
-        <div className="relative max-w-lg w-full rounded-3xl overflow-hidden border border-emerald-500/30 shadow-2xl shadow-emerald-950/50 bg-gradient-to-b from-purple-950/40 via-slate-950/60 to-emerald-950/40 backdrop-blur-md group">
-          {/* Base High-Resolution Art of Character Planting Tree */}
+        {/* Glowing Frame with Hand Planting Money Tree */}
+        <div className="relative max-w-lg w-full rounded-3xl overflow-hidden border border-purple-500/30 shadow-2xl shadow-purple-950/50 bg-gradient-to-b from-purple-950/40 via-slate-950/60 to-emerald-950/40 backdrop-blur-md group">
+          {/* Base High-Resolution Art of Hand Planting Tree */}
           <div className="relative aspect-video w-full overflow-hidden">
             <img
               src={characterMoneyTreeImg}
-              alt="Character planting wealth tree blooming with gold coins"
+              alt="Hand planting wealth tree blooming with gold coins"
               className="w-full h-full object-cover object-center transform transition-transform duration-1000 group-hover:scale-105"
               referrerPolicy="no-referrer"
             />
@@ -85,37 +85,37 @@ export const MoneyTreeAnimation: React.FC<MoneyTreeAnimationProps> = ({
             {/* Dynamic Coin Bloom Layer (Hovering over the tree) */}
             <div className="absolute inset-0 pointer-events-none">
               {/* Pulsing Wealth Star on the tree peak */}
-              <div className="absolute top-[22%] right-[32%] flex items-center justify-center">
+              <div className="absolute top-[18%] left-[50%] -translate-x-1/2 flex items-center justify-center">
                 <span className="relative flex h-8 w-8">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60"></span>
                   <span className="relative inline-flex rounded-full h-8 w-8 bg-amber-400/90 text-amber-950 font-black text-xs items-center justify-center shadow-lg shadow-amber-400/50">
-                    ₹
+                    $
                   </span>
                 </span>
               </div>
 
               {/* Extra blooming gold coins with organic floating bounce */}
-              <div className="absolute top-[28%] right-[22%] animate-bounce [animation-duration:2.8s]">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 text-amber-950 font-extrabold text-xs flex items-center justify-center shadow-md shadow-amber-500/40 border border-yellow-200">
-                  $
-                </div>
-              </div>
-
-              <div className="absolute top-[38%] right-[38%] animate-bounce [animation-duration:3.4s]">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-yellow-400 to-amber-300 text-amber-900 font-bold text-[10px] flex items-center justify-center shadow-md shadow-amber-500/30 border border-yellow-200">
+              <div className="absolute top-[38%] left-[48%] animate-bounce [animation-duration:2.8s]">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 text-amber-950 font-extrabold text-[10px] flex items-center justify-center shadow-md shadow-amber-500/40 border border-yellow-200">
                   ₹
                 </div>
               </div>
 
-              <div className="absolute top-[32%] right-[45%] animate-bounce [animation-duration:2.2s]">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 text-amber-900 font-bold text-[10px] flex items-center justify-center shadow-md shadow-amber-400/40 border border-yellow-100">
+              <div className="absolute top-[44%] left-[45%] animate-bounce [animation-duration:3.4s]">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-yellow-400 to-amber-300 text-amber-900 font-bold text-[10px] flex items-center justify-center shadow-md shadow-amber-500/30 border border-yellow-200">
                   $
                 </div>
               </div>
 
-              {/* Character planting sparkles near the soil */}
-              <div className="absolute bottom-[24%] left-[45%] animate-pulse">
-                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/30 border border-emerald-400/50 backdrop-blur-sm text-[10px] font-bold text-emerald-200 shadow-sm">
+              <div className="absolute top-[44%] left-[53%] animate-bounce [animation-duration:2.2s]">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 text-amber-900 font-bold text-[10px] flex items-center justify-center shadow-md shadow-amber-400/40 border border-yellow-100">
+                  ₹
+                </div>
+              </div>
+
+              {/* Hand planting sparkles near the soil */}
+              <div className="absolute bottom-[16%] left-[42%] animate-pulse">
+                <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/30 border border-emerald-400/50 backdrop-blur-sm text-[10px] font-bold text-emerald-200 shadow-sm">
                   <Sprout className="w-3 h-3 text-emerald-300" />
                   <span>Seed Rooted</span>
                 </div>

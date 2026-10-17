@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sparkles, Sprout, Coins, ArrowUpRight } from 'lucide-react';
-const characterMoneyTreeImg = '/src/assets/images/character_plants_money_tree_1792166280252.jpg';
+const characterMoneyTreeImg = '/src/assets/images/hand_planting_money_tree_1792250871534.jpg';
 
 interface MoneyTreeBackgroundProps {
   opacity?: number;
@@ -10,9 +10,9 @@ interface MoneyTreeBackgroundProps {
 }
 
 export const MoneyTreeBackground: React.FC<MoneyTreeBackgroundProps> = ({
-  opacity = 0.45,
+  opacity = 0.55,
   showArtBanner = true,
-  title = 'Every Rupee Planted Grows a Forest',
+  title = 'Every Seed Planted Grows a Forest',
   subtitle = 'Watch your wealth blossom with disciplined savings and compound growth.',
 }) => {
   return (
@@ -20,55 +20,55 @@ export const MoneyTreeBackground: React.FC<MoneyTreeBackgroundProps> = ({
       className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0"
       aria-hidden="true"
     >
-      {/* 1. Ambient Gradient Canvas */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/70 via-slate-950/90 to-emerald-950/80" />
+      {/* 1. Ambient Gradient Canvas with Lilac & Purple undertones */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#231540]/80 via-slate-950/90 to-[#0e2528]/80" />
 
       {/* 2. Soft Glowing Color Clouds */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/20 blur-[120px] animate-pulse" />
-      <div className="absolute top-1/3 -right-32 w-96 h-96 rounded-full bg-purple-600/20 blur-[130px]" />
-      <div className="absolute -bottom-32 left-1/3 w-96 h-96 rounded-full bg-amber-500/15 blur-[120px]" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-purple-500/25 blur-[120px] animate-pulse" />
+      <div className="absolute top-1/3 -right-32 w-96 h-96 rounded-full bg-emerald-500/20 blur-[130px]" />
+      <div className="absolute -bottom-32 left-1/3 w-96 h-96 rounded-full bg-amber-400/20 blur-[120px]" />
 
-      {/* 3. Background Art of Character Planting Money Tree in empty space */}
+      {/* 3. Background Art of Hand Planting Money Tree */}
       {showArtBanner && (
         <div 
           className="absolute inset-0 flex items-center justify-center lg:justify-end lg:pr-12 pointer-events-none transition-all duration-700"
           style={{ opacity }}
         >
-          <div className="relative w-full max-w-xl aspect-video lg:max-w-2xl rounded-3xl overflow-hidden border border-emerald-500/20 shadow-2xl shadow-emerald-900/30">
+          <div className="relative w-full max-w-xl aspect-video lg:max-w-2xl rounded-3xl overflow-hidden border border-purple-500/30 shadow-2xl shadow-purple-950/40">
             <img
               src={characterMoneyTreeImg}
-              alt="Character planting money tree"
-              className="w-full h-full object-cover object-center filter brightness-90 contrast-105"
+              alt="Hand planting money tree with gold coins"
+              className="w-full h-full object-cover object-center filter brightness-95 contrast-105"
               referrerPolicy="no-referrer"
             />
             {/* Soft blend edges so it melts seamlessly into the background */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-slate-950/60" />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-transparent to-slate-950/80" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-transparent to-slate-950/60" />
 
-            {/* Glowing Golden Coins blooming on the branches */}
-            <div className="absolute top-[24%] right-[32%] flex items-center justify-center">
-              <span className="relative flex h-7 w-7">
+            {/* Glowing Golden Coin blooming on the top peak */}
+            <div className="absolute top-[18%] left-[50%] -translate-x-1/2 flex items-center justify-center">
+              <span className="relative flex h-8 w-8">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-7 w-7 bg-amber-400 text-amber-950 font-black text-xs items-center justify-center shadow-lg shadow-amber-400/50">
-                  ₹
+                <span className="relative inline-flex rounded-full h-8 w-8 bg-amber-400 text-amber-950 font-black text-xs items-center justify-center shadow-lg shadow-amber-400/60">
+                  $
                 </span>
               </span>
             </div>
 
-            <div className="absolute top-[32%] right-[22%] animate-bounce [animation-duration:2.6s]">
+            <div className="absolute top-[42%] left-[45%] animate-bounce [animation-duration:2.8s]">
               <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 text-amber-950 font-black text-[10px] flex items-center justify-center shadow-md shadow-amber-500/40 border border-yellow-200">
-                $
-              </div>
-            </div>
-
-            <div className="absolute top-[38%] right-[42%] animate-bounce [animation-duration:3.2s]">
-              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-yellow-300 to-amber-400 text-amber-950 font-black text-[9px] flex items-center justify-center shadow-md shadow-amber-400/30 border border-yellow-200">
                 ₹
               </div>
             </div>
 
+            <div className="absolute top-[48%] left-[52%] animate-bounce [animation-duration:3.2s]">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-yellow-300 to-amber-400 text-amber-950 font-black text-[9px] flex items-center justify-center shadow-md shadow-amber-400/30 border border-yellow-200">
+                $
+              </div>
+            </div>
+
             {/* Sprout badge near planting spot */}
-            <div className="absolute bottom-[20%] left-[42%] flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/30 border border-emerald-400/50 backdrop-blur-sm text-[10px] font-bold text-emerald-100 shadow-sm">
+            <div className="absolute bottom-[16%] left-[40%] flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/30 border border-emerald-400/50 backdrop-blur-sm text-[10px] font-bold text-emerald-100 shadow-md">
               <Sprout className="w-3 h-3 text-emerald-300" />
               <span>Planting Wealth</span>
             </div>

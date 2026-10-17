@@ -63,14 +63,8 @@ export const Navbar: React.FC = () => {
     openAuthModal, 
     isAuthenticated,
     isDemoMode,
-    demoSecondsRemaining,
     isCalculatorOnlyMode
   } = useAuth();
-
-  const demoMins = Math.floor(demoSecondsRemaining / 60);
-  const demoSecs = demoSecondsRemaining % 60;
-  const formattedDemoTime = `${String(demoMins).padStart(2, '0')}:${String(demoSecs).padStart(2, '0')}`;
-  const isDemoUrgent = demoSecondsRemaining <= 60;
 
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
@@ -272,23 +266,14 @@ export const Navbar: React.FC = () => {
             </span>
           </div>
 
-          {/* Active Demo Session Header Indicator (Never shown for Admin) */}
+          {/* Active Demo Session Header Indicator (No timer counter) */}
           {isDemoMode && !isAdmin && role !== 'admin' && (
             <div 
-              onClick={() => {
-                const el = document.getElementById('demo-countdown-footer-banner');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              title="5-minute demo session active. Fixed countdown timer is pinned in the footer below."
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold border transition-all cursor-pointer shadow-xs ${
-                isDemoUrgent 
-                  ? 'bg-rose-500/20 border-rose-500/50 text-rose-300 animate-pulse' 
-                  : 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300'
-              }`}
+              title="Interactive Sandbox Active"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border border-emerald-500/35 bg-emerald-500/15 text-emerald-300 shadow-xs"
             >
-              <Clock className={`w-3.5 h-3.5 ${isDemoUrgent ? 'text-rose-400 animate-bounce' : 'text-emerald-400 animate-pulse'}`} />
-              <span>Demo: {formattedDemoTime}</span>
-              <span className="text-[10px] font-sans opacity-75 hidden sm:inline">↓ Footer</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span>Demo Sandbox</span>
             </div>
           )}
         </div>

@@ -34,7 +34,7 @@ export const AuthModal: React.FC = () => {
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'forgot_password'>(authModalMode);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('sudharsanm014@gmail.com');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -44,6 +44,21 @@ export const AuthModal: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResetSubmitting, setIsResetSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+
+  const handleQuickAdminLogin = async () => {
+    setEmail('sudharsanm014@gmail.com');
+    setPassword('niceTRY');
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    try {
+      const res = await signIn('sudharsanm014@gmail.com', 'niceTRY');
+      if (!res.success) {
+        setErrorMessage(res.error || 'Admin login failed.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (!isAuthModalOpen) return null;
 
@@ -143,13 +158,43 @@ export const AuthModal: React.FC = () => {
           isLight ? 'bg-white/95 border-slate-200 backdrop-blur-md' : 'bg-slate-900/95 border-slate-800 backdrop-blur-md'
         }`}
       >
-        {/* Left Side: Animated Character Planting Money Tree (Desktop Showcase) */}
-        <div className="hidden lg:flex lg:w-1/2 flex-col justify-center border-r border-slate-200 dark:border-slate-800 bg-gradient-to-b from-indigo-950/40 via-slate-950/60 to-emerald-950/40 p-6">
+        {/* Mobile Showcase Banner (Hand Planting Money Sprout) */}
+        <div className="lg:hidden relative w-full h-32 overflow-hidden border-b border-slate-200 dark:border-slate-800">
+          <img
+            src="/src/assets/images/hand_planting_money_tree_1792250871534.jpg"
+            alt="Hand planting money tree"
+            className="w-full h-full object-cover object-center filter brightness-95"
+            referrerPolicy="no-referrer"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+          <div className="absolute bottom-2.5 left-4 right-4 flex items-center justify-between">
+            <span className="text-xs font-bold text-white flex items-center gap-1.5 drop-shadow-md">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              Planting Wealth & Compounding
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-300/40 font-bold backdrop-blur-xs">
+              FIX Wealth
+            </span>
+          </div>
+        </div>
+
+        {/* Left Side: Animated Hand Planting Money Tree (Desktop Showcase) */}
+        <div className="hidden lg:flex lg:w-1/2 flex-col justify-center border-r border-slate-200 dark:border-slate-800 bg-gradient-to-b from-purple-950/40 via-slate-950/60 to-emerald-950/40 p-6">
           <MoneyTreeAnimation variant="split" />
         </div>
 
         {/* Right Side: Form Content */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-between">
+        <div className="w-full lg:w-1/2 flex flex-col justify-between relative overflow-hidden">
+          {/* Subtle watermark illustration in form background */}
+          <div className="absolute -bottom-12 -right-12 w-64 h-64 opacity-[0.04] dark:opacity-[0.07] pointer-events-none select-none rounded-full overflow-hidden">
+            <img
+              src="/src/assets/images/hand_planting_money_tree_1792250871534.jpg"
+              alt=""
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+
           {/* Header */}
         <div className="p-6 pb-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -346,6 +391,32 @@ export const AuthModal: React.FC = () => {
               </div>
             )}
 
+            {/* Quick Admin Fill & Login Badge */}
+            {activeTab === 'login' && (
+              <div className="p-3 rounded-2xl bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-emerald-500/10 border border-blue-500/25 flex items-center justify-between gap-2.5">
+                <div className="min-w-0">
+                  <div className="text-[11px] font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <span className="text-amber-400">👑</span>
+                    <span>Admin:</span>
+                    <span className="font-mono text-blue-500 text-[10px]">sudharsanm014@gmail.com</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono">
+                    Password: <span className="font-bold text-emerald-500">niceTRY</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  id="btn-admin-auto-login"
+                  onClick={handleQuickAdminLogin}
+                  disabled={isSubmitting}
+                  className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] shadow-sm shadow-blue-500/25 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 flex items-center gap-1"
+                >
+                  <span>1-Click Login</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
             {/* Continue to Google Authentication Button */}
             <button
               type="button"
@@ -437,10 +508,12 @@ export const AuthModal: React.FC = () => {
                 <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  id="input-auth-password"
                   required
+                  autoFocus={activeTab === 'login'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder={activeTab === 'login' ? "Enter password (e.g. niceTRY)" : "••••••••"}
                   className={`w-full pl-9 pr-10 py-2 rounded-xl border text-xs ${
                     isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'
                   }`}

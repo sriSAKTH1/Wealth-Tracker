@@ -564,35 +564,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(LOCAL_AUTH_USER_KEY, JSON.stringify(profile));
 
     if (isCalcOnly) {
-      showNotification('5-Minute Calculator Trial Active · Full vault requires sign up');
+      showNotification('Interactive Calculator Sandbox Active');
     } else {
-      showNotification('5-Minute Demo Session Active · View-Only Mode');
+      showNotification('Interactive Demo Sandbox Active · View-Only Mode');
     }
   };
 
-  // 5-Minute Demo Countdown Timer (strictly for non-admin demo users only)
+  // Demo session: No countdown timer counter per user instruction
   useEffect(() => {
-    if (!isDemoMode || !currentUser || currentUser.role === 'admin') return;
-
-    const interval = setInterval(() => {
-      const startStr = localStorage.getItem(DEMO_SESSION_START_KEY);
-      const start = startStr ? Number(startStr) : Date.now();
-      const elapsed = Math.floor((Date.now() - start) / 1000);
-      const remaining = Math.max(0, DEMO_TOTAL_DURATION_SEC - elapsed);
-
-      setDemoSecondsRemaining(remaining);
-
-      if (remaining <= 0) {
-        clearInterval(interval);
-        // Auto expire demo after 5 minutes
-        signOut();
-        openAuthModal('register');
-        showNotification('Demo session expired (5 minutes completed). Sign up to create your own permanent vault.');
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isDemoMode, currentUser]);
+    setDemoSecondsRemaining(DEMO_TOTAL_DURATION_SEC);
+  }, [isDemoMode]);
 
   const role: 'admin' | 'user' = currentUser?.role === 'admin' ? 'admin' : 'user';
   const isAdmin = role === 'admin';
