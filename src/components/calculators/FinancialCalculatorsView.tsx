@@ -29,7 +29,8 @@ import {
   Wand2,
   ChevronDown,
   ChevronUp,
-  Layers
+  Layers,
+  Scale
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -63,12 +64,14 @@ import {
 import { calculateXIRR, CashFlowTransaction } from '../../utils/xirr';
 import { IncomeGrowthCalculator } from './IncomeGrowthCalculator';
 import { StepUpSIPCalculator } from './StepUpSIPCalculator';
+import { PortfolioRebalanceCalculator } from './PortfolioRebalanceCalculator';
 import { ToolsFeedbackSection } from './ToolsFeedbackSection';
 
 export type CalculatorType =
   | 'sip'
   | 'income_growth'
   | 'stepup_sip'
+  | 'rebalance'
   | 'swp'
   | 'lumpsum'
   | 'emi'
@@ -94,6 +97,7 @@ const CALCULATORS: CalculatorTabItem[] = [
   { id: 'sip', label: 'SIP Calculator', shortLabel: 'SIP', category: 'investments', icon: TrendingUp, color: 'text-emerald-400' },
   { id: 'income_growth', label: 'Income Growth Graph', shortLabel: 'Income Growth', badge: '✨ New', category: 'career', icon: TrendingUp, color: 'text-blue-400' },
   { id: 'stepup_sip', label: 'Step-Up SIP Calculator', shortLabel: 'Step-Up SIP', badge: '📈 2x', category: 'investments', icon: ArrowUpRight, color: 'text-emerald-400' },
+  { id: 'rebalance', label: 'Portfolio Rebalancing', shortLabel: 'Rebalancing', badge: '⚖️ Strategy', category: 'investments', icon: Scale, color: 'text-indigo-400' },
   { id: 'swp', label: 'SWP Calculator', shortLabel: 'SWP', category: 'investments', icon: ArrowDownRight, color: 'text-blue-400' },
   { id: 'lumpsum', label: 'Lumpsum Calculator', shortLabel: 'Lumpsum', category: 'investments', icon: Coins, color: 'text-cyan-400' },
   { id: 'emi', label: 'Loan / EMI Calculator', shortLabel: 'EMI', category: 'loans', icon: Landmark, color: 'text-amber-400' },
@@ -110,7 +114,13 @@ export const FinancialCalculatorsView: React.FC = () => {
   const { theme } = useFinance();
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
-  const [activeCalc, setActiveCalc] = useState<CalculatorType>('sip');
+  const [activeCalc, setActiveCalc] = useState<CalculatorType>(() => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const h = window.location.hash.replace('#', '').toLowerCase();
+      if (h === 'rebalance' || h === 'rebalancing' || h === 'portfolio-rebalancing') return 'rebalance';
+    }
+    return 'sip';
+  });
   const [calcCategory, setCalcCategory] = useState<string>('all');
 
   const filteredCalculators = useMemo(() => {
@@ -1078,6 +1088,13 @@ export const FinancialCalculatorsView: React.FC = () => {
           isLight={isLight}
           onNavigateToIncomeGrowth={() => setActiveCalc('income_growth')}
         />
+      )}
+
+      {/* ------------------------------------------------------------------- */}
+      {/* 1D. PORTFOLIO REBALANCING CALCULATOR */}
+      {/* ------------------------------------------------------------------- */}
+      {activeCalc === 'rebalance' && (
+        <PortfolioRebalanceCalculator isLight={isLight} />
       )}
 
       {/* ------------------------------------------------------------------- */}

@@ -47,6 +47,12 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { FixWealthLogo } from './common/FixWealthLogo';
 import { AdminPinModal } from './auth/AdminPinModal';
+import { 
+  AnimatedFinScoreSection, 
+  AnimatedWealthGrowthSection, 
+  AnimatedMoneyLiveSection,
+  useCountUp
+} from './landing/LandingAnimatedSections';
 
 // Floating Translucent Financial Icons for Hero Entry (Matching reference line-art icons)
 interface FloatingFinanceIcon {
@@ -288,6 +294,10 @@ export const LaunchPage: React.FC = () => {
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState(false);
   const [activeAllocationTab, setActiveAllocationTab] = useState<'actual' | 'target'>('actual');
+
+  // Animated Hero Counters (0 to 88 for FinScore, and 0 to 1.24 Cr for Net Worth)
+  const heroScore = useCountUp(88, 1700, true, 0);
+  const heroNetWorthCr = useCountUp(1.24, 1800, true, 2);
 
   // Launch Page is dedicated Light Mode only.
   // Sets light-theme for landing page, and cleanly restores main page theme when leaving.
@@ -611,8 +621,8 @@ export const LaunchPage: React.FC = () => {
                     <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 block mb-1">
                       Consolidated Net Worth
                     </span>
-                    <div className="text-xl sm:text-2xl lg:text-3xl font-black font-mono text-slate-900 tracking-tight">
-                      ₹1,24,50,000
+                    <div className="text-xl sm:text-2xl lg:text-3xl font-black font-mono text-slate-900 tracking-tight transition-all">
+                      ₹{heroNetWorthCr} Cr
                     </div>
                     <div className="mt-1 flex items-center gap-1.5 text-xs text-emerald-700 font-semibold">
                       <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
@@ -625,8 +635,8 @@ export const LaunchPage: React.FC = () => {
                     <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 block mb-1">
                       Health Score (FinScore)
                     </span>
-                    <div className="text-xl sm:text-2xl lg:text-3xl font-black font-mono text-emerald-600 tracking-tight">
-                      88 <span className="text-xs text-slate-400 font-normal">/ 100</span>
+                    <div className="text-xl sm:text-2xl lg:text-3xl font-black font-mono text-emerald-600 tracking-tight transition-all">
+                      {heroScore} <span className="text-xs text-slate-400 font-normal">/ 100</span>
                     </div>
                     <div className="mt-1 text-xs text-emerald-700 font-medium">
                       Excellent Financial Health
@@ -965,188 +975,18 @@ export const LaunchPage: React.FC = () => {
         </section>
 
         {/* =========================================================================
-            12. NET WORTH SECTION (#wealth)
+            12. ANIMATED NET WORTH & WEALTH GROWTH SECTION (#wealth)
+            Features 10 numbers (0 to 10), grid crosses (+), and 5-year curve line
+            drawing from Year 1 upwards to Year 5 on scroll.
             ========================================================================= */}
-        <section id="wealth" className="py-20 sm:py-28 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 bg-white">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            
-            {/* Left: Net Worth Narrative & Metrics */}
-            <div className="lg:col-span-5 space-y-6">
-              <div>
-                <span className="text-xs font-mono uppercase tracking-widest text-emerald-700 font-bold">
-                  NET WORTH INTELLIGENCE
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-2">
-                  Watch Your Wealth Grow
-                </h2>
-                <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                  Track your net worth over months and years and understand whether your financial decisions are moving you forward.
-                </p>
-              </div>
-
-              {/* 4 Stat Cards */}
-              <div className="grid grid-cols-2 gap-3 font-mono">
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Total Assets</span>
-                  <span className="text-lg sm:text-xl font-bold text-slate-900">₹1.42 Cr</span>
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Total Liabilities</span>
-                  <span className="text-lg sm:text-xl font-bold text-rose-600">₹17.5L</span>
-                </div>
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
-                  <span className="text-[10px] text-emerald-800 uppercase tracking-wider block">Net Worth</span>
-                  <span className="text-lg sm:text-xl font-bold text-emerald-700">₹1.24 Cr</span>
-                </div>
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
-                  <span className="text-[10px] text-emerald-800 uppercase tracking-wider block">YoY Growth</span>
-                  <span className="text-lg sm:text-xl font-bold text-emerald-700">+14.8%</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Growth Chart Visual */}
-            <div className="lg:col-span-7 p-6 rounded-3xl bg-slate-50 border border-slate-200/90 shadow-xl">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Net Worth Curve (5 Years)</h4>
-                  <span className="text-[11px] text-slate-500">Compounding Trajectory</span>
-                </div>
-                <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-mono text-xs font-bold">
-                  ₹1,24,50,000 Current
-                </span>
-              </div>
-
-              <div className="h-56 relative w-full">
-                <svg viewBox="0 0 500 200" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="wealthGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#059669" stopOpacity="0.35" />
-                      <stop offset="100%" stopColor="#059669" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d="M 0 170 C 120 150, 200 130, 300 80 S 420 40, 500 15 L 500 200 L 0 200 Z"
-                    fill="url(#wealthGrad)"
-                  />
-                  <path
-                    d="M 0 170 C 120 150, 200 130, 300 80 S 420 40, 500 15"
-                    fill="none"
-                    stroke="#059669"
-                    strokeWidth="3.5"
-                    strokeLinecap="round"
-                  />
-                  <circle cx="500" cy="15" r="5" fill="#059669" stroke="#ffffff" strokeWidth="2" />
-                </svg>
-              </div>
-
-              <div className="flex justify-between text-[11px] font-mono text-slate-500 mt-3 pt-3 border-t border-slate-200">
-                <span>2022: ₹35L</span>
-                <span>2023: ₹54L</span>
-                <span>2024: ₹78L</span>
-                <span>2025: ₹98L</span>
-                <span className="text-emerald-700 font-bold">2026: ₹1.24 Cr</span>
-              </div>
-            </div>
-
-          </div>
-        </section>
+        <AnimatedWealthGrowthSection />
 
         {/* =========================================================================
-            13. ASSET ALLOCATION SECTION
+            13. ANIMATED MONEY LIVE & ASSET ALLOCATION SECTION
+            Animates portfolio value from 0 to 1.something crore (₹1.24 Cr) on scroll
+            with animated sweeping doughnut segments and progress bars.
             ========================================================================= */}
-        <section className="py-20 bg-slate-50 border-t border-slate-200/80">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-12">
-              <span className="text-xs font-mono uppercase tracking-widest text-emerald-700 font-bold">
-                PORTFOLIO STRATEGY
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-2">
-                Know Where Your Money Lives
-              </h2>
-              <p className="mt-3 text-base text-slate-600">
-                Keep risk calibrated with target vs actual allocation tracking across all asset categories.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-xl">
-              
-              {/* Left: Allocation Visual (Doughnut Simulation) */}
-              <div className="lg:col-span-5 flex flex-col items-center justify-center p-4">
-                <div className="relative w-48 h-48 sm:w-56 sm:h-56 flex items-center justify-center">
-                  <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                    {/* Equity: 64% */}
-                    <circle cx="50" cy="50" r="38" fill="transparent" stroke="#059669" strokeWidth="12" strokeDasharray="64 36" strokeDashoffset="0" />
-                    {/* Debt: 21% */}
-                    <circle cx="50" cy="50" r="38" fill="transparent" stroke="#2563eb" strokeWidth="12" strokeDasharray="21 79" strokeDashoffset="-64" />
-                    {/* Gold: 10% */}
-                    <circle cx="50" cy="50" r="38" fill="transparent" stroke="#d97706" strokeWidth="12" strokeDasharray="10 90" strokeDashoffset="-85" />
-                    {/* Cash: 5% */}
-                    <circle cx="50" cy="50" r="38" fill="transparent" stroke="#0d9488" strokeWidth="12" strokeDasharray="5 95" strokeDashoffset="-95" />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                    <span className="text-xs text-slate-500 uppercase font-mono">Portfolio</span>
-                    <span className="text-xl font-bold font-mono text-slate-900">₹1.24 Cr</span>
-                    <span className="text-[10px] text-emerald-700 font-mono font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Calibrated</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-center gap-3 mt-4 text-[11px] font-mono">
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-600" /> Equity 64%</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-600" /> Debt 21%</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Gold 10%</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-teal-500" /> Cash 5%</span>
-                </div>
-              </div>
-
-              {/* Right: Target vs Actual Comparison Bars */}
-              <div className="lg:col-span-7 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-200 text-xs font-mono text-slate-500">
-                  <span>Asset Class</span>
-                  <span>Target vs Actual Allocation</span>
-                </div>
-
-                {/* Equity */}
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70">
-                  <div className="flex justify-between text-xs mb-1.5">
-                    <span className="font-bold text-slate-900">Equities &amp; Mutual Funds</span>
-                    <span className="font-mono text-slate-600">Target 60% · <strong className="text-emerald-700">Actual 64%</strong></span>
-                  </div>
-                  <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden flex">
-                    <div className="h-full bg-emerald-600" style={{ width: '64%' }} />
-                  </div>
-                  <span className="text-[10px] text-emerald-700 mt-1 block font-mono">+4% Overweight · Disciplined Compounder</span>
-                </div>
-
-                {/* Debt */}
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70">
-                  <div className="flex justify-between text-xs mb-1.5">
-                    <span className="font-bold text-slate-900">Fixed Income, EPF &amp; PPF</span>
-                    <span className="font-mono text-slate-600">Target 25% · <strong className="text-blue-700">Actual 21%</strong></span>
-                  </div>
-                  <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden flex">
-                    <div className="h-full bg-blue-600" style={{ width: '21%' }} />
-                  </div>
-                  <span className="text-[10px] text-slate-500 mt-1 block font-mono">-4% Underweight · Regular SIP Rebalance Active</span>
-                </div>
-
-                {/* Gold */}
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70">
-                  <div className="flex justify-between text-xs mb-1.5">
-                    <span className="font-bold text-slate-900">Sovereign Gold Bonds &amp; Bullion</span>
-                    <span className="font-mono text-slate-600">Target 15% · <strong className="text-amber-700">Actual 15%</strong></span>
-                  </div>
-                  <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden flex">
-                    <div className="h-full bg-amber-500" style={{ width: '15%' }} />
-                  </div>
-                  <span className="text-[10px] text-amber-700 mt-1 block font-mono">Perfect Target Alignment · Hedge Secured</span>
-                </div>
-
-              </div>
-
-            </div>
-          </div>
-        </section>
+        <AnimatedMoneyLiveSection />
 
         {/* =========================================================================
             14. FINANCIAL FREEDOM / FIRE SECTION
@@ -1440,72 +1280,10 @@ export const LaunchPage: React.FC = () => {
         </section>
 
         {/* =========================================================================
-            17. FINANCIAL HEALTH SCORE (FinScore)
+            17. ANIMATED FINANCIAL HEALTH SCORE (FinScore) (#finscore-section)
+            Animates gauge and score rounded from 0 to 88 on scroll.
             ========================================================================= */}
-        <section className="py-20 sm:py-28 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-200/80 bg-slate-50">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            
-            {/* Left: Circular FinScore Gauge */}
-            <div className="lg:col-span-5 p-8 rounded-3xl bg-white border border-emerald-300 flex flex-col items-center justify-center text-center shadow-xl">
-              <div className="relative w-44 h-44 sm:w-48 sm:h-48 flex items-center justify-center">
-                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                  <circle cx="50" cy="50" r="42" fill="transparent" stroke="#e2e8f0" strokeWidth="8" />
-                  <circle cx="50" cy="50" r="42" fill="transparent" stroke="#059669" strokeWidth="8" strokeDasharray="264" strokeDashoffset="31" strokeLinecap="round" />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-4xl sm:text-5xl font-black font-mono text-slate-900 tracking-tight">88</span>
-                  <span className="text-xs font-mono text-slate-500">/ 100</span>
-                  <span className="text-xs font-bold text-emerald-700 mt-1 uppercase tracking-wider">Excellent</span>
-                </div>
-              </div>
-              <p className="mt-4 text-xs text-slate-600 max-w-xs leading-relaxed">
-                Aggregated metric measuring your financial resilience, liquidity runway and compounding stability.
-              </p>
-              <span className="mt-2 text-[10px] text-slate-500 font-mono">
-                *For educational health assessment only
-              </span>
-            </div>
-
-            {/* Right: 5 Scoring Factors */}
-            <div className="lg:col-span-7 space-y-3.5">
-              <div>
-                <span className="text-xs font-mono uppercase tracking-widest text-emerald-700 font-bold">
-                  DIAGNOSTIC ENGINE
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
-                  A Clearer Picture of Your Financial Health
-                </h2>
-                <p className="mt-2 text-sm text-slate-600">
-                  FinScore breaks your financial posture into 5 transparent dimensions:
-                </p>
-              </div>
-
-              <div className="space-y-2 text-xs">
-                <div className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between shadow-sm">
-                  <span className="text-slate-800 font-medium">Liquidity &amp; Cash Buffer</span>
-                  <span className="font-mono font-bold text-emerald-700">92 / 100</span>
-                </div>
-                <div className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between shadow-sm">
-                  <span className="text-slate-800 font-medium">Debt &amp; EMI Manageability</span>
-                  <span className="font-mono font-bold text-emerald-700">85 / 100</span>
-                </div>
-                <div className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between shadow-sm">
-                  <span className="text-slate-800 font-medium">Emergency Fund Coverage</span>
-                  <span className="font-mono font-bold text-emerald-700">95 / 100</span>
-                </div>
-                <div className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between shadow-sm">
-                  <span className="text-slate-800 font-medium">Portfolio Diversification</span>
-                  <span className="font-mono font-bold text-emerald-700">80 / 100</span>
-                </div>
-                <div className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between shadow-sm">
-                  <span className="text-slate-800 font-medium">Monthly Savings Discipline</span>
-                  <span className="font-mono font-bold text-emerald-700">88 / 100</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </section>
+        <AnimatedFinScoreSection />
 
         {/* =========================================================================
             18. CALCULATORS SECTION (#calculators)
