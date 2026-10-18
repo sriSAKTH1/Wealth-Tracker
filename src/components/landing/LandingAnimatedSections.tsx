@@ -80,23 +80,64 @@ export function useCountUp(endValue: number, duration = 1600, startTrigger = fal
    1. ANIMATED FINSCORE SECTION (Section 17)
    Animates from 0 to 88 on scroll with circular gauge progress animation
    ========================================================================= */
+/* =========================================================================
+   1. ANIMATED FINSCORE SECTION (Section 17)
+   Animates from 0 to 88 / 100 and 0 to 880 / 1,000 on scroll with circular gauge.
+   Calculated across 4 Pillars (25 marks each):
+   - Emergency Fund: 25 pts (250/1000) - If NO, mark is 0
+   - Health Insurance: 25 pts (250/1000)
+   - Savings Score: 25 pts (250/1000)
+   - Debt Score: 25 pts (250/1000)
+   ========================================================================= */
 export const AnimatedFinScoreSection: React.FC = () => {
   const { ref, isInView } = useInView({ threshold: 0.25 });
+  const [hasEmergencyFund, setHasEmergencyFund] = useState<boolean>(true);
+  const [scaleMode, setScaleMode] = useState<'1000' | '100'>('1000');
 
-  // Main FinScore: 0 -> 88
-  const score = useCountUp(88, 1800, isInView, 0);
+  // Sub-factor scores out of 100
+  // When emergency fund is NO, mark is 0!
+  const targetEmergency = hasEmergencyFund ? 95 : 0;
+  const targetHealth = 86;
+  const targetSavings = 88;
+  const targetDebt = 83;
 
-  // 5 Sub-factor scores
-  const scoreLiquidity = useCountUp(92, 1500, isInView, 0);
-  const scoreDebt = useCountUp(85, 1600, isInView, 0);
-  const scoreEmergency = useCountUp(95, 1700, isInView, 0);
-  const scoreDiversification = useCountUp(80, 1800, isInView, 0);
-  const scoreSavings = useCountUp(88, 1900, isInView, 0);
+  // Animated sub-factors
+  const scoreEmergency = useCountUp(targetEmergency, 1500, isInView, 0);
+  const scoreHealth = useCountUp(targetHealth, 1600, isInView, 0);
+  const scoreSavings = useCountUp(targetSavings, 1700, isInView, 0);
+  const scoreDebt = useCountUp(targetDebt, 1800, isInView, 0);
+
+  // 4-Pillars Combo calculation:
+  // Each assigned 25 pts out of 100, and 250 pts out of 1,000
+  const emergencyMarks25 = Number(((scoreEmergency * 25) / 100).toFixed(1));
+  const healthMarks25 = Number(((scoreHealth * 25) / 100).toFixed(1));
+  const savingsMarks25 = Number(((scoreSavings * 25) / 100).toFixed(1));
+  const debtMarks25 = Number(((scoreDebt * 25) / 100).toFixed(1));
+
+  const emergencyMarks1000 = Math.round(scoreEmergency * 2.5);
+  const healthMarks1000 = Math.round(scoreHealth * 2.5);
+  const savingsMarks1000 = Math.round(scoreSavings * 2.5);
+  const debtMarks1000 = Math.round(scoreDebt * 2.5);
+
+  const targetTotal100 = Math.round(
+    ((targetEmergency * 25) / 100) +
+    ((targetHealth * 25) / 100) +
+    ((targetSavings * 25) / 100) +
+    ((targetDebt * 25) / 100)
+  );
+  const targetTotal1000 = Math.round(
+    (targetEmergency * 2.5) +
+    (targetHealth * 2.5) +
+    (targetSavings * 2.5) +
+    (targetDebt * 2.5)
+  );
+
+  const animatedScore100 = useCountUp(targetTotal100, 1800, isInView, 0);
+  const animatedScore1000 = useCountUp(targetTotal1000, 1800, isInView, 0);
 
   // Total circumference = 2 * PI * 42 ≈ 263.89
   const circumference = 264;
-  // Calculate dash offset based on animated score: 0 -> 88%
-  const strokeOffset = circumference - (score / 100) * circumference;
+  const strokeOffset = circumference - (animatedScore100 / 100) * circumference;
 
   return (
     <section 
@@ -105,8 +146,32 @@ export const AnimatedFinScoreSection: React.FC = () => {
       className="py-20 sm:py-28 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-200/80 bg-slate-50"
     >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-        {/* Left: Circular FinScore Gauge with 0 to 88 scroll animation */}
-        <div className="lg:col-span-5 p-8 rounded-3xl bg-white border border-emerald-300 flex flex-col items-center justify-center text-center shadow-xl transition-all duration-700">
+        {/* Left: Circular FinScore Gauge with out-of-1,000 & out-of-100 animations */}
+        <div className="lg:col-span-5 p-7 sm:p-8 rounded-3xl bg-white border border-emerald-300 flex flex-col items-center justify-center text-center shadow-xl transition-all duration-700">
+          {/* Scale Mode Switcher */}
+          <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-xl mb-4 text-[11px] font-bold">
+            <button
+              onClick={() => setScaleMode('1000')}
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                scaleMode === '1000'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              1,000 Scale Combo
+            </button>
+            <button
+              onClick={() => setScaleMode('100')}
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                scaleMode === '100'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              100 Scale
+            </button>
+          </div>
+
           <div className="relative w-44 h-44 sm:w-52 sm:h-52 flex items-center justify-center">
             <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
               {/* Background Track Ring */}
@@ -124,7 +189,7 @@ export const AnimatedFinScoreSection: React.FC = () => {
                 cy="50"
                 r="42"
                 fill="transparent"
-                stroke="#059669"
+                stroke={hasEmergencyFund ? '#059669' : '#d97706'}
                 strokeWidth="8"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeOffset}
@@ -134,106 +199,199 @@ export const AnimatedFinScoreSection: React.FC = () => {
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-4xl sm:text-5xl font-black font-mono text-slate-900 tracking-tight transition-transform duration-300">
-                {score}
+                {scaleMode === '1000' ? animatedScore1000 : animatedScore100}
               </span>
-              <span className="text-xs font-mono text-slate-500">/ 100</span>
-              <span className={`text-xs font-bold mt-1 uppercase tracking-wider transition-opacity duration-500 ${
-                score >= 80 ? 'text-emerald-700' : 'text-slate-400'
+              <span className="text-xs font-mono font-bold text-slate-500">
+                {scaleMode === '1000' ? '/ 1,000' : '/ 100'}
+              </span>
+              <span className={`text-[11px] font-bold mt-1 uppercase tracking-wider transition-opacity duration-500 ${
+                animatedScore100 >= 80 ? 'text-emerald-700' : animatedScore100 >= 60 ? 'text-amber-600' : 'text-rose-600'
               }`}>
-                {score >= 80 ? 'Excellent' : score >= 50 ? 'Good' : 'Analyzing...'}
+                {animatedScore100 >= 80 ? 'Excellent' : animatedScore100 >= 60 ? 'Good / Fair' : 'Needs Work'}
               </span>
             </div>
           </div>
-          <p className="mt-4 text-xs text-slate-600 max-w-xs leading-relaxed">
-            Aggregated metric measuring your financial resilience, liquidity runway and compounding stability.
+
+          {/* Dual Score Badge */}
+          <div className="mt-4 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-mono text-slate-700 flex items-center gap-2">
+            <span>Combo: <strong>{animatedScore1000} / 1,000</strong></span>
+            <span className="text-slate-400">•</span>
+            <span>Scale: <strong>{animatedScore100} / 100</strong></span>
+          </div>
+
+          <p className="mt-3 text-xs text-slate-600 max-w-xs leading-relaxed">
+            Composite health calculated from 4 balanced dimensions (Emergency, Insurance, Savings, Debt) at 25% weight each.
           </p>
-          <span className="mt-2 text-[10px] text-slate-500 font-mono">
-            *Real-time diagnostic health assessment
-          </span>
         </div>
 
-        {/* Right: 5 Scoring Factors with animated progress bars */}
-        <div className="lg:col-span-7 space-y-3.5">
+        {/* Right: 4 Scoring Pillars with 25 marks / 250 marks combo */}
+        <div className="lg:col-span-7 space-y-4">
           <div>
-            <span className="text-xs font-mono uppercase tracking-widest text-emerald-700 font-bold">
-              DIAGNOSTIC ENGINE
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
-              A Clearer Picture of Your Financial Health
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-xs font-mono uppercase tracking-widest text-emerald-700 font-bold">
+                4-PILLAR FINSCORE ENGINE (25 + 25 + 25 + 25 = 100)
+              </span>
+              <span className="text-[11px] font-mono font-bold text-slate-500 bg-white px-2.5 py-0.5 rounded-full border border-slate-200">
+                Max Score: 1,000 Pts
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
+              Balanced Financial Health Diagnostic
             </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              FinScore breaks your financial posture into 5 transparent dimensions:
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-600">
+              Each pillar contributes up to <strong>25 points</strong> (out of 100) or <strong>250 points</strong> (out of 1,000):
             </p>
           </div>
 
+          {/* Interactive Emergency Fund Rule Tester */}
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-emerald-50 border border-amber-200/80 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900 block">
+                  Interactive Rule Demo: Emergency Fund Check
+                </span>
+                <span className="text-xs text-slate-600">
+                  {hasEmergencyFund 
+                    ? 'Emergency fund is active: score calculated based on savings buffer.' 
+                    : 'Emergency fund is NO: mark is assigned as 0 (0 / 25 pts, 0 / 250 in 1,000 combo score).'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setHasEmergencyFund(true)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    hasEmergencyFund
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  ✓ Emergency: YES
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHasEmergencyFund(false)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    !hasEmergencyFund
+                      ? 'bg-rose-600 text-white shadow-sm'
+                      : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  ✗ Emergency: NO (Mark: 0)
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-2.5 text-xs">
-            {/* Factor 1 */}
-            <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-sm space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-800 font-medium">Liquidity &amp; Cash Buffer</span>
-                <span className="font-mono font-bold text-emerald-700">{scoreLiquidity} / 100</span>
+            {/* Pillar 1: Emergency Fund */}
+            <div className={`p-3.5 rounded-2xl bg-white border transition-all ${
+              !hasEmergencyFund ? 'border-rose-300 shadow-sm bg-rose-50/20' : 'border-slate-200 shadow-xs'
+            }`}>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-900">1. Emergency Fund (Weight: 25)</span>
+                  {!hasEmergencyFund && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-rose-600">
+                      NO Emergency Fund = 0 Marks
+                    </span>
+                  )}
+                </div>
+                <div className="text-right font-mono">
+                  <span className={`font-bold ${!hasEmergencyFund ? 'text-rose-600' : 'text-emerald-700'}`}>
+                    {emergencyMarks1000} / 250 pts
+                  </span>
+                  <span className="text-slate-400 text-[11px] ml-1.5">
+                    ({scoreEmergency}/100 • {emergencyMarks25}/25)
+                  </span>
+                </div>
               </div>
-              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-emerald-600 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: isInView ? `${scoreLiquidity}%` : '0%' }}
+                  className={`h-full rounded-full transition-all duration-700 ease-out ${
+                    !hasEmergencyFund ? 'bg-rose-500' : 'bg-amber-500'
+                  }`}
+                  style={{ width: `${scoreEmergency}%` }}
                 />
+              </div>
+              <div className="flex justify-between items-center text-[11px] text-slate-500 mt-1">
+                <span>{hasEmergencyFund ? '6-Month living buffer reserve active' : 'Zero emergency buffer allocated'}</span>
+                <span>{hasEmergencyFund ? 'Score based on emergency fund' : 'Mark: 0'}</span>
               </div>
             </div>
 
-            {/* Factor 2 */}
-            <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-sm space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-800 font-medium">Debt &amp; EMI Manageability</span>
-                <span className="font-mono font-bold text-emerald-700">{scoreDebt} / 100</span>
+            {/* Pillar 2: Health Insurance */}
+            <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-bold text-slate-900">2. Health Insurance (Weight: 25)</span>
+                <div className="text-right font-mono">
+                  <span className="font-bold text-emerald-700">
+                    {healthMarks1000} / 250 pts
+                  </span>
+                  <span className="text-slate-400 text-[11px] ml-1.5">
+                    ({scoreHealth}/100 • {healthMarks25}/25)
+                  </span>
+                </div>
               </div>
-              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-blue-600 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: isInView ? `${scoreDebt}%` : '0%' }}
+                  className="h-full bg-blue-600 rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${scoreHealth}%` }}
                 />
+              </div>
+              <div className="flex justify-between items-center text-[11px] text-slate-500 mt-1">
+                <span>Comprehensive personal &amp; family health protection</span>
+                <span>₹5L+ Base Coverage</span>
               </div>
             </div>
 
-            {/* Factor 3 */}
-            <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-sm space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-800 font-medium">Emergency Fund Coverage</span>
-                <span className="font-mono font-bold text-emerald-700">{scoreEmergency} / 100</span>
+            {/* Pillar 3: Savings Score */}
+            <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-bold text-slate-900">3. Savings Score (Weight: 25)</span>
+                <div className="text-right font-mono">
+                  <span className="font-bold text-emerald-700">
+                    {savingsMarks1000} / 250 pts
+                  </span>
+                  <span className="text-slate-400 text-[11px] ml-1.5">
+                    ({scoreSavings}/100 • {savingsMarks25}/25)
+                  </span>
+                </div>
               </div>
-              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: isInView ? `${scoreEmergency}%` : '0%' }}
+                  className="h-full bg-emerald-600 rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${scoreSavings}%` }}
                 />
+              </div>
+              <div className="flex justify-between items-center text-[11px] text-slate-500 mt-1">
+                <span>24% net monthly income saved and compounded</span>
+                <span>Above 20% benchmark</span>
               </div>
             </div>
 
-            {/* Factor 4 */}
-            <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-sm space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-800 font-medium">Portfolio Diversification</span>
-                <span className="font-mono font-bold text-emerald-700">{scoreDiversification} / 100</span>
+            {/* Pillar 4: Debt Score */}
+            <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-bold text-slate-900">4. Debt Score (Weight: 25)</span>
+                <div className="text-right font-mono">
+                  <span className="font-bold text-emerald-700">
+                    {debtMarks1000} / 250 pts
+                  </span>
+                  <span className="text-slate-400 text-[11px] ml-1.5">
+                    ({scoreDebt}/100 • {debtMarks25}/25)
+                  </span>
+                </div>
               </div>
-              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-amber-500 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: isInView ? `${scoreDiversification}%` : '0%' }}
+                  className="h-full bg-purple-600 rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${scoreDebt}%` }}
                 />
               </div>
-            </div>
-
-            {/* Factor 5 */}
-            <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-sm space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-800 font-medium">Monthly Savings Discipline</span>
-                <span className="font-mono font-bold text-emerald-700">{scoreSavings} / 100</span>
-              </div>
-              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-teal-600 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: isInView ? `${scoreSavings}%` : '0%' }}
-                />
+              <div className="flex justify-between items-center text-[11px] text-slate-500 mt-1">
+                <span>14.8% EMI-to-income load (Safe &lt;35% ceiling)</span>
+                <span>Controlled leverage</span>
               </div>
             </div>
           </div>

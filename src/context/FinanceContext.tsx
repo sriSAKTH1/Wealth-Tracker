@@ -237,7 +237,7 @@ interface FinanceContextType {
   liquidRunwayMonths: number;
   debtToAssetRatio: number;
   assetAllocationBreakdown: { category: AssetCategory; value: number; percentage: number; color: string }[];
-  healthScore: { score: number; grade: string; metrics: { label: string; score: number; status: 'good' | 'warning' | 'needs_work'; desc: string }[] };
+  healthScore: { score: number; score1000?: number; grade: string; metrics: { label: string; score: number; status: 'good' | 'warning' | 'needs_work'; desc: string }[] };
 
   // Firestore Persistent Cloud Sync
   isCloudSynced: boolean;
@@ -962,6 +962,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (totalAssets === 0 && totalLiabilities === 0 && monthlyIncome === 0 && monthlyExpenses === 0) {
       return {
         score: 0,
+        score1000: 0,
         grade: 'N/A',
         metrics: [
           {
@@ -1018,6 +1019,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     return {
       score: total,
+      score1000: total * 10,
       grade,
       metrics: [
         {

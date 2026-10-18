@@ -636,10 +636,11 @@ export const LaunchPage: React.FC = () => {
                       Health Score (FinScore)
                     </span>
                     <div className="text-xl sm:text-2xl lg:text-3xl font-black font-mono text-emerald-600 tracking-tight transition-all">
-                      {heroScore} <span className="text-xs text-slate-400 font-normal">/ 100</span>
+                      {Math.round(heroScore * 10)} <span className="text-xs text-slate-400 font-normal">/ 1,000</span>
                     </div>
-                    <div className="mt-1 text-xs text-emerald-700 font-medium">
-                      Excellent Financial Health
+                    <div className="mt-1 text-xs text-emerald-700 font-medium flex items-center justify-between">
+                      <span>Excellent (4 Pillars)</span>
+                      <span className="font-mono text-[10px] text-slate-400">{heroScore}/100</span>
                     </div>
                   </div>
 

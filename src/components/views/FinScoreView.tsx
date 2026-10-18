@@ -319,6 +319,7 @@ export const FinScoreView: React.FC = () => {
   const [goals, setGoals] = useState<FinScoreGoal[]>(INITIAL_FINSCORE_GOALS);
   const [adminConfig, setAdminConfig] = useState<FinScoreAdminRuleConfig>(DEFAULT_ADMIN_CONFIG);
   const [scoreHistory, setScoreHistory] = useState<FinScoreHistoryPoint[]>(INITIAL_FINSCORE_HISTORY);
+  const [viewScoreScale, setViewScoreScale] = useState<'1000' | '100'>('1000');
 
   // Custom Income Source State (Step 2)
   const [editingIncomeId, setEditingIncomeId] = useState<string | null>(null);
@@ -1735,23 +1736,31 @@ Strategic Focus: ${result.biggestPriority}`;
                   </span>
                 </div>
 
-                {/* 4 Pillars Quick Mini Progress */}
+                {/* 4 Pillars Quick Mini Progress (Emergency, Health Insurance, Savings, Debt) */}
                 <div className="grid grid-cols-4 gap-1 sm:gap-1.5 mt-2.5 text-[9px] sm:text-[10px] font-mono w-full">
-                  <div title={`Emergency Fund: ${result.scores.emergencyFund}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard} min-w-0`}>
+                  <div title={`Emergency Fund: ${result.combo.emergencyFund.marks1000}/250 pts (${result.scores.emergencyFund}/100)`} className={`text-center p-1 rounded ${finScoreTheme.innerCard} min-w-0 ${!result.combo.emergencyFund.isActive ? 'ring-1 ring-rose-500/40' : ''}`}>
                     <div className={`${finScoreTheme.muted} text-[8px] sm:text-[9px] truncate`}>Emergency</div>
-                    <div className="font-bold text-amber-400">{result.scores.emergencyFund}</div>
+                    <div className={`font-bold ${!result.combo.emergencyFund.isActive ? 'text-rose-400' : 'text-amber-400'}`}>
+                      {result.combo.emergencyFund.marks1000}<span className="text-[8px] text-slate-500">/250</span>
+                    </div>
                   </div>
-                  <div title={`Insurance: ${result.scores.insurance}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard} min-w-0`}>
-                    <div className={`${finScoreTheme.muted} text-[8px] sm:text-[9px] truncate`}>Insurance</div>
-                    <div className="font-bold text-blue-400">{result.scores.insurance}</div>
+                  <div title={`Health Insurance: ${result.combo.healthInsurance.marks1000}/250 pts (${result.combo.healthInsurance.score100}/100)`} className={`text-center p-1 rounded ${finScoreTheme.innerCard} min-w-0`}>
+                    <div className={`${finScoreTheme.muted} text-[8px] sm:text-[9px] truncate`}>Health Ins</div>
+                    <div className="font-bold text-blue-400">
+                      {result.combo.healthInsurance.marks1000}<span className="text-[8px] text-slate-500">/250</span>
+                    </div>
                   </div>
-                  <div title={`Savings: ${result.scores.savings}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard} min-w-0`}>
+                  <div title={`Savings: ${result.combo.savings.marks1000}/250 pts (${result.scores.savings}/100)`} className={`text-center p-1 rounded ${finScoreTheme.innerCard} min-w-0`}>
                     <div className={`${finScoreTheme.muted} text-[8px] sm:text-[9px] truncate`}>Savings</div>
-                    <div className="font-bold text-emerald-400">{result.scores.savings}</div>
+                    <div className="font-bold text-emerald-400">
+                      {result.combo.savings.marks1000}<span className="text-[8px] text-slate-500">/250</span>
+                    </div>
                   </div>
-                  <div title={`Debt: ${result.scores.debt}/100`} className={`text-center p-1 rounded ${finScoreTheme.innerCard} min-w-0`}>
+                  <div title={`Debt: ${result.combo.debt.marks1000}/250 pts (${result.scores.debt}/100)`} className={`text-center p-1 rounded ${finScoreTheme.innerCard} min-w-0`}>
                     <div className={`${finScoreTheme.muted} text-[8px] sm:text-[9px] truncate`}>Debt</div>
-                    <div className="font-bold text-purple-400">{result.scores.debt}</div>
+                    <div className="font-bold text-purple-400">
+                      {result.combo.debt.marks1000}<span className="text-[8px] text-slate-500">/250</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1870,6 +1879,32 @@ Strategic Focus: ${result.biggestPriority}`;
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               {/* Overall Score Dial */}
               <div className="lg:col-span-5 flex flex-col items-center justify-center text-center p-4">
+                {/* Scale Switcher Toggle */}
+                <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-slate-800/40 border border-slate-700/50 mb-3 text-[11px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setViewScoreScale('1000')}
+                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      viewScoreScale === '1000'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    1,000 Scale Combo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewScoreScale('100')}
+                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      viewScoreScale === '100'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    100 Scale
+                  </button>
+                </div>
+
                 <div className="relative w-44 h-44 flex items-center justify-center">
                   {/* Circular SVG Gauge Track */}
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
@@ -1887,27 +1922,39 @@ Strategic Focus: ${result.biggestPriority}`;
                       r="50"
                       strokeWidth="10"
                       strokeDasharray={314.15}
-                      strokeDashoffset={314.15 - (314.15 * result.overallScore) / 100}
+                      strokeDashoffset={
+                        314.15 - (314.15 * (viewScoreScale === '1000' ? (result.overallScore1000 / 1000) : (result.overallScore / 100)))
+                      }
                       strokeLinecap="round"
-                      className="stroke-blue-500 transition-all duration-1000 ease-out"
+                      className={`${!result.combo.emergencyFund.isActive ? 'stroke-amber-500' : 'stroke-blue-500'} transition-all duration-1000 ease-out`}
                       fill="none"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-4xl sm:text-5xl font-extrabold font-mono tracking-tighter">
-                      {result.overallScore}
+                      {viewScoreScale === '1000' ? result.overallScore1000 : result.overallScore}
                     </span>
                     <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                      Out of 100
+                      {viewScoreScale === '1000' ? 'Out of 1,000' : 'Out of 100'}
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-500 mt-0.5">
+                      {viewScoreScale === '1000' ? `(${result.overallScore} / 100)` : `(${result.overallScore1000} / 1,000)`}
                     </span>
                   </div>
                 </div>
 
-                <div className="mt-3">
+                <div className="mt-3 flex flex-col items-center gap-1.5">
                   <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${result.gradeColor}`}>
                     <Award className="w-3.5 h-3.5" />
                     FINANCIAL HEALTH: {result.grade}
                   </span>
+                  
+                  {/* Emergency Fund Notice */}
+                  {!result.combo.emergencyFund.isActive && (
+                    <span className="text-[10px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 rounded-full">
+                      ⚠️ Emergency Fund: NO (Mark: 0 / 250)
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -2035,43 +2082,56 @@ Strategic Focus: ${result.biggestPriority}`;
             </div>
           </div>
 
-          {/* 4 Core Pillar Score Cards */}
+          {/* 4 Core Pillar Score Cards (Emergency 25, Health Insurance 25, Savings 25, Debt 25 = 1,000 Pts) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Emergency Fund Card */}
             <div 
               onClick={() => setActiveTab('emergency')}
-              className={`p-5 rounded-3xl border shadow-sm cursor-pointer hover:scale-[1.01] transition-all ${finScoreTheme.card}`}
+              className={`p-5 rounded-3xl border shadow-sm cursor-pointer hover:scale-[1.01] transition-all ${finScoreTheme.card} ${
+                !result.combo.emergencyFund.isActive ? 'border-rose-500/50 bg-rose-500/5' : ''
+              }`}
             >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 text-amber-500" />
-                  Emergency Fund
+                  <AlertTriangle className={`w-4 h-4 ${!result.combo.emergencyFund.isActive ? 'text-rose-500' : 'text-amber-500'}`} />
+                  1. Emergency Fund
                 </span>
-                <span className="text-xs font-bold font-mono text-amber-400">
-                  {result.scores.emergencyFund}/100
+                <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded-full ${
+                  !result.combo.emergencyFund.isActive 
+                    ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30' 
+                    : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                }`}>
+                  {result.combo.emergencyFund.marks1000} / 250 Pts
                 </span>
               </div>
               <div className="text-2xl font-extrabold font-mono">
-                {currSym}{(Number(emergency.currentEmergencySavings) || 0).toLocaleString()}
+                {!result.combo.emergencyFund.isActive ? (
+                  <span className="text-rose-400 text-lg sm:text-xl">NO Emergency Fund (0)</span>
+                ) : (
+                  `${currSym}${(Number(emergency.currentEmergencySavings) || 0).toLocaleString()}`
+                )}
               </div>
               <div className="text-xs text-slate-400 mt-0.5">
-                Target: {currSym}{(result.metrics.requiredEmergencyFund ?? 0).toLocaleString()} ({emergency.targetMonths} mo)
+                {!result.combo.emergencyFund.isActive 
+                  ? 'Mark is 0 • Needs 6-month buffer' 
+                  : `Target: ${currSym}${(result.metrics.requiredEmergencyFund ?? 0).toLocaleString()} (${emergency.targetMonths} mo)`}
               </div>
               {/* Visual progress bar */}
               <div className="w-full bg-slate-800 rounded-full h-2 mt-3 overflow-hidden">
                 <div 
-                  className="bg-amber-500 h-2 rounded-full transition-all duration-500"
+                  className={`h-2 rounded-full transition-all duration-500 ${!result.combo.emergencyFund.isActive ? 'bg-rose-500' : 'bg-amber-500'}`}
                   style={{ width: `${Math.min(100, result.metrics.emergencyFundRatio)}%` }}
                 />
               </div>
-              <div className="text-[11px] text-slate-400 mt-2 font-medium">
-                {result.metrics.emergencyShortfall > 0 
-                  ? `Shortfall: ${currSym}${(result.metrics.emergencyShortfall ?? 0).toLocaleString()} needed`
-                  : 'Fully funded!'}
+              <div className="text-[11px] text-slate-400 mt-2 font-medium flex justify-between items-center">
+                <span>{result.combo.emergencyFund.isActive ? `${result.scores.emergencyFund}/100 Score • 25 Pts Weight` : '0/100 Score (0 Pts)'}</span>
+                <span className={result.combo.emergencyFund.isActive ? 'text-amber-400 font-bold' : 'text-rose-400 font-bold'}>
+                  {result.combo.emergencyFund.marks25} / 25
+                </span>
               </div>
             </div>
 
-            {/* Insurance Score Card */}
+            {/* Health Insurance Score Card */}
             <div 
               onClick={() => setActiveTab('insurance')}
               className={`p-5 rounded-3xl border shadow-sm cursor-pointer hover:scale-[1.01] transition-all ${finScoreTheme.card}`}
@@ -2079,32 +2139,31 @@ Strategic Focus: ${result.biggestPriority}`;
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-blue-500" />
-                  Insurance Score
+                  2. Health Insurance
                 </span>
-                <span className="text-xs font-bold font-mono text-blue-400">
-                  {result.scores.insurance}/100
+                <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                  {result.combo.healthInsurance.marks1000} / 250 Pts
                 </span>
               </div>
               <div className="text-2xl font-extrabold font-mono">
-                {(!insurance.hasHealthInsurance && !insurance.hasTermInsurance && (insurance.healthCoverage || 0) === 0 && (insurance.lifeCoverage || 0) === 0)
-                  ? (profile.dependents > 0 ? 'No Insurance (0)' : 'Zero Dependents (40)')
-                  : (result.scores.insurance >= 80 ? 'Protected' : (result.scores.insurance >= 60 ? 'Adequate' : (result.scores.insurance > 0 ? 'Partial Cover' : 'Unprotected (0)')))}
+                {insurance.hasHealthInsurance && (insurance.healthCoverage || 0) > 0
+                  ? `${currSym}${((insurance.healthCoverage || 0) / 100000).toFixed(0)} Lakh Cover`
+                  : 'No Health Policy (0)'}
               </div>
               <div className="text-xs text-slate-400 mt-0.5">
-                {(!insurance.hasHealthInsurance && !insurance.hasTermInsurance && (insurance.healthCoverage || 0) === 0 && (insurance.lifeCoverage || 0) === 0)
-                  ? (profile.dependents > 0 ? '0/100 score (Dependents unprotected)' : '40/100 score (0 dependency risk)')
-                  : `Health: ${result.metrics.insuranceHealthMarks ?? 0}/60 • Life: ${result.metrics.insuranceLifeMarks ?? 0}/40`}
+                {insurance.hasHealthInsurance && (insurance.healthCoverage || 0) > 0
+                  ? (insurance.hasPersonalHealthPolicy ? 'Personal health policy active' : 'Group / employer coverage')
+                  : 'Unprotected against hospitalization'}
               </div>
               <div className="w-full bg-slate-800/40 rounded-full h-2 mt-3 overflow-hidden">
                 <div 
                   className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${result.scores.insurance}%` }}
+                  style={{ width: `${result.combo.healthInsurance.score100}%` }}
                 />
               </div>
-              <div className="text-[11px] text-slate-400 mt-2 font-medium">
-                {(!insurance.hasHealthInsurance && !insurance.hasTermInsurance && (insurance.healthCoverage || 0) === 0 && (insurance.lifeCoverage || 0) === 0)
-                  ? (profile.dependents > 0 ? 'Add ₹5L+ health policy & term life to protect dependents' : 'Add personal health policy to reach 100/100')
-                  : (insurance.hasPersonalHealthPolicy ? 'Personal health policy active' : 'Needs independent health policy')}
+              <div className="text-[11px] text-slate-400 mt-2 font-medium flex justify-between items-center">
+                <span>{result.combo.healthInsurance.score100}/100 Score • 25 Pts Weight</span>
+                <span className="text-blue-400 font-bold">{result.combo.healthInsurance.marks25} / 25</span>
               </div>
             </div>
 
@@ -2116,10 +2175,10 @@ Strategic Focus: ${result.biggestPriority}`;
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                   <DollarSign className="w-4 h-4 text-emerald-500" />
-                  Savings Score
+                  3. Savings Score
                 </span>
-                <span className="text-xs font-bold font-mono text-emerald-400">
-                  {result.scores.savings}/100
+                <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  {result.combo.savings.marks1000} / 250 Pts
                 </span>
               </div>
               <div className="text-2xl font-extrabold font-mono">
@@ -2134,8 +2193,9 @@ Strategic Focus: ${result.biggestPriority}`;
                   style={{ width: `${result.scores.savings}%` }}
                 />
               </div>
-              <div className="text-[11px] text-slate-400 mt-2 font-medium">
-                {result.metrics.savingsRatio >= 25 ? 'Healthy surplus accumulation' : 'Needs expense pruning'}
+              <div className="text-[11px] text-slate-400 mt-2 font-medium flex justify-between items-center">
+                <span>{result.scores.savings}/100 Score • 25 Pts Weight</span>
+                <span className="text-emerald-400 font-bold">{result.combo.savings.marks25} / 25</span>
               </div>
             </div>
 
@@ -2147,10 +2207,10 @@ Strategic Focus: ${result.biggestPriority}`;
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                   <Briefcase className="w-4 h-4 text-purple-500" />
-                  Debt Score
+                  4. Debt Score
                 </span>
-                <span className="text-xs font-bold font-mono text-purple-400">
-                  {result.scores.debt}/100
+                <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                  {result.combo.debt.marks1000} / 250 Pts
                 </span>
               </div>
               <div className="text-2xl font-extrabold font-mono">
@@ -2165,8 +2225,9 @@ Strategic Focus: ${result.biggestPriority}`;
                   style={{ width: `${result.scores.debt}%` }}
                 />
               </div>
-              <div className="text-[11px] text-slate-400 mt-2 font-medium">
-                {result.metrics.emiToIncomeRatio <= 35 ? 'Safe debt-to-income buffer' : 'High EMI burden warning'}
+              <div className="text-[11px] text-slate-400 mt-2 font-medium flex justify-between items-center">
+                <span>{result.scores.debt}/100 Score • 25 Pts Weight</span>
+                <span className="text-purple-400 font-bold">{result.combo.debt.marks25} / 25</span>
               </div>
             </div>
           </div>
@@ -3804,9 +3865,9 @@ Strategic Focus: ${result.biggestPriority}`;
         }`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="text-lg font-bold">Step 2 — Income & Expense Analysis</h2>
+              <h2 className="text-lg font-bold">Step 2 — Savings Score &amp; Cash Flow ({result.combo.savings.marks1000}/250 Pts • {result.scores.savings}/100)</h2>
               <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Detailed monthly cash flow breakdown to calculate your Savings Ratio: <strong>Savings = Income − Expenses</strong>.
+                Weight: <strong>25 points</strong> (out of 100) or <strong>250 points</strong> (out of 1,000). Detailed monthly cash flow breakdown to calculate your Savings Ratio: <strong>Savings = Income − Expenses</strong>.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -4435,9 +4496,9 @@ Strategic Focus: ${result.biggestPriority}`;
           }`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h2 className="text-lg font-bold">Step 3 — 💳 Loan & Debt Score ({result.scores.debt}/100)</h2>
+                <h2 className="text-lg font-bold">Step 3 — 💳 Loan &amp; Debt Score ({result.combo.debt.marks1000}/250 Pts • {result.scores.debt}/100)</h2>
                 <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                  Evaluates loan tenures, expected closure dates, monthly EMI drain, and interest exposure.
+                  Weight: <strong>25 points</strong> (out of 100) or <strong>250 points</strong> (out of 1,000). Evaluates loan tenures, expected closure dates, monthly EMI drain, and interest exposure.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -4771,14 +4832,14 @@ Strategic Focus: ${result.biggestPriority}`;
         }`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="text-lg font-bold">Step 4 — 🛡️ Insurance Protection Score ({result.scores.insurance}/100)</h2>
+              <h2 className="text-lg font-bold">Step 4 — 🛡️ Health &amp; Life Insurance ({result.combo.healthInsurance.marks1000}/250 Pts • {result.scores.insurance}/100)</h2>
               <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Assesses Health insurance (up to 60 marks; 50-60 for ₹5L+) and Life insurance (up to 40 marks based on dependents). If a user doesn't have a dependency, life insurance score is 40. If a user has a dependency and no life insurance, life score is 0. If both health and life are absent with dependents, score is 0.
+                Weight: <strong>25 points</strong> (out of 100) or <strong>250 points</strong> (out of 1,000). Evaluates health hospitalization defense (50-60 marks for ₹5L+) and family dependency life cover. If no health policy exists, health score is marked as 0.
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
-                Recommended Life Cover: {currSym}{(result.metrics.recommendedLifeCoverage ?? 0).toLocaleString()}
+                Pillar Weight: 25 / 100 (250 / 1000)
               </span>
             </div>
           </div>
@@ -5134,6 +5195,86 @@ Strategic Focus: ${result.biggestPriority}`;
             <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
               Essential Outflow: {currSym}{(result.metrics.essentialExpenses ?? 0).toLocaleString()}/mo
             </span>
+          </div>
+
+          {/* Emergency Fund Presence: YES or NO Toggle */}
+          <div className={`p-5 rounded-2xl border space-y-3 ${
+            isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+          }`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider block">
+                  Do you currently maintain an emergency fund?
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  Select YES to score based on your liquid reserves, or NO to set mark to 0.
+                </span>
+              </div>
+              <span className={`text-xs font-mono font-bold px-3 py-1 rounded-full shrink-0 ${
+                emergency.hasEmergencyFund !== false && (emergency.currentEmergencySavings || 0) > 0
+                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+              }`}>
+                {emergency.hasEmergencyFund !== false && (emergency.currentEmergencySavings || 0) > 0
+                  ? `YES: Active (${result.combo.emergencyFund.marks1000}/250 Pts)`
+                  : 'NO: Mark is 0 (0 / 250 Pts)'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <button
+                type="button"
+                onClick={() => setEmergency({
+                  ...emergency,
+                  hasEmergencyFund: true,
+                  currentEmergencySavings: emergency.currentEmergencySavings > 0 ? emergency.currentEmergencySavings : 200000
+                })}
+                className={`py-3 px-4 rounded-2xl font-bold border flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  emergency.hasEmergencyFund !== false && (emergency.currentEmergencySavings || 0) > 0
+                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-md ring-2 ring-emerald-500/30'
+                    : isLight ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50' : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                <span>YES — I Maintain an Emergency Fund</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setEmergency({
+                  ...emergency,
+                  hasEmergencyFund: false,
+                  currentEmergencySavings: 0
+                })}
+                className={`py-3 px-4 rounded-2xl font-bold border flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  emergency.hasEmergencyFund === false || (emergency.currentEmergencySavings || 0) === 0
+                    ? 'bg-rose-600 text-white border-rose-500 shadow-md ring-2 ring-rose-500/30'
+                    : isLight ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50' : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'
+                }`}
+              >
+                <X className="w-4 h-4 text-rose-300" />
+                <span>NO — No Emergency Fund (Mark: 0)</span>
+              </button>
+            </div>
+
+            {/* Live Explanation Banner */}
+            {emergency.hasEmergencyFund === false || (emergency.currentEmergencySavings || 0) === 0 ? (
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-semibold">Emergency Fund Status: NO (Mark Assigned: 0)</strong>
+                  <span>Under the FinScore formula, if emergency fund is NO, your mark is assigned as <strong>0 / 100</strong> (0 / 25 points, 0 / 250 in the 1,000 combo score). Build at least a 1-month runway to protect your cash flow.</span>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-semibold">Emergency Fund Active (Score Based on Savings)</strong>
+                  <span>Based on your liquid reserves ({currSym}{(emergency.currentEmergencySavings || 0).toLocaleString()}), your emergency fund score is <strong>{result.scores.emergencyFund} / 100</strong>, earning <strong>{result.combo.emergencyFund.marks25} / 25 points</strong> ({result.combo.emergencyFund.marks1000} / 250 points in the 1,000 combo score).</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Configurable Target Months Selector */}

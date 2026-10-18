@@ -346,6 +346,7 @@ export interface FinScoreInsurance {
 }
 
 export interface FinScoreEmergency {
+  hasEmergencyFund?: boolean; // If false / no, emergency fund mark is 0
   targetMonths: number; // default 6, configurable 3-12
   currentEmergencySavings: number;
 }
@@ -381,12 +382,34 @@ export interface FinScoreAlert {
   actionRecommendation?: string;
 }
 
+export interface FinScoreComboPillar {
+  name: string;
+  score100: number; // 0-100
+  weight: number; // 25
+  marks25: number; // 0-25
+  marks1000: number; // 0-250
+  maxMarks1000: number; // 250
+  statusDesc: string;
+  isActive: boolean;
+}
+
+export interface FinScoreComboBreakdown {
+  emergencyFund: FinScoreComboPillar;
+  healthInsurance: FinScoreComboPillar;
+  savings: FinScoreComboPillar;
+  debt: FinScoreComboPillar;
+  totalScore100: number;
+  totalScore1000: number;
+}
+
 export interface FinScoreResult {
   overallScore: number; // 0-100
+  overallScore1000: number; // 0-1,000 combo score
   grade: 'Excellent' | 'Good' | 'Fair' | 'Needs Attention';
   gradeColor: string; // Tailwind color classes
   summaryDiagnosis: string;
   biggestPriority: string;
+  combo: FinScoreComboBreakdown;
   scores: {
     savings: number; // 0-100
     expenseManagement: number; // 0-100
@@ -427,12 +450,12 @@ export interface FinScoreResult {
 
 export interface FinScoreAdminRuleConfig {
   weights: {
-    savings: number; // default 15
-    expenseManagement: number; // default 15
-    debt: number; // default 20
-    emergencyFund: number; // default 20
-    insurance: number; // default 15
-    futureGoals: number; // default 15
+    savings: number; // default 25
+    debt: number; // default 25
+    emergencyFund: number; // default 25
+    insurance: number; // default 25 (health insurance)
+    expenseManagement?: number;
+    futureGoals?: number;
   };
   emergencyTargetMonthsDefault: number; // default 6
   maxHealthyEmiRatio: number; // default 40%

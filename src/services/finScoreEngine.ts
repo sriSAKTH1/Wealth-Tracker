@@ -10,17 +10,18 @@ import {
   FinScoreResult,
   FinScoreAlert,
   FinScoreAdminRuleConfig,
-  FinScoreHistoryPoint
+  FinScoreHistoryPoint,
+  FinScoreComboBreakdown
 } from '../types';
 
 export const DEFAULT_ADMIN_CONFIG: FinScoreAdminRuleConfig = {
   weights: {
-    savings: 15,
-    expenseManagement: 15,
-    debt: 20,
-    emergencyFund: 20,
-    insurance: 15,
-    futureGoals: 15,
+    emergencyFund: 25,
+    insurance: 25,
+    savings: 25,
+    debt: 25,
+    expenseManagement: 0,
+    futureGoals: 0,
   },
   emergencyTargetMonthsDefault: 6,
   maxHealthyEmiRatio: 40, // 40% EMI-to-income
@@ -61,6 +62,7 @@ export const EMPTY_FINSCORE_INSURANCE: FinScoreInsurance = {
 };
 
 export const EMPTY_FINSCORE_EMERGENCY: FinScoreEmergency = {
+  hasEmergencyFund: false,
   targetMonths: 6,
   currentEmergencySavings: 0,
 };
@@ -126,6 +128,7 @@ export const INITIAL_FINSCORE_INSURANCE: FinScoreInsurance = {
 };
 
 export const INITIAL_FINSCORE_EMERGENCY: FinScoreEmergency = {
+  hasEmergencyFund: true,
   targetMonths: 6,
   currentEmergencySavings: 232931, // Liquid Bank (₹82,931) + Emergency FD (₹1,50,000)
 };
@@ -215,10 +218,55 @@ export function calculateFinScore(
   if (!profile.monthlyIncome || profile.monthlyIncome <= 0) {
     return {
       overallScore: 0,
+      overallScore1000: 0,
       grade: 'Needs Attention',
       gradeColor: 'text-slate-400 bg-slate-500/15 border-slate-500/30',
       summaryDiagnosis: 'Financial information has been cleared. Enter your monthly income and expenses to calculate your personalized Financial Health Score.',
       biggestPriority: 'Add your monthly net income and family profile in Step 1 to diagnose your financial health.',
+      combo: {
+        emergencyFund: {
+          name: 'Emergency Fund',
+          score100: 0,
+          weight: 25,
+          marks25: 0,
+          marks1000: 0,
+          maxMarks1000: 250,
+          statusDesc: 'No emergency fund data (Mark: 0)',
+          isActive: false,
+        },
+        healthInsurance: {
+          name: 'Health Insurance',
+          score100: 0,
+          weight: 25,
+          marks25: 0,
+          marks1000: 0,
+          maxMarks1000: 250,
+          statusDesc: 'No health insurance data (Mark: 0)',
+          isActive: false,
+        },
+        savings: {
+          name: 'Savings Score',
+          score100: 0,
+          weight: 25,
+          marks25: 0,
+          marks1000: 0,
+          maxMarks1000: 250,
+          statusDesc: 'No savings data',
+          isActive: false,
+        },
+        debt: {
+          name: 'Debt Score',
+          score100: 0,
+          weight: 25,
+          marks25: 0,
+          marks1000: 0,
+          maxMarks1000: 250,
+          statusDesc: 'No debt data',
+          isActive: false,
+        },
+        totalScore100: 0,
+        totalScore1000: 0,
+      },
       scores: {
         savings: 0,
         expenseManagement: 0,
@@ -337,22 +385,29 @@ export function calculateFinScore(
   debtScore = Math.min(100, Math.max(0, Math.round(debtScore)));
 
   // 3. Emergency Fund Score
-  const targetMonths = emergency.targetMonths || adminConfig.emergencyTargetMonthsDefault;
+  const targetMonths = emergency.targetMonths || adminConfig.emergencyTargetMonthsDefault || 6;
   // Essential monthly baseline: essential expenses + EMI
   const monthlyEssentialBasis = Math.max(5000, essentialExpenses);
   const requiredEmergencyFund = monthlyEssentialBasis * targetMonths;
-  const currentEmergencySavings = emergency.currentEmergencySavings || 0;
+  const currentEmergencySavings = Number(emergency.currentEmergencySavings) || 0;
   const emergencyFundRatio = Math.round((currentEmergencySavings / (requiredEmergencyFund || 1)) * 100);
   const emergencyShortfall = Math.max(0, requiredEmergencyFund - currentEmergencySavings);
 
-  let emergencyFundScore = Math.min(100, emergencyFundRatio);
-  if (emergencyFundRatio >= 100) emergencyFundScore = 100;
-  else if (emergencyFundRatio >= 80) emergencyFundScore = 85 + ((emergencyFundRatio - 80) / 20) * 15;
-  else if (emergencyFundRatio >= 50) emergencyFundScore = 55 + ((emergencyFundRatio - 50) / 30) * 30;
-  else emergencyFundScore = Math.max(5, (emergencyFundRatio / 50) * 55);
-  emergencyFundScore = Math.min(100, Math.max(0, Math.round(emergencyFundScore)));
+  // User specification:
+  // "If the emergency fund is no, you can put the mark as 0. Based on the emergency fund you can give the score there."
+  const hasEmergencyFund = emergency.hasEmergencyFund !== false && currentEmergencySavings > 0;
+  let emergencyFundScore = 0;
+  if (!hasEmergencyFund) {
+    emergencyFundScore = 0;
+  } else {
+    if (emergencyFundRatio >= 100) emergencyFundScore = 100;
+    else if (emergencyFundRatio >= 80) emergencyFundScore = 85 + ((emergencyFundRatio - 80) / 20) * 15;
+    else if (emergencyFundRatio >= 50) emergencyFundScore = 60 + ((emergencyFundRatio - 50) / 30) * 25;
+    else emergencyFundScore = Math.max(10, Math.round((emergencyFundRatio / 50) * 55));
+    emergencyFundScore = Math.min(100, Math.max(0, Math.round(emergencyFundScore)));
+  }
 
-  // 4. Insurance Score
+  // 4. Insurance Score & Health Insurance Pillar
   // Check if insurance is present / configured
   const hasLifePolicy = Boolean(
     (insurance.hasLifeInsurance || insurance.hasTermInsurance) &&
@@ -362,7 +417,26 @@ export function calculateFinScore(
     insurance.hasHealthInsurance &&
     (Number(insurance.healthCoverage) || 0) > 0
   );
-  const hasAnyInsurance = hasLifePolicy || hasHealthPolicy;
+  const healthCoverage = Number(insurance.healthCoverage) || 0;
+
+  // Health Insurance specific score (0 to 100):
+  let healthInsuranceScore = 0;
+  if (!hasHealthPolicy || healthCoverage <= 0) {
+    healthInsuranceScore = 0;
+  } else {
+    if (healthCoverage >= 1000000 || insurance.hasPersonalHealthPolicy) {
+      healthInsuranceScore = 100;
+    } else if (healthCoverage >= 500000) {
+      healthInsuranceScore = 85 + Math.min(15, Math.round(((healthCoverage - 500000) / 500000) * 15));
+    } else if (healthCoverage >= 300000) {
+      healthInsuranceScore = 70 + Math.round(((healthCoverage - 300000) / 200000) * 15);
+    } else if (healthCoverage >= 100000) {
+      healthInsuranceScore = 55;
+    } else {
+      healthInsuranceScore = 40;
+    }
+    healthInsuranceScore = Math.min(100, Math.max(0, Math.round(healthInsuranceScore)));
+  }
 
   // Recommended life cover: ~10x to 15x annual income + total outstanding debt
   const annualIncome = income * 12;
@@ -383,21 +457,16 @@ export function calculateFinScore(
 
   // A. Health Insurance calculation (0 to 60 marks)
   let insuranceHealthMarks = 0;
-  const healthCoverage = Number(insurance.healthCoverage) || 0;
-
   if (hasHealthPolicy) {
     if (healthCoverage >= 500000) {
-      // 5 Lakh or more gives 50 to 60 marks
       if (healthCoverage >= 1000000 || insurance.hasPersonalHealthPolicy) {
         insuranceHealthMarks = 60;
       } else if (healthCoverage > 500000) {
         insuranceHealthMarks = 50 + Math.min(10, Math.round(((healthCoverage - 500000) / 500000) * 10));
       } else {
-        // Exactly 5 Lakh (50 to 60 marks baseline)
         insuranceHealthMarks = 50;
       }
     } else if (healthCoverage >= 1000) {
-      // 1,000+ basic health insurance gives 60 marks
       insuranceHealthMarks = 60;
     } else if (healthCoverage > 0) {
       insuranceHealthMarks = 50;
@@ -405,25 +474,17 @@ export function calculateFinScore(
       insuranceHealthMarks = 50;
     }
   } else {
-    // Neither health policy nor coverage: 0 marks
     insuranceHealthMarks = 0;
   }
 
   // B. Life Insurance calculation based on dependency (0 to 40 marks)
-  // "If a user doesn't have a dependency, at that time you can give the score 40.
-  //  If a user has a dependency and they don't have life insurance, you can mark 0."
   let insuranceLifeMarks = 0;
-
   if (dependents === 0) {
-    // User does not have a dependency: give score 40
     insuranceLifeMarks = 40;
   } else {
-    // User has dependency:
     if (!hasLifePolicy || totalLifeCoverage === 0) {
-      // User has dependency and does NOT have life insurance -> mark 0
       insuranceLifeMarks = 0;
     } else {
-      // User has life insurance for dependents
       if (lifeCoverRatio >= 1.0) {
         insuranceLifeMarks = 40;
       } else if (lifeCoverRatio >= 0.75) {
@@ -439,7 +500,6 @@ export function calculateFinScore(
   }
 
   // Combined Total Insurance Score
-  // "Yeah the health and life insurance, we don't have this too. You can mark a score as 0 in the total insurance score."
   const combinedScore = Math.round(insuranceHealthMarks + insuranceLifeMarks);
   const insuranceScore = Math.min(100, Math.max(0, combinedScore));
 
@@ -480,19 +540,81 @@ export function calculateFinScore(
   }
   futureGoalsScore = Math.min(100, Math.max(10, futureGoalsScore));
 
-  // 6. Overall Financial Health Score (Weighted Composite)
-  const w = adminConfig.weights;
-  const totalWeight = w.savings + w.expenseManagement + w.debt + w.emergencyFund + w.insurance + w.futureGoals;
-  
-  const overallScore = Math.round(
-    (savingsScore * w.savings +
-      expenseManagementScore * w.expenseManagement +
-      debtScore * w.debt +
-      emergencyFundScore * w.emergencyFund +
-      insuranceScore * w.insurance +
-      futureGoalsScore * w.futureGoals) /
-      (totalWeight || 100)
-  );
+  // 6. Overall Financial Health Score & 4-Pillar 1,000 Combo
+  // User Prompt:
+  // "Here the FinScore will be calculated based on emergency fund, insurance, savings, plus debt.
+  //  They have 100, 100, 100, 100. Based on 100 you can assign:
+  //  - emergency fund: 25
+  //  - health insurance: 25
+  //  - savings score: 25
+  //  - debt score: 25
+  //  Like that you can give a combo and give the out-of-1,000 score. If the emergency fund is no, you can put the mark as 0. Based on the emergency fund you can give the score there."
+
+  // 4 Pillar Combo Marks out of 25 (out of 100 total):
+  const emergencyMarks25 = Number(((emergencyFundScore * 25) / 100).toFixed(1));
+  const healthMarks25 = Number(((healthInsuranceScore * 25) / 100).toFixed(1));
+  const savingsMarks25 = Number(((savingsScore * 25) / 100).toFixed(1));
+  const debtMarks25 = Number(((debtScore * 25) / 100).toFixed(1));
+
+  // 4 Pillar Combo Marks out of 250 (out of 1,000 total):
+  const emergencyMarks1000 = Math.round(emergencyFundScore * 2.5);
+  const healthMarks1000 = Math.round(healthInsuranceScore * 2.5);
+  const savingsMarks1000 = Math.round(savingsScore * 2.5);
+  const debtMarks1000 = Math.round(debtScore * 2.5);
+
+  const overallScore1000 = Math.min(1000, Math.max(0, Math.round(
+    emergencyMarks1000 + healthMarks1000 + savingsMarks1000 + debtMarks1000
+  )));
+
+  // Out of 100 score:
+  const overallScore = Math.min(100, Math.max(0, Math.round(
+    emergencyMarks25 + healthMarks25 + savingsMarks25 + debtMarks25
+  )));
+
+  const combo: FinScoreComboBreakdown = {
+    emergencyFund: {
+      name: 'Emergency Fund',
+      score100: emergencyFundScore,
+      weight: 25,
+      marks25: emergencyMarks25,
+      marks1000: emergencyMarks1000,
+      maxMarks1000: 250,
+      statusDesc: hasEmergencyFund ? `${emergencyFundRatio}% of ${targetMonths}-mo buffer` : 'No emergency fund (Mark: 0)',
+      isActive: hasEmergencyFund,
+    },
+    healthInsurance: {
+      name: 'Health Insurance',
+      score100: healthInsuranceScore,
+      weight: 25,
+      marks25: healthMarks25,
+      marks1000: healthMarks1000,
+      maxMarks1000: 250,
+      statusDesc: hasHealthPolicy ? `Covered (₹${(healthCoverage || 0).toLocaleString()})` : 'No health insurance (Mark: 0)',
+      isActive: hasHealthPolicy,
+    },
+    savings: {
+      name: 'Savings Score',
+      score100: savingsScore,
+      weight: 25,
+      marks25: savingsMarks25,
+      marks1000: savingsMarks1000,
+      maxMarks1000: 250,
+      statusDesc: `${savingsRatio}% monthly income saved`,
+      isActive: savingsScore > 0,
+    },
+    debt: {
+      name: 'Debt Score',
+      score100: debtScore,
+      weight: 25,
+      marks25: debtMarks25,
+      marks1000: debtMarks1000,
+      maxMarks1000: 250,
+      statusDesc: totalMonthlyEmi === 0 ? 'Zero Debt Burden (100/100)' : `${emiToIncomeRatio}% EMI-to-income`,
+      isActive: true,
+    },
+    totalScore100: overallScore,
+    totalScore1000: overallScore1000,
+  };
 
   // Grade classification
   let grade: 'Excellent' | 'Good' | 'Fair' | 'Needs Attention' = 'Good';
@@ -717,6 +839,8 @@ export function calculateFinScore(
 
   return {
     overallScore,
+    overallScore1000,
+    combo,
     grade,
     gradeColor,
     summaryDiagnosis,
@@ -726,7 +850,7 @@ export function calculateFinScore(
       expenseManagement: expenseManagementScore,
       debt: debtScore,
       emergencyFund: emergencyFundScore,
-      insurance: insuranceScore,
+      insurance: healthInsuranceScore || insuranceScore,
       futureGoals: futureGoalsScore,
     },
     metrics: {
