@@ -2232,6 +2232,297 @@ Strategic Focus: ${result.biggestPriority}`;
             </div>
           </div>
 
+          {/* ------------------------------------------------------------- */}
+          {/* 4-PILLAR FINSCORE™ 1,000 COMBO SYSTEM (Emergency + Insurance + Savings + Debt) */}
+          {/* ------------------------------------------------------------- */}
+          <div className={`p-6 sm:p-7 rounded-3xl border shadow-sm ${finScoreTheme.card} space-y-5`}>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/60">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                    FinScore™ 1,000 Combo Engine
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    25 + 25 + 25 + 25 = 100 Combo
+                  </span>
+                </div>
+                <h3 className="text-lg font-extrabold mt-1 tracking-tight flex items-center gap-2">
+                  <span>Balanced 4-Pillar Scoring Architecture</span>
+                  <span className="text-sm font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-lg border border-blue-500/20">
+                    {result.overallScore1000} / 1,000 Pts
+                  </span>
+                </h3>
+                <p className={`text-xs mt-1 max-w-2xl ${finScoreTheme.muted}`}>
+                  Each pillar is evaluated on a <strong>0–100 base scale</strong> and weighted at <strong>25%</strong>, contributing up to <strong>25 marks</strong> (out of 100) or <strong>250 marks</strong> (out of 1,000). If Emergency Fund is NO, its mark is set to <strong>0</strong>.
+                </p>
+              </div>
+
+              {/* Quick Interactive Emergency Fund Switcher right on Dashboard */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Quick Test Emergency Fund:
+                  </span>
+                  <span className="text-xs font-medium text-slate-300">
+                    {emergency.hasEmergencyFund !== false && (emergency.currentEmergencySavings || 0) > 0
+                      ? 'Status: YES (Scored on liquid buffer)'
+                      : 'Status: NO (Assigned Mark: 0)'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmergency({
+                        ...emergency,
+                        hasEmergencyFund: true,
+                        currentEmergencySavings: emergency.currentEmergencySavings > 0 ? emergency.currentEmergencySavings : 232931
+                      });
+                      setToastNotice('Emergency Fund set to YES: Score calculated based on liquid savings buffer.');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      emergency.hasEmergencyFund !== false && (emergency.currentEmergencySavings || 0) > 0
+                        ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/30'
+                        : 'bg-slate-800/80 text-slate-400 border border-slate-700 hover:bg-slate-700'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+                    <span>YES</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmergency({
+                        ...emergency,
+                        hasEmergencyFund: false,
+                        currentEmergencySavings: 0
+                      });
+                      setToastNotice('Emergency Fund set to NO: Emergency mark is set to 0 as requested.');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      emergency.hasEmergencyFund === false || (emergency.currentEmergencySavings || 0) === 0
+                        ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-500/30'
+                        : 'bg-slate-800/80 text-slate-400 border border-slate-700 hover:bg-slate-700'
+                    }`}
+                  >
+                    <X className="w-3.5 h-3.5 text-rose-300" />
+                    <span>NO (Mark: 0)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 4 Pillars Combo Matrix Breakdown Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 font-mono text-[11px] uppercase tracking-wider">
+                    <th className="pb-3 font-semibold">Pillar</th>
+                    <th className="pb-3 font-semibold text-center">Diagnostic Score (100)</th>
+                    <th className="pb-3 font-semibold text-center">Weight</th>
+                    <th className="pb-3 font-semibold text-center">Combo Mark (25)</th>
+                    <th className="pb-3 font-semibold text-center">1,000 Scale (250)</th>
+                    <th className="pb-3 font-semibold text-right">Calculation Rule &amp; Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-sans">
+                  {/* Row 1: Emergency Fund */}
+                  <tr className="hover:bg-slate-800/20 transition-colors">
+                    <td className="py-3.5 pr-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`p-1.5 rounded-lg ${!result.combo.emergencyFund.isActive ? 'bg-rose-500/15 text-rose-400' : 'bg-amber-500/15 text-amber-400'}`}>
+                          <AlertTriangle className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-bold flex items-center gap-1.5">
+                            <span>1. Emergency Fund</span>
+                            {!result.combo.emergencyFund.isActive && (
+                              <span className="text-[10px] font-mono text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
+                                NO (0 Mark)
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-slate-400">
+                            Cash cushion for emergency expenses
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 text-center font-mono font-bold text-sm">
+                      {result.combo.emergencyFund.isActive ? (
+                        <span>{result.combo.emergencyFund.score100} / 100</span>
+                      ) : (
+                        <span className="text-rose-400">0 / 100</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 text-center font-mono text-slate-400">
+                      25%
+                    </td>
+                    <td className="py-3.5 text-center font-mono font-bold">
+                      <span className={result.combo.emergencyFund.isActive ? 'text-amber-400' : 'text-rose-400 font-extrabold'}>
+                        {result.combo.emergencyFund.marks25} / 25
+                      </span>
+                    </td>
+                    <td className="py-3.5 text-center font-mono font-bold">
+                      <span className={`px-2 py-0.5 rounded-md ${
+                        result.combo.emergencyFund.isActive ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                      }`}>
+                        {result.combo.emergencyFund.marks1000} / 250 Pts
+                      </span>
+                    </td>
+                    <td className="py-3.5 text-right text-xs">
+                      {result.combo.emergencyFund.isActive ? (
+                        <span className="text-slate-300">
+                          {result.metrics.emergencyFundRatio}% of {emergency.targetMonths}-mo buffer ({currSym}{(emergency.currentEmergencySavings || 0).toLocaleString()})
+                        </span>
+                      ) : (
+                        <span className="text-rose-400 font-medium">
+                          No emergency fund maintained • 0 mark assigned
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+
+                  {/* Row 2: Health Insurance */}
+                  <tr className="hover:bg-slate-800/20 transition-colors">
+                    <td className="py-3.5 pr-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-blue-500/15 text-blue-400">
+                          <ShieldCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-bold">2. Health Insurance</div>
+                          <div className="text-[11px] text-slate-400">
+                            Hospitalization &amp; critical illness defense
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 text-center font-mono font-bold text-sm">
+                      {result.combo.healthInsurance.score100} / 100
+                    </td>
+                    <td className="py-3.5 text-center font-mono text-slate-400">
+                      25%
+                    </td>
+                    <td className="py-3.5 text-center font-mono font-bold text-blue-400">
+                      {result.combo.healthInsurance.marks25} / 25
+                    </td>
+                    <td className="py-3.5 text-center font-mono font-bold">
+                      <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                        {result.combo.healthInsurance.marks1000} / 250 Pts
+                      </span>
+                    </td>
+                    <td className="py-3.5 text-right text-xs text-slate-300">
+                      {result.combo.healthInsurance.statusDesc}
+                    </td>
+                  </tr>
+
+                  {/* Row 3: Savings Score */}
+                  <tr className="hover:bg-slate-800/20 transition-colors">
+                    <td className="py-3.5 pr-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-400">
+                          <DollarSign className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-bold">3. Savings Score</div>
+                          <div className="text-[11px] text-slate-400">
+                            Monthly savings rate &amp; cash surplus ratio
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 text-center font-mono font-bold text-sm">
+                      {result.combo.savings.score100} / 100
+                    </td>
+                    <td className="py-3.5 text-center font-mono text-slate-400">
+                      25%
+                    </td>
+                    <td className="py-3.5 text-center font-mono font-bold text-emerald-400">
+                      {result.combo.savings.marks25} / 25
+                    </td>
+                    <td className="py-3.5 text-center font-mono font-bold">
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        {result.combo.savings.marks1000} / 250 Pts
+                      </span>
+                    </td>
+                    <td className="py-3.5 text-right text-xs text-slate-300">
+                      {result.metrics.savingsRatio}% saved monthly ({currSym}{(result.metrics.monthlySavings || 0).toLocaleString()})
+                    </td>
+                  </tr>
+
+                  {/* Row 4: Debt Score */}
+                  <tr className="hover:bg-slate-800/20 transition-colors">
+                    <td className="py-3.5 pr-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-purple-500/15 text-purple-400">
+                          <Briefcase className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-bold">4. Debt Score</div>
+                          <div className="text-[11px] text-slate-400">
+                            EMI to monthly income burden
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 text-center font-mono font-bold text-sm">
+                      {result.combo.debt.score100} / 100
+                    </td>
+                    <td className="py-3.5 text-center font-mono text-slate-400">
+                      25%
+                    </td>
+                    <td className="py-3.5 text-center font-mono font-bold text-purple-400">
+                      {result.combo.debt.marks25} / 25
+                    </td>
+                    <td className="py-3.5 text-center font-mono font-bold">
+                      <span className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                        {result.combo.debt.marks1000} / 250 Pts
+                      </span>
+                    </td>
+                    <td className="py-3.5 text-right text-xs text-slate-300">
+                      {result.combo.debt.statusDesc}
+                    </td>
+                  </tr>
+
+                  {/* Summary Row */}
+                  <tr className="bg-slate-900/60 font-bold border-t-2 border-slate-700">
+                    <td className="py-4 pr-2">
+                      <div className="flex items-center gap-2">
+                        <Award className="w-5 h-5 text-amber-400" />
+                        <div>
+                          <span className="text-sm">FinScore™ Total Combo</span>
+                          <span className="block text-[10px] text-slate-400 font-normal">
+                            Composite Financial Health Score
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 text-center font-mono text-sm text-slate-300">
+                      —
+                    </td>
+                    <td className="py-4 text-center font-mono text-slate-300">
+                      100%
+                    </td>
+                    <td className="py-4 text-center font-mono text-base text-blue-400">
+                      {result.overallScore} / 100
+                    </td>
+                    <td className="py-4 text-center font-mono text-lg text-emerald-400 font-extrabold">
+                      <span className="px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 inline-block shadow-sm">
+                        {result.overallScore1000} / 1,000 Pts
+                      </span>
+                    </td>
+                    <td className="py-4 text-right">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${result.gradeColor}`}>
+                        Grade {result.grade}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* Future Goals Quick Progress Overview */}
           <div className={`p-6 rounded-3xl border shadow-sm ${finScoreTheme.card}`}>
             <div className="flex items-center justify-between mb-4">
