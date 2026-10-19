@@ -51,7 +51,11 @@ import {
   ArrowDownLeft,
   FileSpreadsheet,
   ExternalLink,
-  Tag
+  Tag,
+  ChevronDown,
+  ChevronUp,
+  Lightbulb,
+  BookOpen
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -115,7 +119,7 @@ import {
   formatTenureLabel
 } from './GoalsView';
 import { FinScoreAmountInput } from '../finscore/FinScoreAmountInput';
-import { FinScoreHealthPlanModal, FinScoreBenchmarkModal } from '../finscore/FinScoreModals';
+import { FinScoreHealthPlanModal, FinScoreBenchmarkModal, FinScoreFactorExplanationModal } from '../finscore/FinScoreModals';
 import { FinancialStatementChart } from '../FinancialStatementChart';
 import { PersonalFinanceAdvisorSection } from '../finscore/PersonalFinanceAdvisorSection';
 
@@ -492,6 +496,10 @@ export const FinScoreView: React.FC = () => {
   const [showAddProfileModal, setShowAddProfileModal] = useState(false);
   const [showHealthPlanModal, setShowHealthPlanModal] = useState(false);
   const [showBenchmarkModal, setShowBenchmarkModal] = useState(false);
+  const [showFactorsModal, setShowFactorsModal] = useState(false);
+  const [selectedFactorTab, setSelectedFactorTab] = useState<'all' | 'emergency' | 'insurance' | 'savings' | 'debt' | 'goals'>('all');
+  const [isFactorsSectionExpanded, setIsFactorsSectionExpanded] = useState(true);
+  const [expandedInlineFactor, setExpandedInlineFactor] = useState<string | null>('emergency');
   const [toastNotice, setToastNotice] = useState<string | null>(null);
   const [tempProfile, setTempProfile] = useState<FinScoreProfile>(INITIAL_FINSCORE_PROFILE);
 
@@ -2046,6 +2054,16 @@ Strategic Focus: ${result.biggestPriority}`;
                 {/* Dashboard Action Row with User's Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   <button
+                    onClick={() => {
+                      setSelectedFactorTab('all');
+                      setShowFactorsModal(true);
+                    }}
+                    className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer transition-all"
+                  >
+                    <Lightbulb className="w-4 h-4 text-amber-200" />
+                    <span>Explain Factors &amp; Advice</span>
+                  </button>
+                  <button
                     onClick={() => setShowHealthPlanModal(true)}
                     className="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all"
                   >
@@ -2255,6 +2273,31 @@ Strategic Focus: ${result.biggestPriority}`;
                 <p className={`text-xs mt-1 max-w-2xl ${finScoreTheme.muted}`}>
                   Each pillar is evaluated on a <strong>0–100 base scale</strong> and weighted at <strong>25%</strong>, contributing up to <strong>25 marks</strong> (out of 100) or <strong>250 marks</strong> (out of 1,000). If Emergency Fund is NO, its mark is set to <strong>0</strong>.
                 </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedFactorTab('all');
+                      setShowFactorsModal(true);
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-all shadow-sm flex items-center gap-1.5"
+                  >
+                    <Lightbulb className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Explain Factors &amp; Actionable Advice (Modal)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFactorsSectionExpanded(true);
+                      const el = document.getElementById('finscore-factors-deepdive-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer transition-all flex items-center gap-1.5"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                    <span>Expand Factors Below</span>
+                  </button>
+                </div>
               </div>
 
               {/* Quick Interactive Emergency Fund Switcher right on Dashboard */}
@@ -2371,15 +2414,28 @@ Strategic Focus: ${result.biggestPriority}`;
                       </span>
                     </td>
                     <td className="py-3.5 text-right text-xs">
-                      {result.combo.emergencyFund.isActive ? (
-                        <span className="text-slate-300">
-                          {result.metrics.emergencyFundRatio}% of {emergency.targetMonths}-mo buffer ({currSym}{(emergency.currentEmergencySavings || 0).toLocaleString()})
-                        </span>
-                      ) : (
-                        <span className="text-rose-400 font-medium">
-                          No emergency fund maintained • 0 mark assigned
-                        </span>
-                      )}
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        {result.combo.emergencyFund.isActive ? (
+                          <span className="text-slate-300">
+                            {result.metrics.emergencyFundRatio}% of {emergency.targetMonths}-mo buffer ({currSym}{(emergency.currentEmergencySavings || 0).toLocaleString()})
+                          </span>
+                        ) : (
+                          <span className="text-rose-400 font-medium">
+                            No emergency fund maintained • 0 mark assigned
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedFactorTab('emergency');
+                            setShowFactorsModal(true);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-bold text-[10px] transition-colors cursor-pointer border border-amber-500/20"
+                        >
+                          <HelpCircle className="w-3 h-3" />
+                          <span>Advice</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
 
@@ -2413,7 +2469,20 @@ Strategic Focus: ${result.biggestPriority}`;
                       </span>
                     </td>
                     <td className="py-3.5 text-right text-xs text-slate-300">
-                      {result.combo.healthInsurance.statusDesc}
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        <span>{result.combo.healthInsurance.statusDesc}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedFactorTab('insurance');
+                            setShowFactorsModal(true);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-bold text-[10px] transition-colors cursor-pointer border border-blue-500/20"
+                        >
+                          <HelpCircle className="w-3 h-3" />
+                          <span>Advice</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
 
@@ -2447,7 +2516,20 @@ Strategic Focus: ${result.biggestPriority}`;
                       </span>
                     </td>
                     <td className="py-3.5 text-right text-xs text-slate-300">
-                      {result.metrics.savingsRatio}% saved monthly ({currSym}{(result.metrics.monthlySavings || 0).toLocaleString()})
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        <span>{result.metrics.savingsRatio}% saved monthly ({currSym}{(result.metrics.monthlySavings || 0).toLocaleString()})</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedFactorTab('savings');
+                            setShowFactorsModal(true);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold text-[10px] transition-colors cursor-pointer border border-emerald-500/20"
+                        >
+                          <HelpCircle className="w-3 h-3" />
+                          <span>Advice</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
 
@@ -2481,7 +2563,20 @@ Strategic Focus: ${result.biggestPriority}`;
                       </span>
                     </td>
                     <td className="py-3.5 text-right text-xs text-slate-300">
-                      {result.combo.debt.statusDesc}
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        <span>{result.combo.debt.statusDesc}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedFactorTab('debt');
+                            setShowFactorsModal(true);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 font-bold text-[10px] transition-colors cursor-pointer border border-purple-500/20"
+                        >
+                          <HelpCircle className="w-3 h-3" />
+                          <span>Advice</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
 
@@ -2521,6 +2616,485 @@ Strategic Focus: ${result.biggestPriority}`;
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* ------------------------------------------------------------- */}
+          {/* EXPANDABLE SECTION: FACTORS EXPLANATION & ACTIONABLE ADVICE */}
+          {/* ------------------------------------------------------------- */}
+          <div id="finscore-factors-deepdive-section" className={`p-6 sm:p-7 rounded-3xl border shadow-sm ${finScoreTheme.card} space-y-5`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/60">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-gradient-to-br from-amber-500/20 to-blue-500/20 text-amber-400 border border-amber-500/30">
+                  <Lightbulb className="w-5 h-5 text-amber-300" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                      Pillars Deep-Dive &amp; Advice
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      4 Factors • 100% Explained
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-extrabold tracking-tight mt-0.5 flex items-center gap-2">
+                    <span>How Each Factor Contributes + Actionable Advice</span>
+                  </h3>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedFactorTab(expandedInlineFactor as any || 'all');
+                    setShowFactorsModal(true);
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-all shadow-sm flex items-center gap-1.5"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Open Fullscreen Modal</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsFactorsSectionExpanded(!isFactorsSectionExpanded)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer transition-all flex items-center gap-1.5"
+                >
+                  <span>{isFactorsSectionExpanded ? 'Collapse' : 'Expand Section'}</span>
+                  {isFactorsSectionExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            {isFactorsSectionExpanded && (
+              <div className="space-y-4 animate-in fade-in duration-300">
+                {/* Segmented factor selector */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedInlineFactor('emergency')}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      expandedInlineFactor === 'emergency'
+                        ? 'bg-amber-500/15 border-amber-500/50 shadow-sm ring-1 ring-amber-500/30'
+                        : 'bg-slate-900/40 border-slate-800/80 hover:bg-slate-800/30 text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-amber-400 font-bold">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        <span>1. Emergency Fund</span>
+                      </div>
+                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                        emergency.hasEmergencyFund !== false && (emergency.currentEmergencySavings || 0) > 0
+                          ? 'bg-amber-500/10 text-amber-400'
+                          : 'bg-rose-500/10 text-rose-400'
+                      }`}>
+                        {result.combo.emergencyFund.marks1000}/250
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-300 mt-2 font-medium">
+                      25% Weight • Liquid buffer
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setExpandedInlineFactor('insurance')}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      expandedInlineFactor === 'insurance'
+                        ? 'bg-blue-500/15 border-blue-500/50 shadow-sm ring-1 ring-blue-500/30'
+                        : 'bg-slate-900/40 border-slate-800/80 hover:bg-slate-800/30 text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-blue-400 font-bold">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>2. Health Insurance</span>
+                      </div>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">
+                        {result.combo.healthInsurance.marks1000}/250
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-300 mt-2 font-medium">
+                      25% Weight • Hospitalization cover
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setExpandedInlineFactor('savings')}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      expandedInlineFactor === 'savings'
+                        ? 'bg-emerald-500/15 border-emerald-500/50 shadow-sm ring-1 ring-emerald-500/30'
+                        : 'bg-slate-900/40 border-slate-800/80 hover:bg-slate-800/30 text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                        <DollarSign className="w-3.5 h-3.5" />
+                        <span>3. Savings Score</span>
+                      </div>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">
+                        {result.combo.savings.marks1000}/250
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-300 mt-2 font-medium">
+                      25% Weight • {result.metrics.savingsRatio}% saved monthly
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setExpandedInlineFactor('debt')}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      expandedInlineFactor === 'debt'
+                        ? 'bg-purple-500/15 border-purple-500/50 shadow-sm ring-1 ring-purple-500/30'
+                        : 'bg-slate-900/40 border-slate-800/80 hover:bg-slate-800/30 text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-purple-400 font-bold">
+                        <Briefcase className="w-3.5 h-3.5" />
+                        <span>4. Debt Score</span>
+                      </div>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400">
+                        {result.combo.debt.marks1000}/250
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-300 mt-2 font-medium">
+                      25% Weight • {result.metrics.emiToIncomeRatio}% EMI ratio
+                    </div>
+                  </button>
+                </div>
+
+                {/* Inline Factor Detailed Breakdown & Advice Panel */}
+                {expandedInlineFactor === 'emergency' && (
+                  <div className="p-5 rounded-2xl bg-slate-950/70 border border-amber-500/30 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono font-bold uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">
+                            Factor 1: Emergency Fund (25% Weight • 250 Max Points)
+                          </span>
+                          {emergency.hasEmergencyFund === false && (
+                            <span className="text-[10px] font-bold text-rose-400 bg-rose-500/15 px-2 py-0.5 rounded">
+                              ⚠️ NO Emergency Fund (Assigned Mark: 0)
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="text-base font-bold text-white mt-1">
+                          How it calculates your score &amp; why it matters
+                        </h4>
+                        <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                          Your emergency fund is evaluated on a <strong>0–100 base score</strong> comparing your liquid savings (<strong>{currSym}{(emergency.currentEmergencySavings || 0).toLocaleString()}</strong>) against your 6-month target of <strong>{currSym}{(result.metrics.requiredEmergencyFund || 0).toLocaleString()}</strong>. With a 25% combo weight, this contributes up to <strong>25 marks (100-scale)</strong> or <strong>250 marks (1,000-scale)</strong>. If Emergency Fund is set to <strong>NO</strong>, the pillar mark is set directly to <strong>0 Pts</strong>.
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-xl font-mono font-black text-amber-400">
+                          {result.combo.emergencyFund.marks1000} / 250 Pts
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-mono">
+                          {result.combo.emergencyFund.marks25} / 25 Marks
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      <div className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Actionable Advice for Emergency Fund</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                          <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">
+                            Action 1: Automated Sweep
+                          </span>
+                          <p className="text-slate-300 leading-relaxed">
+                            Auto-transfer 15% of monthly salary ({currSym}{Math.round((profile?.monthlyIncome || 0) * 0.15).toLocaleString()}) to an instant-access liquid fund on pay day.
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                          <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider block mb-1">
+                            Action 2: Zero Volatility
+                          </span>
+                          <p className="text-slate-300 leading-relaxed">
+                            Keep cash strictly out of stocks and locked FDs. Use 50% bank sweep-in FDs and 50% overnight/liquid mutual funds.
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                          <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider block mb-1">
+                            Action 3: Milestone Target
+                          </span>
+                          <p className="text-slate-300 leading-relaxed">
+                            Current buffer covers {(result?.metrics?.emergencyMonthsAvailable ?? (emergency?.currentEmergencySavings && result?.metrics?.essentialExpenses ? (emergency.currentEmergencySavings / result.metrics.essentialExpenses).toFixed(1) : 0))} months. Bridge the {currSym}{(result.metrics.emergencyShortfall || 0).toLocaleString()} gap to reach 100/100.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedFactorTab('emergency');
+                          setShowFactorsModal(true);
+                        }}
+                        className="text-xs font-bold text-amber-400 hover:underline flex items-center gap-1"
+                      >
+                        Open Interactive Emergency Simulator <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('emergency')}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white cursor-pointer transition-colors shadow-sm flex items-center gap-1.5"
+                      >
+                        <span>Update Emergency Fund in Step 5</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {expandedInlineFactor === 'insurance' && (
+                  <div className="p-5 rounded-2xl bg-slate-950/70 border border-blue-500/30 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                      <div>
+                        <span className="text-[10px] font-mono font-bold uppercase text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">
+                          Factor 2: Health Insurance (25% Weight • 250 Max Points)
+                        </span>
+                        <h4 className="text-base font-bold text-white mt-1">
+                          How it calculates your score &amp; why it matters
+                        </h4>
+                        <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                          Hospitalization defense evaluates your active sum insured (<strong>{currSym}{(insurance?.healthCoverage || 0).toLocaleString()}</strong>) relative to the recommended family floater standard of <strong>{currSym}15,00,000</strong>. It assigns 25% weight (up to 250 points) to ensure high medical inflation does not deplete your investments.
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-xl font-mono font-black text-blue-400">
+                          {result.combo.healthInsurance.marks1000} / 250 Pts
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-mono">
+                          {result.combo.healthInsurance.marks25} / 25 Marks
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      <div className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Actionable Advice for Health Insurance</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                          <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">
+                            Action 1: Super Top-Up Hack
+                          </span>
+                          <p className="text-slate-300 leading-relaxed">
+                            Buy a ₹5L base policy and stack a ₹25L Super Top-Up policy (with ₹5L deductible). This yields ₹30L protection for ~₹400/month.
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                          <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider block mb-1">
+                            Action 2: Retail Independence
+                          </span>
+                          <p className="text-slate-300 leading-relaxed">
+                            Never depend solely on your employer's group policy; secure personal retail coverage to avoid loss of cover during job changes.
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                          <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider block mb-1">
+                            Action 3: Auto-Restoration
+                          </span>
+                          <p className="text-slate-300 leading-relaxed">
+                            Ensure policy has unlimited restoration of sum insured and comprehensive pre/post-hospitalization OPD riders.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedFactorTab('insurance');
+                          setShowFactorsModal(true);
+                        }}
+                        className="text-xs font-bold text-blue-400 hover:underline flex items-center gap-1"
+                      >
+                        Deep-Dive Insurance Details <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('insurance')}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-colors shadow-sm flex items-center gap-1.5"
+                      >
+                        <span>Configure Insurance in Step 4</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {expandedInlineFactor === 'savings' && (
+                  <div className="p-5 rounded-2xl bg-slate-950/70 border border-emerald-500/30 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                      <div>
+                        <span className="text-[10px] font-mono font-bold uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                          Factor 3: Savings Score (25% Weight • 250 Max Points)
+                        </span>
+                        <h4 className="text-base font-bold text-white mt-1">
+                          How it calculates your score &amp; why it matters
+                        </h4>
+                        <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                          Your monthly savings rate is currently <strong>{result.metrics.savingsRatio}%</strong> ({currSym}{(result.metrics.monthlySavings || 0).toLocaleString()} saved out of {currSym}{(profile?.monthlyIncome || 0).toLocaleString()} net income). The score scales to 25% (up to 250 points) with 30%+ savings earning top score.
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-xl font-mono font-black text-emerald-400">
+                          {result.combo.savings.marks1000} / 250 Pts
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-mono">
+                          {result.combo.savings.marks25} / 25 Marks
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      <div className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Actionable Advice for Savings &amp; Surplus</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                          <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">
+                            Action 1: Pay Yourself First
+                          </span>
+                          <p className="text-slate-300 leading-relaxed">
+                            Automate your SIP deduction immediately on salary credit day. Save first, then budget the remainder for monthly living costs.
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                          <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider block mb-1">
+                            Action 2: 50/30/20 Allocation
+                          </span>
+                          <p className="text-slate-300 leading-relaxed">
+                            Maintain Needs at 50%, Wants at 30%, and channel 20%–30% directly into wealth compounding instruments.
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                          <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider block mb-1">
+                            Action 3: Step-Up SIP
+                          </span>
+                          <p className="text-slate-300 leading-relaxed">
+                            Commit to increasing your monthly savings by 10% annually with every promotion and annual compensation review.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedFactorTab('savings');
+                          setShowFactorsModal(true);
+                        }}
+                        className="text-xs font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                      >
+                        Simulate Savings Rate <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('income_expenses')}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-colors shadow-sm flex items-center gap-1.5"
+                      >
+                        <span>Adjust Incomes/Expenses in Step 1 &amp; 2</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {expandedInlineFactor === 'debt' && (
+                  <div className="p-5 rounded-2xl bg-slate-950/70 border border-purple-500/30 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                      <div>
+                        <span className="text-[10px] font-mono font-bold uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
+                          Factor 4: Debt Score (25% Weight • 250 Max Points)
+                        </span>
+                        <h4 className="text-base font-bold text-white mt-1">
+                          How it calculates your score &amp; why it matters
+                        </h4>
+                        <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                          Your EMI obligations currently take <strong>{result.metrics.emiToIncomeRatio}%</strong> of monthly income ({currSym}{(result.metrics.totalMonthlyEmi || 0).toLocaleString()} / mo). FinScore rewards sustainable leverage; ratios under 30% maximize marks, while &gt;45% sharply penalize the score.
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-xl font-mono font-black text-purple-400">
+                          {result.combo.debt.marks1000} / 250 Pts
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-mono">
+                          {result.combo.debt.marks25} / 25 Marks
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      <div className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Actionable Advice for Debt Freedom</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                          <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">
+                            Action 1: Debt Avalanche
+                          </span>
+                          <p className="text-slate-300 leading-relaxed">
+                            Direct extra cash into the highest-interest loan first (e.g. personal loan or credit cards) to minimize total interest cost.
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                          <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider block mb-1">
+                            Action 2: 1 Extra EMI/Year
+                          </span>
+                          <p className="text-slate-300 leading-relaxed">
+                            Prepaying just one extra EMI per year knocks 4–6 years off a 20-year loan and saves significant interest.
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                          <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider block mb-1">
+                            Action 3: 35% Safe Ceiling
+                          </span>
+                          <p className="text-slate-300 leading-relaxed">
+                            Keep combined monthly EMIs under 35% of income to avoid credit strain and ensure high loan eligibility when needed.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedFactorTab('debt');
+                          setShowFactorsModal(true);
+                        }}
+                        className="text-xs font-bold text-purple-400 hover:underline flex items-center gap-1"
+                      >
+                        Simulate EMI Reduction <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('debt')}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white cursor-pointer transition-colors shadow-sm flex items-center gap-1.5"
+                      >
+                        <span>Manage Loans in Step 3</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Future Goals Quick Progress Overview */}
@@ -7968,6 +8542,32 @@ Strategic Focus: ${result.biggestPriority}`;
         profile={profile}
         currSym={currSym}
         isLight={isLight}
+      />
+
+      {/* Interactive Factor Explanation & Actionable Advice Modal */}
+      <FinScoreFactorExplanationModal
+        isOpen={showFactorsModal}
+        onClose={() => setShowFactorsModal(false)}
+        result={result}
+        emergency={emergency}
+        insurance={insurance}
+        loans={loans}
+        profile={profile}
+        currSym={currSym}
+        isLight={isLight}
+        onNavigateTab={(tab) => setActiveTab(tab)}
+        initialFactor={selectedFactorTab}
+        onToggleEmergencyFund={(hasFund) => {
+          setEmergency(prev => ({
+            ...prev,
+            hasEmergencyFund: hasFund,
+            currentEmergencySavings: hasFund ? (prev.currentEmergencySavings > 0 ? prev.currentEmergencySavings : 232931) : 0
+          }));
+          setToastNotice(hasFund 
+            ? 'Emergency Fund set to YES: Score calculated on liquid savings buffer.' 
+            : 'Emergency Fund set to NO: Emergency mark is set to 0 as requested.'
+          );
+        }}
       />
     </div>
   );
