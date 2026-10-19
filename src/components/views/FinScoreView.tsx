@@ -125,6 +125,7 @@ import { PersonalFinanceAdvisorSection } from '../finscore/PersonalFinanceAdviso
 
 type FinScoreTab = 
   | 'dashboard' 
+  | 'factors_advice'
   | 'profile' 
   | 'income_expenses' 
   | 'debt' 
@@ -310,8 +311,8 @@ export const FinScoreView: React.FC = () => {
     }
   }, [theme]);
 
-  // Active FinScore section
-  const [activeTab, setActiveTab] = useState<FinScoreTab>('dashboard');
+  // Active FinScore section - default to 'factors_advice' for full page view
+  const [activeTab, setActiveTab] = useState<FinScoreTab>('factors_advice');
 
   // Core Financial State
   const [profile, setProfile] = useState<FinScoreProfile>(INITIAL_FINSCORE_PROFILE);
@@ -500,6 +501,7 @@ export const FinScoreView: React.FC = () => {
   const [selectedFactorTab, setSelectedFactorTab] = useState<'all' | 'emergency' | 'insurance' | 'savings' | 'debt' | 'goals'>('all');
   const [isFactorsSectionExpanded, setIsFactorsSectionExpanded] = useState(true);
   const [expandedInlineFactor, setExpandedInlineFactor] = useState<string | null>('emergency');
+  const [fullPageFactorFilter, setFullPageFactorFilter] = useState<'all' | 'emergency' | 'insurance' | 'savings' | 'debt' | 'goals'>('all');
   const [toastNotice, setToastNotice] = useState<string | null>(null);
   const [tempProfile, setTempProfile] = useState<FinScoreProfile>(INITIAL_FINSCORE_PROFILE);
 
@@ -1846,6 +1848,7 @@ Strategic Focus: ${result.biggestPriority}`;
             { id: 'goals', label: '7. Future Goals', shortLabel: 'Goals', icon: Target },
             { id: 'ai_assistant', label: '8. AI Agent (In Dev)', shortLabel: 'AI Agent', icon: Bot, isAi: true },
             { id: 'dashboard', label: '9. Score Dashboard', shortLabel: 'Score', icon: Activity },
+            { id: 'factors_advice', label: '10. Factors & Advice (Full Page)', shortLabel: 'Factors & Advice', icon: Lightbulb, isHighlight: true },
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1857,10 +1860,12 @@ Strategic Focus: ${result.biggestPriority}`;
                 className={`flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl whitespace-nowrap transition-all shrink-0 cursor-pointer ${
                   isActive
                     ? finScoreTheme.subtabActive
-                    : finScoreTheme.subtabInactive
+                    : ('isHighlight' in tab && tab.isHighlight)
+                      ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20'
+                      : finScoreTheme.subtabInactive
                 }`}
               >
-                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <Icon className={`w-3.5 h-3.5 shrink-0 ${('isHighlight' in tab && tab.isHighlight && !isActive) ? 'text-amber-400' : ''}`} />
                 <span>
                   <span className="sm:hidden">{tab.shortLabel}</span>
                   <span className="hidden sm:inline">{tab.label}</span>
@@ -1869,6 +1874,11 @@ Strategic Focus: ${result.biggestPriority}`;
                   <span className="flex h-2 w-2 relative ml-0.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                )}
+                {'isHighlight' in tab && tab.isHighlight && !isActive && (
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-300 font-bold ml-0.5 border border-amber-400/30">
+                    NEW
                   </span>
                 )}
               </button>
@@ -2054,14 +2064,11 @@ Strategic Focus: ${result.biggestPriority}`;
                 {/* Dashboard Action Row with User's Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   <button
-                    onClick={() => {
-                      setSelectedFactorTab('all');
-                      setShowFactorsModal(true);
-                    }}
+                    onClick={() => setActiveTab('factors_advice')}
                     className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer transition-all"
                   >
                     <Lightbulb className="w-4 h-4 text-amber-200" />
-                    <span>Explain Factors &amp; Advice</span>
+                    <span>Score Factors &amp; Advice (Full Page)</span>
                   </button>
                   <button
                     onClick={() => setShowHealthPlanModal(true)}
@@ -2276,14 +2283,22 @@ Strategic Focus: ${result.biggestPriority}`;
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <button
                     type="button"
+                    onClick={() => setActiveTab('factors_advice')}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-white cursor-pointer transition-all shadow-sm flex items-center gap-1.5"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Open Full Page Score Factors &amp; Advice</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => {
                       setSelectedFactorTab('all');
                       setShowFactorsModal(true);
                     }}
                     className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-all shadow-sm flex items-center gap-1.5"
                   >
-                    <Lightbulb className="w-3.5 h-3.5 text-amber-300" />
-                    <span>Explain Factors &amp; Actionable Advice (Modal)</span>
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Explain in Modal</span>
                   </button>
                   <button
                     type="button"
@@ -2645,6 +2660,14 @@ Strategic Focus: ${result.biggestPriority}`;
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
+                  onClick={() => setActiveTab('factors_advice')}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-white cursor-pointer transition-all shadow-sm flex items-center gap-1.5"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open Full Page</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
                     setSelectedFactorTab(expandedInlineFactor as any || 'all');
                     setShowFactorsModal(true);
@@ -2652,7 +2675,7 @@ Strategic Focus: ${result.biggestPriority}`;
                   className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-all shadow-sm flex items-center gap-1.5"
                 >
                   <BookOpen className="w-3.5 h-3.5" />
-                  <span>Open Fullscreen Modal</span>
+                  <span>Open Modal</span>
                 </button>
                 <button
                   type="button"
@@ -4546,6 +4569,908 @@ Strategic Focus: ${result.biggestPriority}`;
             isLight={isLight}
             onNavigateToStep={stepId => setActiveTab(stepId as any)}
           />
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* SECTION: FULL PAGE SCORE FACTORS & ACTIONABLE ADVICE */}
+      {/* ------------------------------------------------------------- */}
+      {activeTab === 'factors_advice' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {/* Full Page Header Card */}
+          <div className={`p-6 sm:p-8 rounded-3xl border shadow-sm ${finScoreTheme.card} space-y-5`}>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/60">
+              <div className="flex items-start gap-3.5">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-500/20 to-blue-500/20 text-amber-400 border border-amber-500/30 shrink-0">
+                  <Lightbulb className="w-7 h-7 text-amber-300" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                      Full-Page Factor Diagnostic
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      Balanced 25% + 25% + 25% + 25% = 1,000 Combo
+                    </span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black mt-1 tracking-tight flex items-center gap-2 flex-wrap">
+                    <span>Score Factors &amp; Actionable Advice</span>
+                    <span className="text-sm font-mono font-bold text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-lg border border-blue-500/20">
+                      {result.overallScore1000} / 1,000 Pts
+                    </span>
+                  </h2>
+                  <p className={`text-xs sm:text-sm mt-1 max-w-3xl leading-relaxed ${finScoreTheme.muted}`}>
+                    Understand exactly how each of the four survival and growth pillars contributes to your composite score. Review mathematical logic, benchmark metrics, and follow high-impact advice to elevate your score to Grade A.
+                  </p>
+                </div>
+              </div>
+
+              {/* Action buttons on header */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('dashboard')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                    isLight ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                  }`}
+                >
+                  <Activity className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Back to Dashboard</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowFactorsModal(true)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Open Quick Modal</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Overall Score Dial & 4-Pillar Visual Progress */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+              {/* Dial preview */}
+              <div className="lg:col-span-4 flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-950/40 border border-slate-800/80 text-center">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Composite FinScore™</div>
+                <div className="text-4xl font-extrabold font-mono text-white tracking-tight">
+                  {result.overallScore1000} <span className="text-sm font-normal text-slate-400 font-sans">/ 1,000</span>
+                </div>
+                <div className="text-xs font-mono text-slate-400 mt-0.5">
+                  ({result.overallScore} / 100 Scale)
+                </div>
+                <div className={`mt-2.5 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border ${result.gradeColor}`}>
+                  <Award className="w-3.5 h-3.5" />
+                  <span>Financial Health: Grade {result.grade}</span>
+                </div>
+              </div>
+
+              {/* 4 Pillars Summary Bars */}
+              <div className="lg:col-span-8 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold uppercase tracking-wider text-slate-400 text-[11px]">
+                    4-Pillar Proportional Contributions (250 Max Each):
+                  </span>
+                  <span className="font-mono text-xs text-blue-400 font-bold">
+                    {result.overallScore1000} / 1,000 Total Pts
+                  </span>
+                </div>
+
+                <div className="w-full h-3.5 rounded-full bg-slate-800 overflow-hidden flex shadow-inner">
+                  <div 
+                    className={`transition-all duration-500 ${emergency.hasEmergencyFund !== false && (emergency.currentEmergencySavings || 0) > 0 ? 'bg-amber-500' : 'bg-rose-500/60'}`}
+                    style={{ width: `${(result.combo.emergencyFund.marks1000 / 1000) * 100}%` }}
+                    title={`Emergency Fund: ${result.combo.emergencyFund.marks1000} Pts`}
+                  />
+                  <div 
+                    className="bg-blue-500 transition-all duration-500"
+                    style={{ width: `${(result.combo.healthInsurance.marks1000 / 1000) * 100}%` }}
+                    title={`Health Insurance: ${result.combo.healthInsurance.marks1000} Pts`}
+                  />
+                  <div 
+                    className="bg-emerald-500 transition-all duration-500"
+                    style={{ width: `${(result.combo.savings.marks1000 / 1000) * 100}%` }}
+                    title={`Savings Score: ${result.combo.savings.marks1000} Pts`}
+                  />
+                  <div 
+                    className="bg-purple-500 transition-all duration-500"
+                    style={{ width: `${(result.combo.debt.marks1000 / 1000) * 100}%` }}
+                    title={`Debt Score: ${result.combo.debt.marks1000} Pts`}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono text-center">
+                  <div className="p-2 rounded-xl bg-slate-900/60 border border-slate-800 text-amber-400">
+                    <span className="block text-[10px] uppercase text-slate-400">Emergency</span>
+                    <strong className="text-sm">{result.combo.emergencyFund.marks1000}</strong> / 250
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-900/60 border border-slate-800 text-blue-400">
+                    <span className="block text-[10px] uppercase text-slate-400">Health Ins</span>
+                    <strong className="text-sm">{result.combo.healthInsurance.marks1000}</strong> / 250
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-900/60 border border-slate-800 text-emerald-400">
+                    <span className="block text-[10px] uppercase text-slate-400">Savings</span>
+                    <strong className="text-sm">{result.combo.savings.marks1000}</strong> / 250
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-900/60 border border-slate-800 text-purple-400">
+                    <span className="block text-[10px] uppercase text-slate-400">Debt</span>
+                    <strong className="text-sm">{result.combo.debt.marks1000}</strong> / 250
+                  </div>
+                </div>
+
+                {/* Live Emergency Fund Toggle Test */}
+                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div>
+                    <span className="font-bold text-slate-300 block">
+                      Emergency Fund Rule: If NO, Assigned Mark = 0 Pts
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      {emergency.hasEmergencyFund !== false && (emergency.currentEmergencySavings || 0) > 0
+                        ? 'Status: YES (Scored on liquid buffer vs target months)'
+                        : 'Status: NO (Assigned Mark: 0 Pts)'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmergency({
+                          ...emergency,
+                          hasEmergencyFund: true,
+                          currentEmergencySavings: emergency.currentEmergencySavings > 0 ? emergency.currentEmergencySavings : 232931
+                        });
+                        setToastNotice('Emergency Fund set to YES: Score calculated on liquid savings buffer.');
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 ${
+                        emergency.hasEmergencyFund !== false && (emergency.currentEmergencySavings || 0) > 0
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>YES (Active)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmergency({
+                          ...emergency,
+                          hasEmergencyFund: false,
+                          currentEmergencySavings: 0
+                        });
+                        setToastNotice('Emergency Fund set to NO: Emergency mark is set to 0 as requested.');
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 ${
+                        emergency.hasEmergencyFund === false || (emergency.currentEmergencySavings || 0) === 0
+                          ? 'bg-rose-600 text-white shadow-sm'
+                          : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>NO (0 Pts)</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Navigation Bar */}
+            <div className="pt-2 border-t border-slate-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setFullPageFactorFilter('all')}
+                className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  fullPageFactorFilter === 'all'
+                    ? 'bg-blue-600 text-white shadow-sm font-bold'
+                    : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>All 4 Pillars Grid</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFullPageFactorFilter('emergency')}
+                className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  fullPageFactorFilter === 'emergency'
+                    ? 'bg-amber-600 text-white shadow-sm font-bold'
+                    : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800'
+                }`}
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                <span>1. Emergency Fund (25%)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFullPageFactorFilter('insurance')}
+                className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  fullPageFactorFilter === 'insurance'
+                    ? 'bg-blue-600 text-white shadow-sm font-bold'
+                    : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                <span>2. Health Insurance (25%)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFullPageFactorFilter('savings')}
+                className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  fullPageFactorFilter === 'savings'
+                    ? 'bg-emerald-600 text-white shadow-sm font-bold'
+                    : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                <span>3. Savings Score (25%)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFullPageFactorFilter('debt')}
+                className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  fullPageFactorFilter === 'debt'
+                    ? 'bg-purple-600 text-white shadow-sm font-bold'
+                    : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5 text-purple-400" />
+                <span>4. Debt Score (25%)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFullPageFactorFilter('goals')}
+                className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  fullPageFactorFilter === 'goals'
+                    ? 'bg-indigo-600 text-white shadow-sm font-bold'
+                    : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800'
+                }`}
+              >
+                <Target className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Future Goals Readiness</span>
+              </button>
+            </div>
+          </div>
+
+          {/* ------------------------------------------------------------- */}
+          {/* PILLAR 1: EMERGENCY FUND FULL CARD */}
+          {/* ------------------------------------------------------------- */}
+          {(fullPageFactorFilter === 'all' || fullPageFactorFilter === 'emergency') && (
+            <div className={`p-6 sm:p-7 rounded-3xl border shadow-sm ${finScoreTheme.card} space-y-5`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/60">
+                <div className="flex items-start gap-3">
+                  <div className={`p-2.5 rounded-2xl ${emergency.hasEmergencyFund !== false && (emergency.currentEmergencySavings || 0) > 0 ? 'bg-amber-500/15 text-amber-400' : 'bg-rose-500/15 text-rose-400'}`}>
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                        Pillar 1 of 4 • 25% Weight
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                        emergency.hasEmergencyFund !== false && (emergency.currentEmergencySavings || 0) > 0
+                          ? 'bg-emerald-500/15 text-emerald-400'
+                          : 'bg-rose-500/15 text-rose-400'
+                      }`}>
+                        {emergency.hasEmergencyFund !== false && (emergency.currentEmergencySavings || 0) > 0
+                          ? 'ACTIVE (YES)'
+                          : 'INACTIVE (NO - Mark: 0)'}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold mt-1 text-white">Emergency Fund &amp; Liquidity Shield</h3>
+                    <p className={`text-xs mt-0.5 ${finScoreTheme.muted}`}>
+                      Cash buffer to survive income shocks without being forced to sell compounding assets or take emergency debt.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right sm:border-l sm:pl-5 border-slate-800">
+                  <div className="text-[11px] text-slate-400 font-mono">Pillar Score (25% Weight)</div>
+                  <div className="text-2xl font-mono font-black text-amber-400">
+                    {result.combo.emergencyFund.marks1000} <span className="text-sm font-normal text-slate-400">/ 250 Pts</span>
+                  </div>
+                  <div className="text-xs font-mono text-slate-400">
+                    {result.combo.emergencyFund.marks25} / 25 Marks • Base: {result.combo.emergencyFund.score100}/100
+                  </div>
+                </div>
+              </div>
+
+              {/* Mathematical Rule Box */}
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-200 leading-relaxed space-y-1">
+                <div className="font-bold text-amber-300 flex items-center gap-1.5">
+                  <Scale className="w-4 h-4 text-amber-400" />
+                  <span>How This Factor is Calculated</span>
+                </div>
+                <p>
+                  FinScore evaluates your liquid savings buffer (<strong>{currSym}{(emergency.currentEmergencySavings || 0).toLocaleString()}</strong>) against your {emergency.targetMonths || 6}-month essential expenses baseline (<strong>{currSym}{(result.metrics.requiredEmergencyFund || 0).toLocaleString()}</strong>). It generates a 0–100 base diagnostic score, which is multiplied by 25% to yield up to <strong>25 marks (100 scale)</strong> or <strong>250 points (1,000 scale)</strong>.
+                </p>
+                <div className="font-semibold text-rose-300 pt-1">
+                  ⚠️ Special Rule: If Emergency Fund is set to NO, the mark is assigned as 0 Pts directly.
+                </div>
+              </div>
+
+              {/* Exact Metrics Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Current Buffer</div>
+                  <div className="text-base font-mono font-bold text-white mt-1">
+                    {currSym}{(emergency.currentEmergencySavings || 0).toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Liquid savings</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Target Required</div>
+                  <div className="text-base font-mono font-bold text-amber-400 mt-1">
+                    {currSym}{(result.metrics.requiredEmergencyFund || 0).toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">{emergency.targetMonths || 6} months living costs</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cushion Available</div>
+                  <div className="text-base font-mono font-bold text-blue-400 mt-1">
+                    {(result?.metrics?.emergencyMonthsAvailable ?? (emergency?.currentEmergencySavings && result?.metrics?.essentialExpenses ? (emergency.currentEmergencySavings / result.metrics.essentialExpenses).toFixed(1) : 0))} Months
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Safe benchmark: 6.0 Mos</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Funded Ratio</div>
+                  <div className="text-base font-mono font-bold text-emerald-400 mt-1">
+                    {result.combo.emergencyFund.isActive ? `${result.metrics.emergencyFundRatio}%` : '0%'}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Target: 100%</div>
+                </div>
+              </div>
+
+              {/* Actionable Advice Cards */}
+              <div className="space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Actionable Step-by-Step Advice</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                      High Impact (+50–100 Pts)
+                    </span>
+                    <h5 className="font-bold text-white text-sm">Automate Day-1 Salary Sweep</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      Auto-debit 15% of your income ({currSym}{Math.round((profile?.monthlyIncome || 0) * 0.15).toLocaleString()}) to an instant-redemption liquid fund immediately on salary credit.
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">
+                      Capital Preservation
+                    </span>
+                    <h5 className="font-bold text-white text-sm">Keep Zero Equity Volatility</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      Do not put emergency cash in stocks, crypto, or locked fixed deposits. Use 50% bank sweep-in FDs and 50% overnight/liquid mutual funds.
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
+                      Risk Profile Adjustment
+                    </span>
+                    <h5 className="font-bold text-white text-sm">Expand to 9–12 Months if Freelance</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      If you have variable income or elderly dependents, expand the cushion to 9–12 months to guarantee total resilience.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowFactorsModal(true)}
+                  className="text-xs font-bold text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>Launch Live Interactive Simulator</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('emergency')}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white cursor-pointer transition-colors shadow-sm flex items-center gap-1.5"
+                >
+                  <span>Configure Emergency Fund in Step 5</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ------------------------------------------------------------- */}
+          {/* PILLAR 2: HEALTH INSURANCE FULL CARD */}
+          {/* ------------------------------------------------------------- */}
+          {(fullPageFactorFilter === 'all' || fullPageFactorFilter === 'insurance') && (
+            <div className={`p-6 sm:p-7 rounded-3xl border shadow-sm ${finScoreTheme.card} space-y-5`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/60">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 rounded-2xl bg-blue-500/15 text-blue-400">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                        Pillar 2 of 4 • 25% Weight
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/15 text-blue-400">
+                        {result.combo.healthInsurance.score100 >= 80 ? 'EXCELLENT' : result.combo.healthInsurance.score100 >= 50 ? 'MODERATE' : 'NEEDS UPGRADE'}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold mt-1 text-white">Health Insurance &amp; Hospitalization Defense</h3>
+                    <p className={`text-xs mt-0.5 ${finScoreTheme.muted}`}>
+                      Protects accumulated capital against catastrophic medical emergencies, surgeries, and ICU bills.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right sm:border-l sm:pl-5 border-slate-800">
+                  <div className="text-[11px] text-slate-400 font-mono">Pillar Score (25% Weight)</div>
+                  <div className="text-2xl font-mono font-black text-blue-400">
+                    {result.combo.healthInsurance.marks1000} <span className="text-sm font-normal text-slate-400">/ 250 Pts</span>
+                  </div>
+                  <div className="text-xs font-mono text-slate-400">
+                    {result.combo.healthInsurance.marks25} / 25 Marks • Base: {result.combo.healthInsurance.score100}/100
+                  </div>
+                </div>
+              </div>
+
+              {/* Mathematical Rule Box */}
+              <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/25 text-xs text-blue-200 leading-relaxed space-y-1">
+                <div className="font-bold text-blue-300 flex items-center gap-1.5">
+                  <Scale className="w-4 h-4 text-blue-400" />
+                  <span>How This Factor is Calculated</span>
+                </div>
+                <p>
+                  Evaluates hospitalization sum insured (<strong>{currSym}{(insurance?.healthCoverage || 0).toLocaleString()}</strong>) against the recommended <strong>₹15,00,000</strong> family floater baseline. It also verifies retail independence vs sole reliance on corporate employer policies. Weighted at 25%, contributing up to <strong>250 points</strong>.
+                </p>
+              </div>
+
+              {/* Exact Metrics Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Cover</div>
+                  <div className="text-base font-mono font-bold text-white mt-1">
+                    {currSym}{(insurance?.healthCoverage || 0).toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Sum insured</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Benchmark</div>
+                  <div className="text-base font-mono font-bold text-blue-400 mt-1">
+                    ₹15,00,000
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Family floater standard</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Policy Type</div>
+                  <div className="text-base font-mono font-bold text-emerald-400 mt-1">
+                    {insurance?.isFamilyCovered ? 'Family Floater' : 'Individual'}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">{insurance?.hasPersonalHealthPolicy ? 'Private retail cover' : 'Needs private cover'}</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Corporate Reliance</div>
+                  <div className="text-base font-mono font-bold text-amber-400 mt-1">
+                    {insurance?.hasEmployerInsurance ? 'Employer Active' : 'Independent'}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Retail backup required</div>
+                </div>
+              </div>
+
+              {/* Actionable Advice Cards */}
+              <div className="space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Actionable Step-by-Step Advice</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                      Smart Hack
+                    </span>
+                    <h5 className="font-bold text-white text-sm">Base ₹5L + Super Top-Up ₹25L</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      Pair an inexpensive ₹5L base policy with a ₹25L Super Top-Up (₹5L deductible) to obtain ₹30L total protection at 60% lower premium (~₹450/month).
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded">
+                      Vulnerability Warning
+                    </span>
+                    <h5 className="font-bold text-white text-sm">Never Rely Exclusively on Employer Cover</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      Employer policies terminate upon job exit or layoff. Always maintain an independent retail health plan while young and healthy.
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
+                      Policy Clause Check
+                    </span>
+                    <h5 className="font-bold text-white text-sm">Verify Restoration &amp; NCB Benefits</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      Confirm automatic sum insured restoration and cumulative bonus boosters that increase your cover by up to 100% without extra cost.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowHealthPlanModal(true)}
+                  className="text-xs font-bold text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Generate 1-Click Health Plan</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('insurance')}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-colors shadow-sm flex items-center gap-1.5"
+                >
+                  <span>Configure Insurance in Step 4</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ------------------------------------------------------------- */}
+          {/* PILLAR 3: SAVINGS SCORE FULL CARD */}
+          {/* ------------------------------------------------------------- */}
+          {(fullPageFactorFilter === 'all' || fullPageFactorFilter === 'savings') && (
+            <div className={`p-6 sm:p-7 rounded-3xl border shadow-sm ${finScoreTheme.card} space-y-5`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/60">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 rounded-2xl bg-emerald-500/15 text-emerald-400">
+                    <DollarSign className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                        Pillar 3 of 4 • 25% Weight
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400">
+                        SAVINGS RATE: {result.metrics.savingsRatio}%
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold mt-1 text-white">Monthly Savings Rate &amp; Cash Surplus</h3>
+                    <p className={`text-xs mt-0.5 ${finScoreTheme.muted}`}>
+                      The financial surplus engine that fuels investment compounding, equity SIPs, and wealth creation.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right sm:border-l sm:pl-5 border-slate-800">
+                  <div className="text-[11px] text-slate-400 font-mono">Pillar Score (25% Weight)</div>
+                  <div className="text-2xl font-mono font-black text-emerald-400">
+                    {result.combo.savings.marks1000} <span className="text-sm font-normal text-slate-400">/ 250 Pts</span>
+                  </div>
+                  <div className="text-xs font-mono text-slate-400">
+                    {result.combo.savings.marks25} / 25 Marks • Base: {result.combo.savings.score100}/100
+                  </div>
+                </div>
+              </div>
+
+              {/* Mathematical Rule Box */}
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-200 leading-relaxed space-y-1">
+                <div className="font-bold text-emerald-300 flex items-center gap-1.5">
+                  <Scale className="w-4 h-4 text-emerald-400" />
+                  <span>How This Factor is Calculated</span>
+                </div>
+                <p>
+                  Measures the percentage of net monthly income (<strong>{currSym}{(profile?.monthlyIncome || 0).toLocaleString()}</strong>) retained after living costs and loan EMIs. Currently, you save <strong>{result.metrics.savingsRatio}%</strong> (<strong>{currSym}{(result.metrics.monthlySavings || 0).toLocaleString()} / mo</strong>). A rate &ge; 30% unlocks full marks (250/250 pts).
+                </p>
+              </div>
+
+              {/* Exact Metrics Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net Monthly Income</div>
+                  <div className="text-base font-mono font-bold text-white mt-1">
+                    {currSym}{(profile?.monthlyIncome || 0).toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Take-home earnings</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Living Expenses</div>
+                  <div className="text-base font-mono font-bold text-amber-400 mt-1">
+                    {currSym}{(result.metrics.totalExpenses || 0).toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Needs + Wants</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Monthly Saved Surplus</div>
+                  <div className="text-base font-mono font-bold text-emerald-400 mt-1">
+                    {currSym}{(result.metrics.monthlySavings || 0).toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Available for SIP / Wealth</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Current Savings Rate</div>
+                  <div className="text-base font-mono font-bold text-blue-400 mt-1">
+                    {result.metrics.savingsRatio}%
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Target: 30%+ for Max Score</div>
+                </div>
+              </div>
+
+              {/* Actionable Advice Cards */}
+              <div className="space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Actionable Step-by-Step Advice</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                      Core Rule
+                    </span>
+                    <h5 className="font-bold text-white text-sm">Pay Yourself First on Day 1</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      Never save "what remains after spending." Automate your mutual fund SIP on the day of salary credit and spend only what is left.
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">
+                      Quick Leakage Fix
+                    </span>
+                    <h5 className="font-bold text-white text-sm">Audit Discretionary Subscriptions</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      Trimming unused streaming services, excessive food delivery, and impulse spends by 10% redirects {currSym}{Math.round((result.metrics.discretionaryExpenses || 0) * 0.1).toLocaleString()}/month to savings.
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
+                      Wealth Accelerator
+                    </span>
+                    <h5 className="font-bold text-white text-sm">10% Annual Step-Up SIP</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      Commit to bumping up your monthly SIP by 10% each year with your annual appraisal to dramatically outpace inflation.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowFactorsModal(true)}
+                  className="text-xs font-bold text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>Simulate Savings Rate Score Gain</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('income_expenses')}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-colors shadow-sm flex items-center gap-1.5"
+                >
+                  <span>Adjust Incomes/Expenses in Step 1 &amp; 2</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ------------------------------------------------------------- */}
+          {/* PILLAR 4: DEBT SCORE FULL CARD */}
+          {/* ------------------------------------------------------------- */}
+          {(fullPageFactorFilter === 'all' || fullPageFactorFilter === 'debt') && (
+            <div className={`p-6 sm:p-7 rounded-3xl border shadow-sm ${finScoreTheme.card} space-y-5`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/60">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 rounded-2xl bg-purple-500/15 text-purple-400">
+                    <Briefcase className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                        Pillar 4 of 4 • 25% Weight
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                        result.metrics.emiToIncomeRatio <= 30 ? 'bg-emerald-500/15 text-emerald-400' : result.metrics.emiToIncomeRatio <= 45 ? 'bg-amber-500/15 text-amber-400' : 'bg-rose-500/15 text-rose-400'
+                      }`}>
+                        EMI RATIO: {result.metrics.emiToIncomeRatio}% OF INCOME
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold mt-1 text-white">Debt Management &amp; EMI Burden</h3>
+                    <p className={`text-xs mt-0.5 ${finScoreTheme.muted}`}>
+                      Measures debt liabilities, monthly EMI drains, and leverage safety relative to cash earnings.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right sm:border-l sm:pl-5 border-slate-800">
+                  <div className="text-[11px] text-slate-400 font-mono">Pillar Score (25% Weight)</div>
+                  <div className="text-2xl font-mono font-black text-purple-400">
+                    {result.combo.debt.marks1000} <span className="text-sm font-normal text-slate-400">/ 250 Pts</span>
+                  </div>
+                  <div className="text-xs font-mono text-slate-400">
+                    {result.combo.debt.marks25} / 25 Marks • Base: {result.combo.debt.score100}/100
+                  </div>
+                </div>
+              </div>
+
+              {/* Mathematical Rule Box */}
+              <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/25 text-xs text-purple-200 leading-relaxed space-y-1">
+                <div className="font-bold text-purple-300 flex items-center gap-1.5">
+                  <Scale className="w-4 h-4 text-purple-400" />
+                  <span>How This Factor is Calculated</span>
+                </div>
+                <p>
+                  Evaluates total monthly EMI payments (<strong>{currSym}{(result.metrics.totalMonthlyEmi || 0).toLocaleString()} / mo</strong>) against monthly income. DTI ratios &le; 25% receive 100/100, while ratios &gt; 45% trigger significant deductions. Contributes up to <strong>250 points</strong> to your FinScore.
+                </p>
+              </div>
+
+              {/* Exact Metrics Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Active Debt</div>
+                  <div className="text-base font-mono font-bold text-white mt-1">
+                    {currSym}{(result.metrics.totalDebt || 0).toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">{loans?.length || 0} active loans</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Monthly EMI Drain</div>
+                  <div className="text-base font-mono font-bold text-purple-400 mt-1">
+                    {currSym}{(result.metrics.totalMonthlyEmi || 0).toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Recurring commitment</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">EMI-To-Income</div>
+                  <div className="text-base font-mono font-bold text-blue-400 mt-1">
+                    {result.metrics.emiToIncomeRatio}%
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Safe ceiling: &lt; 35%</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Leverage Rating</div>
+                  <div className="text-base font-mono font-bold text-emerald-400 mt-1">
+                    {result.combo.debt.score100 >= 80 ? 'Healthy' : result.combo.debt.score100 >= 60 ? 'Manageable' : 'High Leverage'}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Diagnostic rating</div>
+                </div>
+              </div>
+
+              {/* Actionable Advice Cards */}
+              <div className="space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Actionable Step-by-Step Advice</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                      Strategy 1
+                    </span>
+                    <h5 className="font-bold text-white text-sm">Debt Avalanche Method</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      Target highest interest rate loans first (e.g. personal loans at 12%–16% or credit cards) while paying minimums on lower-cost debt.
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">
+                      Prepayment Trick
+                    </span>
+                    <h5 className="font-bold text-white text-sm">1 Extra EMI Per Year</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      Paying just one extra EMI per calendar year on a long-term loan knocks off 4–6 years of tenure and saves substantial interest.
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
+                      Discipline Rule
+                    </span>
+                    <h5 className="font-bold text-white text-sm">Always Clear Credit Cards in Full</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      Never revolve credit card balances at 36%–42% annual interest. Set up auto-debit for total statement balance on payment due date.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowFactorsModal(true)}
+                  className="text-xs font-bold text-purple-400 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>Simulate Prepayment Impact</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('debt')}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white cursor-pointer transition-colors shadow-sm flex items-center gap-1.5"
+                >
+                  <span>Manage Debt in Step 3</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ------------------------------------------------------------- */}
+          {/* BONUS PILLAR: FUTURE GOALS READINESS FULL CARD */}
+          {/* ------------------------------------------------------------- */}
+          {(fullPageFactorFilter === 'all' || fullPageFactorFilter === 'goals') && (
+            <div className={`p-6 sm:p-7 rounded-3xl border shadow-sm ${finScoreTheme.card} space-y-5`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/60">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 rounded-2xl bg-indigo-500/15 text-indigo-400">
+                    <Target className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                        Future Milestones &amp; Long-Term Wealth
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-400">
+                        SCORE: {result.scores.futureGoals} / 100
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold mt-1 text-white">Future Goals Readiness &amp; Milestones</h3>
+                    <p className={`text-xs mt-0.5 ${finScoreTheme.muted}`}>
+                      Evaluates whether your monthly savings and investment rate can fund your life milestones (Home, Child Education, Retirement).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right sm:border-l sm:pl-5 border-slate-800">
+                  <div className="text-[11px] text-slate-400 font-mono">Monthly Goal Target</div>
+                  <div className="text-2xl font-mono font-black text-indigo-400">
+                    {currSym}{(result.metrics.totalGoalRequiredMonthlySavings || 0).toLocaleString()} <span className="text-sm font-normal text-slate-400">/ mo</span>
+                  </div>
+                  <div className="text-xs font-mono text-slate-400">
+                    Current Surplus: {currSym}{(result.metrics.monthlySavings || 0).toLocaleString()} / mo
+                  </div>
+                </div>
+              </div>
+
+              {/* Actionable Advice Cards */}
+              <div className="space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Actionable Advice for Goal Readiness</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                      Asset Allocation
+                    </span>
+                    <h5 className="font-bold text-white text-sm">Match Tenure to Asset Class</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      For goals &gt; 5 years away (Retirement, Higher Education), allocate 70%+ to equity index funds. For goals &lt; 3 years away, stick to debt or arbitrage funds to prevent market drawdowns.
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">
+                      Inflation Accounting
+                    </span>
+                    <h5 className="font-bold text-white text-sm">Inflate Milestones by 7%–10%</h5>
+                    <p className="text-slate-300 leading-relaxed">
+                      Always adjust long-term goals for inflation so you don't fall short of purchasing power at retirement or college admissions.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('goals')}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer transition-colors shadow-sm flex items-center gap-1.5"
+                >
+                  <span>Manage Future Goals in Step 7</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

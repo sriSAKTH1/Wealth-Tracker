@@ -266,7 +266,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Navigation State
   const [activeTab, setActiveTabState] = useState<MainTab>(() => {
-    return isCalculatorOnlyMode ? 'calculators' : 'overview';
+    return isCalculatorOnlyMode ? 'calculators' : 'finscore';
   });
 
   const setActiveTab = (tab: MainTab) => {

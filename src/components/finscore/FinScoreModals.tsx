@@ -24,7 +24,8 @@ import {
   Info,
   Layers,
   ArrowUpRight,
-  Scale
+  Scale,
+  ExternalLink
 } from 'lucide-react';
 import { FinScoreResult, FinScoreProfile, FinScoreEmergency, FinScoreInsurance, FinScoreLoan } from '../../types';
 import { useFinance } from '../../context/FinanceContext';
@@ -613,13 +614,28 @@ export const FinScoreFactorExplanationModal: React.FC<FactorExplanationModalProp
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className={`p-2 rounded-xl transition-colors cursor-pointer shrink-0 ${styles.btnSecondary}`}
-            aria-label="Close modal"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                onNavigateTab('factors_advice');
+                onClose();
+              }}
+              title="Open full page view"
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Open Full Page</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className={`p-2 rounded-xl transition-colors cursor-pointer shrink-0 ${styles.btnSecondary}`}
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* 4-Pillar Visual Contribution Ribbon */}
