@@ -122,6 +122,7 @@ import { FinScoreAmountInput } from '../finscore/FinScoreAmountInput';
 import { FinScoreHealthPlanModal, FinScoreBenchmarkModal, FinScoreFactorExplanationModal } from '../finscore/FinScoreModals';
 import { FinancialStatementChart } from '../FinancialStatementChart';
 import { PersonalFinanceAdvisorSection } from '../finscore/PersonalFinanceAdvisorSection';
+import { FinScoreBlueprintDashboard } from '../finscore/FinScoreBlueprintDashboard';
 
 type FinScoreTab = 
   | 'dashboard' 
@@ -311,8 +312,11 @@ export const FinScoreView: React.FC = () => {
     }
   }, [theme]);
 
-  // Active FinScore section - default to 'factors_advice' for full page view
-  const [activeTab, setActiveTab] = useState<FinScoreTab>('factors_advice');
+  // Active FinScore section - default to 'dashboard' to display the new Blueprint UI
+  const [activeTab, setActiveTab] = useState<FinScoreTab>('dashboard');
+
+  // Dashboard UI Layout Mode: 'blueprint' (matching user's uploaded blueprint image) vs 'classic'
+  const [dashboardLayoutMode, setDashboardLayoutMode] = useState<'blueprint' | 'classic'>('blueprint');
 
   // Core Financial State
   const [profile, setProfile] = useState<FinScoreProfile>(INITIAL_FINSCORE_PROFILE);
@@ -1892,8 +1896,74 @@ Strategic Focus: ${result.biggestPriority}`;
       {/* ------------------------------------------------------------- */}
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
-          {/* Main Hero Financial Health Banner */}
-          <div className={`p-6 sm:p-8 rounded-3xl border shadow-xl ${finScoreTheme.card}`}>
+          {/* Dashboard Mode Switcher: Blueprint UI (Uploaded Image Style) vs Classic Deep Dive */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-blue-500/10 to-indigo-500/10 border border-emerald-500/30 shadow-xs">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-emerald-500" />
+                <span>FinScore UI Experience:</span>
+              </span>
+              <div className="inline-flex items-center p-0.5 rounded-xl bg-slate-900/40 border border-slate-700/50 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setDashboardLayoutMode('blueprint')}
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                    dashboardLayoutMode === 'blueprint'
+                      ? 'bg-emerald-600 text-white font-bold shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  <span>Blueprint UI Style (Image Match)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDashboardLayoutMode('classic')}
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                    dashboardLayoutMode === 'classic'
+                      ? 'bg-blue-600 text-white font-bold shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Classic Detailed View</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab('factors_advice')}
+                className="px-3 py-1 rounded-lg text-xs font-bold bg-amber-500/15 text-amber-500 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <Lightbulb className="w-3.5 h-3.5" />
+                <span>Full Page Factors &amp; Advice</span>
+              </button>
+            </div>
+          </div>
+
+          {dashboardLayoutMode === 'blueprint' ? (
+            <FinScoreBlueprintDashboard
+              profile={profile}
+              incomes={incomeSources}
+              expenses={expenses}
+              loans={loans}
+              insurance={insurance}
+              emergency={emergency}
+              goals={goals}
+              result={result}
+              currSym={currSym}
+              isLight={isLight}
+              onNavigateToTab={(tabId) => setActiveTab(tabId as FinScoreTab)}
+              onOpenReportModal={() => setShowBenchmarkModal(true)}
+              onOpenPlanModal={() => setShowHealthPlanModal(true)}
+              onOpenBenchmarkModal={() => setShowBenchmarkModal(true)}
+            />
+          ) : (
+            <>
+              {/* Main Hero Financial Health Banner */}
+              <div className={`p-6 sm:p-8 rounded-3xl border shadow-xl ${finScoreTheme.card}`}>
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               {/* Overall Score Dial */}
               <div className="lg:col-span-5 flex flex-col items-center justify-center text-center p-4">
@@ -4569,6 +4639,8 @@ Strategic Focus: ${result.biggestPriority}`;
             isLight={isLight}
             onNavigateToStep={stepId => setActiveTab(stepId as any)}
           />
+            </>
+          )}
         </div>
       )}
 

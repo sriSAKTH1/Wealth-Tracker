@@ -35,10 +35,9 @@ export const Sidebar: React.FC = () => {
 
   const isLight = theme === 'light' || theme === 'nature' || theme === 'retro';
 
-  // Group 1: Core Navigation (Dashboard, FinScore, Wealth, Goals, Accounts)
+  // Group 1: Core Navigation (Dashboard, Wealth, Goals, Accounts)
   const coreNavItems: { id: MainTab; label: string; icon: any; badge?: string }[] = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'finscore', label: 'FinScore™ & Advice', icon: Sparkles, badge: 'Pillars' },
     { id: 'wealth', label: 'Wealth & Allocation', icon: TrendingUp },
     { id: 'goals', label: 'Goals & Essentials', icon: Target },
     { id: 'account', label: 'Accounts & Budgets', icon: Wallet },
