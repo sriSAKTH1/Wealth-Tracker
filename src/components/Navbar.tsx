@@ -17,7 +17,6 @@ import {
   ShieldCheck,
   Keyboard,
   PanelLeftClose,
-  PanelLeft,
   MoreVertical,
   X,
   Database,
@@ -30,6 +29,7 @@ import { useFinance, CURRENCY_CONFIGS } from '../context/FinanceContext';
 import { useAuth } from '../context/AuthContext';
 import { CurrencyCode, AppBroadcastNotification } from '../types';
 import { fetchBroadcastNotifications } from '../services/firebase';
+import { FixWealthLogo } from './common/FixWealthLogo';
 
 export const Navbar: React.FC = () => {
   const { 
@@ -52,7 +52,8 @@ export const Navbar: React.FC = () => {
     keyboardShortcutsEnabled,
     setIsShortcutsHelpOpen,
     isSidebarOpen,
-    toggleSidebar
+    toggleSidebar,
+    setIsSidebarOpen
   } = useFinance();
 
   const { 
@@ -239,20 +240,32 @@ export const Navbar: React.FC = () => {
   return (
     <header className={`sticky top-0 z-30 w-full border-b transition-all duration-200 ${navStyles.header} px-4 sm:px-6 py-3`}>
       <div className="w-full flex items-center justify-between gap-3">
-        {/* Left: Mobile Drawer Button & Active View Context */}
-        <div className="flex items-center gap-3">
-          {/* Mobile-only menu toggle (hidden on desktop where sidebar is sticky on the left) */}
+        {/* Left: Mobile/Tablet Brand Logo & Sidebar Drawer Trigger + Active View Context */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Mobile & Tablet Logo to Open Sidebar */}
           <button
-            id="btn-mobile-sidebar-toggle"
+            id="btn-mobile-tablet-logo-sidebar"
+            type="button"
             onClick={toggleSidebar}
-            aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
-            className={`lg:hidden p-2 rounded-xl border transition-all cursor-pointer ${navStyles.btn}`}
+            aria-label={isSidebarOpen ? "Close sidebar menu" : "Open sidebar menu"}
+            title="Open sidebar navigation"
+            className="lg:hidden flex items-center gap-1.5 sm:gap-2 p-1 -ml-1 rounded-xl hover:bg-slate-500/10 active:scale-95 transition-all cursor-pointer group"
           >
-            <PanelLeft className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/15 via-emerald-600/20 to-teal-700/25 flex items-center justify-center p-1 ring-1 ring-emerald-500/30 group-hover:ring-emerald-500/60 shadow-xs transition-all">
+              <FixWealthLogo className="w-6 h-6" showRoots={true} />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className={`text-sm font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                FIX
+              </span>
+              <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 tracking-wider">
+                WEALTH
+              </span>
+            </div>
           </button>
 
-          {/* Desktop Active Page Breadcrumb / Title */}
-          <div className="flex flex-col">
+          {/* Active Page Breadcrumb / Title (shown on tablet and desktop) */}
+          <div className="hidden sm:flex flex-col">
             <div className="flex items-center gap-2">
               <span className={`text-sm sm:text-base font-bold tracking-tight ${navStyles.title}`}>
                 {tabTitles[activeTab]?.title || 'Dashboard'}
