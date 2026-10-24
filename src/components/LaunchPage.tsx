@@ -1691,6 +1691,15 @@ export const LaunchPage: React.FC = () => {
                     Register
                   </button>
                 </li>
+                <li>
+                  <button 
+                    id="btn-footer-admin-test-mode"
+                    onClick={() => setIsAdminPinModalOpen(true)}
+                    className="text-slate-400 hover:text-blue-600 cursor-pointer transition-colors"
+                  >
+                    Admin Test Mode
+                  </button>
+                </li>
               </ul>
             </div>
 

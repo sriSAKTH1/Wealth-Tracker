@@ -529,7 +529,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setCurrentUser(profile);
       localStorage.setItem(LOCAL_AUTH_USER_KEY, JSON.stringify(profile));
-      showNotification('👑 Master Administrator Active (sudharsan014@gamil.com) • Full Access Without Timer');
+      showNotification('👑 Master Administrator Active • Full Access Without Timer');
       return;
     }
 
@@ -570,15 +570,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Demo session: No countdown timer counter per user instruction
-  useEffect(() => {
-    setDemoSecondsRemaining(DEMO_TOTAL_DURATION_SEC);
-  }, [isDemoMode]);
-
   const role: 'admin' | 'user' = currentUser?.role === 'admin' ? 'admin' : 'user';
   const isAdmin = role === 'admin';
   const isUser = role === 'user';
   const isAuthenticated = Boolean(currentUser && currentUser.id);
+
+  // Demo session countdown timer for non-admin demo visitors (admin has unlimited session)
+  useEffect(() => {
+    if (!isDemoMode || isAdmin) return;
+
+    const syncRemaining = () => {
+      const startStr = localStorage.getItem(DEMO_SESSION_START_KEY);
+      if (startStr) {
+        const elapsed = Math.floor((Date.now() - Number(startStr)) / 1000);
+        const remaining = Math.max(0, DEMO_TOTAL_DURATION_SEC - elapsed);
+        setDemoSecondsRemaining(remaining);
+        return remaining;
+      }
+      return DEMO_TOTAL_DURATION_SEC;
+    };
+
+    syncRemaining();
+
+    const interval = setInterval(() => {
+      const remaining = syncRemaining();
+      if (remaining <= 0) {
+        showNotification('Demo sandbox timer expired. Sign up or log in to save your portfolio permanently.');
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isDemoMode, isAdmin]);
 
   return (
     <AuthContext.Provider
